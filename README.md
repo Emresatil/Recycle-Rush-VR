@@ -49,3 +49,59 @@ Project implementation details can be found here:
 ## VR Mockup
 
 ![VR Mockup](docs/assets/mockup-vr.png)
+
+---
+
+## Additional Mockups
+
+### Main Menu Mockup
+
+A concept showing how the Recycle Rush VR main menu may appear inside the Meta Quest environment.
+
+![Main Menu](docs/assets/mockup-home.png)
+
+---
+
+### Gameplay Mockup
+
+A concept visualization of the player sorting recyclable waste into the correct recycling bins.
+
+![Gameplay](docs/assets/mockup-gameplay.png)
+
+---
+
+### Controller Interaction
+
+Example of XR grab interaction using Meta Quest Touch Plus controllers.
+
+![Interaction](docs/assets/mockup-interaction.png)
+
+---
+
+## User Interface Concepts
+
+### Main Menu UI
+
+![Main Menu UI](docs/assets/ui-main-menu.png)
+
+### Gameplay HUD
+
+![Gameplay HUD](docs/assets/ui-gameplay.png)
+
+---
+
+## Game Assets
+
+### Recycling Bins
+
+Low-poly recycling bins used in the game environment.
+
+![Recycling Bins](docs/assets/recycle-bins.png)
+
+---
+
+## Layered App Icon Structure
+
+Concept presentation showing the background layer, foreground layer and the assembled Meta Quest application icon.
+
+![Layered App Icon](docs/assets/app-icon-showcase.png)
