@@ -36,4 +36,56 @@ public class BeltMovement : MonoBehaviour
         // MovePosition fizik motorunu tetikler ve üzerindeki objeleri de beraberinde sürükler.
         rb.MovePosition(rb.position + movement);
     }
+
+    // =====================================================
+    // İLK TEMAS ÇÖZÜMÜ (Bounce & Stabilize)
+    // Obje banda ilk çarptığı anda:
+    // 1. Dikey hızı (Y) sıfırlanır → sekme (bounce) olmaz
+    // 2. Dönme hızı sıfırlanır → savrulma olmaz
+    // 3. Rotasyon kilitlenir → titreme (jitter) olmaz
+    // 4. Obje dik pozisyona getirilir
+    // 5. Collision Detection "Continuous" yapılır → clipping engellenir
+    // =====================================================
+    void OnCollisionEnter(Collision collision)
+    {
+        Rigidbody itemRb = collision.rigidbody;
+        if (itemRb != null && !itemRb.isKinematic)
+        {
+            // Sekmeyi önle: dikey hızı sıfırla, yatay hızı koru
+            Vector3 vel = itemRb.linearVelocity;
+            vel.y = 0f;
+            itemRb.linearVelocity = vel;
+            
+            // Dönme hızını tamamen sıfırla
+            itemRb.angularVelocity = Vector3.zero;
+            
+            // Objeyi anında dik pozisyona getir (Y ekseni rotasyonunu koru)
+            Vector3 currentEuler = itemRb.transform.eulerAngles;
+            itemRb.transform.rotation = Quaternion.Euler(0f, currentEuler.y, 0f);
+
+            // Rotasyonu kilitle → Titreme (jitter) tamamen engellenir.
+            // Spawner'dan gelen tüm objeler otomatik olarak bu ayarı alır,
+            // tek tek Inspector'dan ayarlamaya gerek kalmaz.
+            itemRb.constraints = RigidbodyConstraints.FreezeRotation;
+            
+            // İçinden geçmeyi (clipping) önle
+            itemRb.collisionDetectionMode = CollisionDetectionMode.Continuous;
+        }
+    }
+
+    // =====================================================
+    // BANTTAN ÇIKIŞ ÇÖZÜMÜ
+    // Obje banttan ayrıldığında (oyuncu eline aldığında veya
+    // bandın sonundan düştüğünde) rotasyon kilidini geri aç.
+    // Böylece oyuncu objeyi serbestçe döndürüp fırlatabilir.
+    // =====================================================
+    void OnCollisionExit(Collision collision)
+    {
+        Rigidbody itemRb = collision.rigidbody;
+        if (itemRb != null && !itemRb.isKinematic)
+        {
+            // Rotasyon kilidini kaldır (oyuncu serbestçe döndürebilsin)
+            itemRb.constraints = RigidbodyConstraints.None;
+        }
+    }
 }
