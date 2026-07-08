@@ -5,6 +5,10 @@ TagManager:
   serializedVersion: 3
   tags:
   - Anchor
+  - Plastic
+  - Paper
+  - Glass
+  - Metal
   layers:
   - Default
   - TransparentFX
