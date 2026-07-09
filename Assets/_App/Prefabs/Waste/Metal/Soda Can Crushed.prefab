@@ -32,6 +32,37 @@ Transform:
   - {fileID: 3656546815103576207}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &7973219770882214606
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6811957030712830604}
+  m_Layer: 0
+  m_Name: AttachPoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6811957030712830604
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7973219770882214606}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.0613, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3656546815103576207}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &2816533742367523908
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -54,15 +85,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -7662593906896114485, guid: 7ad4fdd755ed70a4da3453eecfaca41e, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.12551
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -7662593906896114485, guid: 7ad4fdd755ed70a4da3453eecfaca41e, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.04506
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -7662593906896114485, guid: 7ad4fdd755ed70a4da3453eecfaca41e, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.11142
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -7662593906896114485, guid: 7ad4fdd755ed70a4da3453eecfaca41e, type: 3}
       propertyPath: m_LocalRotation.w
@@ -102,7 +133,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: -7662593906896114485, guid: 7ad4fdd755ed70a4da3453eecfaca41e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6811957030712830604}
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 3919575227936213854, guid: 7ad4fdd755ed70a4da3453eecfaca41e, type: 3}
       insertIndex: -1
@@ -242,7 +276,7 @@ MonoBehaviour:
   m_StartingInteractionStrengthFilters: []
   m_AutoFindParentInteractableInHierarchy: 0
   m_ParentInteractableObject: {fileID: 0}
-  m_AttachTransform: {fileID: 0}
+  m_AttachTransform: {fileID: 6811957030712830604}
   m_SecondaryAttachTransform: {fileID: 0}
   m_UseDynamicAttach: 0
   m_MatchAttachPosition: 1
