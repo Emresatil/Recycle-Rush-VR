@@ -18,7 +18,7 @@ public class WasteSpawner : MonoBehaviour
 
     [Header("Organik Konum (Dağılım)")]
     [Tooltip("Çöpler bandın sağına/soluna ne kadar kayarak düşebilir?")]
-    public float spawnWidthOffset = 0.4f;
+    public float spawnWidthOffset = 0.1f; // 0.4 çok fazlaydı, bandı aşıyordu. 0.1'e düşürdük.
 
     // Tekrarı önlemek için son üretilen çöpü hafızada tutuyoruz
     private GameObject _lastSpawnedPrefab;
@@ -44,7 +44,7 @@ public class WasteSpawner : MonoBehaviour
         {
             SpawnWaste();
 
-            // Bir sonraki üretim için rastgele bir süre bekle (Daha organik hissettirir)
+            // 1. Özellik: Bir sonraki üretim için rastgele bir süre bekle
             float randomWait = Random.Range(minSpawnInterval, maxSpawnInterval);
             yield return new WaitForSeconds(randomWait);
         }
@@ -52,19 +52,19 @@ public class WasteSpawner : MonoBehaviour
 
     void SpawnWaste()
     {
-        // 1. Özellik: Anti-Tekrar Sistemi ile üst üste aynı çöpün düşme ihtimalini azalt
+        // 2. Özellik: Anti-Tekrar Sistemi
         GameObject selectedPrefab = GetRandomPrefab();
 
-        // 2. Özellik: Rastgele Konum (Offset). Çöpler ip gibi aynı hizada düşmesin, bant genişliğine yayılsın
-        // Bandın Z ekseninde (ileri doğru) aktığını varsayarak sağa sola (X ekseninde) kaydırıyoruz.
+        // 3. Özellik: Rastgele Konum (Offset). Genişlik 0.1'e düşürüldü ki bandı aşmasınlar
         Vector3 randomOffset = new Vector3(Random.Range(-spawnWidthOffset, spawnWidthOffset), 0f, 0f);
         Vector3 finalSpawnPosition = spawnPoint.position + randomOffset;
 
-        // 3. Özellik: Rastgele Rotasyon. Çöpler dümdüz değil, farklı açılarla düşsün ki fizik motoru yuvarlasın
-        Quaternion randomRotation = Random.rotation;
+        // 4. Özellik: DÜZELTME - Çöpler yatay düşmesin diye sadece Y ekseninde (kendi etrafında) döndürüyoruz!
+        // Eskiden Random.rotation idi, bu yüzden şişeler yan veya ters doğuyordu.
+        Quaternion uprightRandomRotation = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
 
         // Obje üretimi
-        Instantiate(selectedPrefab, finalSpawnPosition, randomRotation);
+        Instantiate(selectedPrefab, finalSpawnPosition, uprightRandomRotation);
     }
 
     // Üst üste aynı objenin gelmesini engelleyen özel fonksiyon
