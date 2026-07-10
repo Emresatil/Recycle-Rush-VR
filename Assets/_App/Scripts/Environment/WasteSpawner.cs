@@ -1,138 +1,91 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class WasteSpawner : MonoBehaviour
 {
-    [Header("Pool Settings")]
-    [SerializeField, Tooltip("Üretilecek atık prefab'larının listesi (Object Pool için).")]
-    private GameObject[] _wastePrefabs;
-
-    [SerializeField, Tooltip("Her bir prefab türünden kaç adet önbelleğe alınacak (Cache).")]
-    private int _poolSizePerPrefab = 5;
-
     [Header("Spawn Settings")]
-    [SerializeField, Tooltip("Atıkların havada süzülmeye başlayacağı üretim noktası.")]
-    private Transform _spawnPoint;
-
-    [SerializeField, Tooltip("İki üretim arasındaki saniye cinsinden süre.")]
-    private float _spawnInterval = 3f;
-
-    [SerializeField, Tooltip("Üretim süresinin düşebileceği minimum sınır (Maksimum Zorluk).")]
-    private float _minSpawnInterval = 0.5f;
-
-    // Object Pool Listesi
-    private List<GameObject> _objectPool = new List<GameObject>();
+    [Tooltip("Üretilecek atık prefab'larının listesi")]
+    public GameObject[] wastePrefabs;
     
-    // Coroutine Referansı (İleride durdurmak gerekirse diye Cache'lendi)
-    private Coroutine _spawnCoroutine;
+    [Tooltip("Atıkların düşeceği başlangıç noktası")]
+    public Transform spawnPoint;
+    
+    [Header("Organik Zamanlama (Zorluk)")]
+    [Tooltip("En az kaç saniyede bir atık düşsün?")]
+    public float minSpawnInterval = 1.5f;
+    [Tooltip("En fazla kaç saniyede bir atık düşsün?")]
+    public float maxSpawnInterval = 3.5f;
 
-    private void Awake()
-    {
-        // Update veya oyun akışı içinde Instantiate çağırmamak için 
-        // tüm objeleri Awake içinde üretip (Allocate) havuza atıyoruz.
-        InitializePool();
-    }
+    [Header("Organik Konum (Dağılım)")]
+    [Tooltip("Çöpler bandın sağına/soluna ne kadar kayarak düşebilir?")]
+    public float spawnWidthOffset = 0.4f;
 
-    private void Start()
+    // Tekrarı önlemek için son üretilen çöpü hafızada tutuyoruz
+    private GameObject _lastSpawnedPrefab;
+
+    void Start()
     {
-        if (_wastePrefabs != null && _wastePrefabs.Length > 0 && _spawnPoint != null)
+        if (wastePrefabs.Length > 0 && spawnPoint != null)
         {
-            _spawnCoroutine = StartCoroutine(SpawnRoutine());
+            StartCoroutine(SpawnRoutine());
         }
         else
         {
-            Debug.LogWarning("WasteSpawner: Prefab listesi veya Spawn Point atanmamış!");
+            Debug.LogWarning("WasteSpawner: Prefab listesi veya Spawn Point boş!");
         }
     }
 
-    /// <summary>
-    /// Tüm prefab'lardan belirtilen sayı kadar üretip inaktif şekilde havuza ekler.
-    /// </summary>
-    private void InitializePool()
+    IEnumerator SpawnRoutine()
     {
-        foreach (var prefab in _wastePrefabs)
-        {
-            for (int i = 0; i < _poolSizePerPrefab; i++)
-            {
-                GameObject obj = Instantiate(prefab, transform);
-                obj.SetActive(false); // Ekranda görünmemesi için kapat
-                _objectPool.Add(obj);
-            }
-        }
-    }
-
-    /// <summary>
-    /// Havuzdan inaktif (kullanılmayan) rastgele bir obje çeker.
-    /// </summary>
-    private GameObject GetPooledObject()
-    {
-        if (_objectPool.Count == 0) return null;
-
-        // Rastgelelik hissini artırmak için havuzda rastgele bir noktadan aramaya başla
-        int startIndex = Random.Range(0, _objectPool.Count);
-        
-        for (int i = 0; i < _objectPool.Count; i++)
-        {
-            int index = (startIndex + i) % _objectPool.Count;
-            if (!_objectPool[index].activeInHierarchy)
-            {
-                return _objectPool[index]; // Boşta olan ilk objeyi döndür
-            }
-        }
-
-        Debug.LogWarning("WasteSpawner: Havuzda boş obje kalmadı! _poolSizePerPrefab değerini artırın.");
-        return null;
-    }
-
-    private IEnumerator SpawnRoutine()
-    {
-        // Oyun başladığında oyuncunun hazırlanması için 2 saniye tolerans
+        // Oyun başlarken oyuncuya 2 saniye hazırlanma payı ver
         yield return new WaitForSeconds(2f);
 
         while (true)
         {
             SpawnWaste();
-            yield return new WaitForSeconds(_spawnInterval);
+
+            // Bir sonraki üretim için rastgele bir süre bekle (Daha organik hissettirir)
+            float randomWait = Random.Range(minSpawnInterval, maxSpawnInterval);
+            yield return new WaitForSeconds(randomWait);
         }
     }
 
-    private void SpawnWaste()
+    void SpawnWaste()
     {
-        GameObject wasteItem = GetPooledObject();
-        if (wasteItem != null)
-        {
-            // Objeyi spawn noktasına taşı ve Antigravity için rastgele bir dönüşle başlat
-            wasteItem.transform.position = _spawnPoint.position;
-            wasteItem.transform.rotation = Random.rotation; 
-            wasteItem.SetActive(true); // Objeyi sahneye sür
-        }
+        // 1. Özellik: Anti-Tekrar Sistemi ile üst üste aynı çöpün düşme ihtimalini azalt
+        GameObject selectedPrefab = GetRandomPrefab();
+
+        // 2. Özellik: Rastgele Konum (Offset). Çöpler ip gibi aynı hizada düşmesin, bant genişliğine yayılsın
+        // Bandın Z ekseninde (ileri doğru) aktığını varsayarak sağa sola (X ekseninde) kaydırıyoruz.
+        Vector3 randomOffset = new Vector3(Random.Range(-spawnWidthOffset, spawnWidthOffset), 0f, 0f);
+        Vector3 finalSpawnPosition = spawnPoint.position + randomOffset;
+
+        // 3. Özellik: Rastgele Rotasyon. Çöpler dümdüz değil, farklı açılarla düşsün ki fizik motoru yuvarlasın
+        Quaternion randomRotation = Random.rotation;
+
+        // Obje üretimi
+        Instantiate(selectedPrefab, finalSpawnPosition, randomRotation);
     }
 
-    /// <summary>
-    /// ScoreManager tarafından puan barajları (50, 100, 200) aşıldığında tetiklenecek Event Listener.
-    /// Dinamik zorluk (Dynamic Difficulty) artışını sağlar.
-    /// </summary>
-    public void OnScoreThresholdReached(int currentScore)
+    // Üst üste aynı objenin gelmesini engelleyen özel fonksiyon
+    GameObject GetRandomPrefab()
     {
-        if (currentScore >= 200)
+        GameObject selected = null;
+        int maxAttempts = 3; // Sonsuz döngüyü önlemek için 3 deneme hakkı
+        
+        for (int i = 0; i < maxAttempts; i++)
         {
-            SetSpawnInterval(1.0f); // Çok hızlı (Arcade mode)
+            int randomIndex = Random.Range(0, wastePrefabs.Length);
+            selected = wastePrefabs[randomIndex];
+            
+            // Eğer seçilen obje bir öncekiyle aynı DEĞİLSE döngüden çık ve onu kullan
+            if (selected != _lastSpawnedPrefab)
+            {
+                break;
+            }
         }
-        else if (currentScore >= 100)
-        {
-            SetSpawnInterval(1.5f); // Hızlı
-        }
-        else if (currentScore >= 50)
-        {
-            SetSpawnInterval(2.0f); // Orta
-        }
-    }
 
-    private void SetSpawnInterval(float newInterval)
-    {
-        // Yeni sürenin, belirlenen minimum sürenin altına inmesini (oyunun çökmesini) engeller
-        _spawnInterval = Mathf.Max(newInterval, _minSpawnInterval);
-        Debug.Log($"[WasteSpawner] Zorluk Arttı! Yeni Üretim Aralığı: {_spawnInterval} saniye.");
+        _lastSpawnedPrefab = selected; // Hafızayı güncelle
+        return selected;
     }
 }
