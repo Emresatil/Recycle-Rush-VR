@@ -131,6 +131,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Spring
       objectReference: {fileID: 0}
+    - target: {fileID: 5861069733216532766, guid: 25b6af779d97eb54598107827cdb5248, type: 3}
+      propertyPath: m_TagString
+      value: Metal
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:

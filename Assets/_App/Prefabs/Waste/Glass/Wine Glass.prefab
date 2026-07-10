@@ -79,6 +79,10 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: -1758674408456032153, guid: e080c087bd2ce30469ef6336c9b0aeeb, type: 3}
+      propertyPath: m_TagString
+      value: Glass
+      objectReference: {fileID: 0}
     - target: {fileID: -595851130805275874, guid: e080c087bd2ce30469ef6336c9b0aeeb, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.08

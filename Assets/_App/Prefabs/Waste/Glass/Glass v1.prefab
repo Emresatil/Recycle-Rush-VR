@@ -131,6 +131,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Glass
       objectReference: {fileID: 0}
+    - target: {fileID: 7133204268785314945, guid: c75629633e71913449ce42894d6e4691, type: 3}
+      propertyPath: m_TagString
+      value: Glass
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:

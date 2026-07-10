@@ -102,6 +102,7 @@ GameObject:
   - component: {fileID: 8421152260399136959}
   - component: {fileID: 2873710211977870406}
   - component: {fileID: 9032054342236209768}
+  - component: {fileID: -3672276708256645249}
   m_Layer: 0
   m_Name: TrashbinBlue
   m_TagString: Untagged
@@ -204,6 +205,25 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.64300585, y: 1.173587, z: 0.7297379}
   m_Center: {x: 0.00000017881393, y: 0.58679336, z: -0.042004004}
+--- !u!114 &-3672276708256645249
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4602025962161850522}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f58d6fe93dc06546b8694703d8702ab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BinTrigger
+  _acceptedWasteType: 0
+  _correctScore: 10
+  _correctHapticDuration: 0.2
+  _correctHapticAmplitude: 0.5
+  _incorrectScore: -5
+  _incorrectHapticDuration: 0.4
+  _incorrectHapticAmplitude: 0.8
 --- !u!1 &5457695760073695924
 GameObject:
   m_ObjectHideFlags: 0

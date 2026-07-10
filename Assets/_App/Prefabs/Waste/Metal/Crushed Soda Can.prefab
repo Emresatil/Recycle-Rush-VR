@@ -131,6 +131,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Crushed Soda Can
       objectReference: {fileID: 0}
+    - target: {fileID: 7042261733086434576, guid: a764bdf9ae5c26544903e3b4320bc8e5, type: 3}
+      propertyPath: m_TagString
+      value: Metal
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:

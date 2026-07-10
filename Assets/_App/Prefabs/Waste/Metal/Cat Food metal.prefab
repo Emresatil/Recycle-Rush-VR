@@ -127,9 +127,33 @@ PrefabInstance:
       propertyPath: m_ConstrainProportionsScale
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: -3475762294473152573, guid: ba437a6e0b9e37d4d898b96bd16372b9, type: 3}
+      propertyPath: m_TagString
+      value: Metal
+      objectReference: {fileID: 0}
     - target: {fileID: 2107409826236812522, guid: ba437a6e0b9e37d4d898b96bd16372b9, type: 3}
       propertyPath: m_Name
       value: Cat Food Cans %7C closed%2C open
+      objectReference: {fileID: 0}
+    - target: {fileID: 2107409826236812522, guid: ba437a6e0b9e37d4d898b96bd16372b9, type: 3}
+      propertyPath: m_TagString
+      value: Metal
+      objectReference: {fileID: 0}
+    - target: {fileID: 2338904160175761222, guid: ba437a6e0b9e37d4d898b96bd16372b9, type: 3}
+      propertyPath: m_TagString
+      value: Metal
+      objectReference: {fileID: 0}
+    - target: {fileID: 4149838120940861267, guid: ba437a6e0b9e37d4d898b96bd16372b9, type: 3}
+      propertyPath: m_TagString
+      value: Metal
+      objectReference: {fileID: 0}
+    - target: {fileID: 6668690574445107842, guid: ba437a6e0b9e37d4d898b96bd16372b9, type: 3}
+      propertyPath: m_TagString
+      value: Untagged
+      objectReference: {fileID: 0}
+    - target: {fileID: 7817225421292466125, guid: ba437a6e0b9e37d4d898b96bd16372b9, type: 3}
+      propertyPath: m_TagString
+      value: Metal
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
