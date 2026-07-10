@@ -131,6 +131,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Cat Food Cans %7C closed%2C open
       objectReference: {fileID: 0}
+    - target: {fileID: 2107409826236812522, guid: ba437a6e0b9e37d4d898b96bd16372b9, type: 3}
+      propertyPath: m_TagString
+      value: Metal
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:

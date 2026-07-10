@@ -131,6 +131,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Metal Bars
       objectReference: {fileID: 0}
+    - target: {fileID: 5861069733216532766, guid: d5b9558569cb96942a4442e8a49bdcc9, type: 3}
+      propertyPath: m_TagString
+      value: Metal
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:

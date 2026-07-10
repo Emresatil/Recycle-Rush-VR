@@ -75,6 +75,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Hurricane Glass
       objectReference: {fileID: 0}
+    - target: {fileID: -3623814044326617561, guid: c452fb08937fd764bb441169dec769f9, type: 3}
+      propertyPath: m_TagString
+      value: Glass
+      objectReference: {fileID: 0}
     - target: {fileID: 3057150167277423746, guid: c452fb08937fd764bb441169dec769f9, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.08

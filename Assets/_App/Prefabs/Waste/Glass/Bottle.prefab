@@ -75,6 +75,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Bottle
       objectReference: {fileID: 0}
+    - target: {fileID: -293203802875518696, guid: 50449b29976a84e4a9fa3a77eba9c5b1, type: 3}
+      propertyPath: m_TagString
+      value: Glass
+      objectReference: {fileID: 0}
     - target: {fileID: 7881466077556996133, guid: 50449b29976a84e4a9fa3a77eba9c5b1, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.68
