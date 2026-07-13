@@ -236,7 +236,7 @@ GameObject:
   - component: {fileID: 8253704055302865005}
   m_Layer: 0
   m_Name: CardboardBoxes_2
-  m_TagString: Untagged
+  m_TagString: Paper
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
