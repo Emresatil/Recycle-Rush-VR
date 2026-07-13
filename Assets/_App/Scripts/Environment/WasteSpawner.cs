@@ -23,15 +23,53 @@ public class WasteSpawner : MonoBehaviour
     // Tekrarı önlemek için son üretilen çöpü hafızada tutuyoruz
     private GameObject _lastSpawnedPrefab;
 
-    void Start()
+    private Coroutine _spawnCoroutine;
+
+    private void OnEnable()
     {
-        if (wastePrefabs.Length > 0 && spawnPoint != null)
+        // Event dinleyicisini ekle (Abone ol)
+        GameManager.OnGameStateChanged += HandleGameStateChanged;
+    }
+
+    private void OnDisable()
+    {
+        // Script veya obje kapandığında Event aboneliğini kaldır (Memory leak önlemi)
+        GameManager.OnGameStateChanged -= HandleGameStateChanged;
+    }
+
+    private void Start()
+    {
+        if (wastePrefabs.Length == 0 || spawnPoint == null)
         {
-            StartCoroutine(SpawnRoutine());
+            Debug.LogWarning("WasteSpawner: Prefab listesi veya Spawn Point boş!");
+            return;
+        }
+
+        // Eğer oyun bizden önce çoktan Playing statüsüne geçmişse (Start çalışma sırası farkından) manuel tetikle
+        if (GameManager.Instance != null && GameManager.Instance.CurrentState == GameState.Playing)
+        {
+            HandleGameStateChanged(GameState.Playing);
+        }
+    }
+
+    private void HandleGameStateChanged(GameState newState)
+    {
+        if (newState == GameState.Playing)
+        {
+            // Sadece oyun aktifken spawn işlemini başlat
+            if (_spawnCoroutine == null)
+            {
+                _spawnCoroutine = StartCoroutine(SpawnRoutine());
+            }
         }
         else
         {
-            Debug.LogWarning("WasteSpawner: Prefab listesi veya Spawn Point boş!");
+            // Pause veya GameOver durumunda üretimi durdur
+            if (_spawnCoroutine != null)
+            {
+                StopCoroutine(_spawnCoroutine);
+                _spawnCoroutine = null;
+            }
         }
     }
 
