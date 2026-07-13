@@ -58,16 +58,26 @@ public class BinTrigger : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        // Giren objenin atık türünü, en optimize tag kontrol metodu ile alıyoruz.
+        Debug.Log($"<color=orange>[BinTrigger]</color> Kutunun içine bir şey girdi! Giren şeyin adı: {other.name}");
+
+        // Giren objenin atık türünü alıyoruz.
         WasteType incomingType = GetWasteTypeFromCollider(other);
         
-        // Eğer giren obje bir atık değilse (örn: oyuncu eli, zemin vb.), işlemi iptal et (Early Exit).
-        if (incomingType == WasteType.Untagged) return;
+        Debug.Log($"<color=yellow>[BinTrigger]</color> {other.name} objesinin Tag kontrolü yapıldı. Bulunan Atık Türü: {incomingType}");
+
+        // Eğer giren obje bir atık değilse işlemi iptal et.
+        if (incomingType == WasteType.Untagged) 
+        {
+            Debug.Log("<color=red>[BinTrigger]</color> Bu obje Untagged (Etiketsiz) olduğu için puanlama yapılmadı ve silinmedi!");
+            return;
+        }
 
         // Doğruluk mantığı: Giren atığın türü, kutunun kabul ettiği türe eşit mi?
         bool isCorrect = (incomingType == _acceptedWasteType);
+        
+        Debug.Log($"<color=cyan>[BinTrigger]</color> Kutu Türü: {_acceptedWasteType} | Gelen Çöp Türü: {incomingType} | Eşleşme: {isCorrect}");
 
-        // Diğer Manager sınıflarına yayınlanacak (Broadcast) veri paketini hazırla
+        // Diğer Manager sınıflarına yayınlanacak veri paketi
         SortResultData resultData = new SortResultData
         {
             IsCorrect = isCorrect,
@@ -77,33 +87,42 @@ public class BinTrigger : MonoBehaviour
             HapticAmplitude = isCorrect ? _correctHapticAmplitude : _incorrectHapticAmplitude
         };
 
-        // Event'i fırlat. "?." operatörü, null check yaparak (eğer dinleyen sistem yoksa) hata vermesini engeller.
+        Debug.Log($"<color=magenta>[BinTrigger]</color> OnWasteProcessed sinyali fırlatılıyor! Puan değişimi: {resultData.ScoreChange}");
+
+        // Event'i fırlat.
         OnWasteProcessed?.Invoke(resultData);
 
         // İşlem tamamlandıktan sonra atık objesini sahneden yok et.
-        // Eğer Tag ve Collider alt objede (child) ise sadece o parçayı silmemesi için,
-        // Rigidbody'nin bağlı olduğu ana (Root) prefab objesini bulup tamamını siliyoruz.
-        if (other.attachedRigidbody != null)
-        {
-            Destroy(other.attachedRigidbody.gameObject);
-        }
-        else
-        {
-            Destroy(other.gameObject); // Yedek (Fallback) durum
-        }
+        // Çöplerin içi içe geçmiş prefablar olma ihtimaline karşı her zaman en dıştaki (Root) objeyi siliyoruz.
+        Debug.Log($"<color=green>[BinTrigger]</color> {other.transform.root.name} objesi tamamen yok edildi.");
+        Destroy(other.transform.root.gameObject);
     }
 
     /// <summary>
-    /// String karşılaştırmaları yerine Unity'nin GC (Garbage Collection) üretmeyen
-    /// ve çok daha hızlı olan CompareTag metodunu kullanır.
+    /// String karşılaştırmaları yerine Unity'nin GC üretmeyen CompareTag metodunu kullanır.
+    /// Prefab'ların ana gövdesine (Root) konan Tag'leri okuyabilmek için yukarı doğru tarar.
     /// </summary>
     private WasteType GetWasteTypeFromCollider(Collider col)
     {
-        if (col.CompareTag("Paper")) return WasteType.Paper;
-        if (col.CompareTag("Glass")) return WasteType.Glass;
-        if (col.CompareTag("Plastic")) return WasteType.Plastic;
-        if (col.CompareTag("Metal")) return WasteType.Metal;
-        
+        // 1. Önce doğrudan çarpan parçaya veya onun Rigidbody'sine bakalım
+        GameObject directObj = col.attachedRigidbody != null ? col.attachedRigidbody.gameObject : col.gameObject;
+        if (CheckTag(directObj, out WasteType type)) return type;
+
+        // 2. Eğer bulamadıysa, kesin Tag'i en dıştaki (Root) objeye koymuştur. Oraya bakalım:
+        GameObject rootObj = col.transform.root.gameObject;
+        if (CheckTag(rootObj, out WasteType rootType)) return rootType;
+
         return WasteType.Untagged;
+    }
+
+    private bool CheckTag(GameObject obj, out WasteType type)
+    {
+        if (obj.CompareTag("Paper")) { type = WasteType.Paper; return true; }
+        if (obj.CompareTag("Glass")) { type = WasteType.Glass; return true; }
+        if (obj.CompareTag("Plastic")) { type = WasteType.Plastic; return true; }
+        if (obj.CompareTag("Metal")) { type = WasteType.Metal; return true; }
+        
+        type = WasteType.Untagged;
+        return false;
     }
 }

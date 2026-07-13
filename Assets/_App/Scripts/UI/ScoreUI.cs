@@ -12,13 +12,16 @@ namespace RecycleRush.UI
         [SerializeField, Tooltip("Ekranda puanı gösterecek olan TextMeshPro bileşeni")]
         private TextMeshProUGUI _scoreText;
 
-        private void OnEnable()
+        private void Start()
         {
-            // ScoreManager'daki "OnScoreChanged" sinyalini dinlemeye başla ve 
-            // sinyal gelince UpdateScoreDisplay fonksiyonunu çalıştır!
+            // Unity'de kodların çalışma sırası rastgele olabildiği için, ScoreManager.Instance'ın
+            // Awake() içinde hazır olmasını bekliyoruz. Bu yüzden dinlemeye Start() içinde başlıyoruz.
             if (ScoreManager.Instance != null)
             {
                 ScoreManager.Instance.OnScoreChanged += UpdateScoreDisplay;
+                
+                // İlk açılış puanını yazdır.
+                UpdateScoreDisplay(ScoreManager.Instance.CurrentScore);
             }
         }
 
@@ -31,14 +34,6 @@ namespace RecycleRush.UI
             }
         }
 
-        private void Start()
-        {
-            // İlk açılışta ekranda "New Text" yazmaması için manuel olarak ilk puanı (0) yazdır.
-            if (ScoreManager.Instance != null && _scoreText != null)
-            {
-                UpdateScoreDisplay(ScoreManager.Instance.CurrentScore);
-            }
-        }
 
         /// <summary>
         /// Sinyal geldiğinde tetiklenen fonksiyon.

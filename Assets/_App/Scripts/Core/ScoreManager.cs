@@ -48,6 +48,36 @@ namespace RecycleRush.Core
             OnScoreChanged?.Invoke(CurrentScore);
         }
 
+        private void OnEnable()
+        {
+            // Gün 9'da yazılan BinTrigger kodundaki statik sinyali (Event) dinlemeye başla
+            BinTrigger.OnWasteProcessed += HandleWasteProcessed;
+        }
+
+        private void OnDisable()
+        {
+            // Memory leak (Bellek sızıntısı) önlemek için obje kapanırken dinlemeyi bırak
+            BinTrigger.OnWasteProcessed -= HandleWasteProcessed;
+        }
+
+        /// <summary>
+        /// BinTrigger'dan gelen veri paketini (SortResultData) işler ve puanı günceller.
+        /// </summary>
+        private void HandleWasteProcessed(SortResultData data)
+        {
+            if (data.IsCorrect)
+            {
+                // Doğru kutuya atıldıysa puan ekle (örn: 10)
+                AddScore(data.ScoreChange);
+            }
+            else
+            {
+                // Yanlış kutuya atıldıysa puan çıkar.
+                // data.ScoreChange eksi bir sayı (-5) olarak geldiği için onu Mathf.Abs ile pozitife çevirip siliyoruz.
+                SubtractScore(Mathf.Abs(data.ScoreChange));
+            }
+        }
+
         /// <summary>
         /// Doğru atık eşleşmesinde çağrılır ve puan ekler.
         /// </summary>
