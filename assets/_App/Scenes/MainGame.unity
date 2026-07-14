@@ -928,7 +928,8 @@ MonoBehaviour:
   - {fileID: 5089588363924917385, guid: 76e45dd3b58ab6f4da7b3fd7b9714bd5, type: 3}
   - {fileID: 2661205264216994680, guid: 3cea4afddf71e2343896ff67df3fae1b, type: 3}
   - {fileID: 1467448516992097433, guid: 7e46d3968ed195f4daf41d6cd3f73036, type: 3}
-  - {fileID: 7409626719541327130, guid: 9254cd7434192b94e91f0bd340564353, type: 3}
+  - {fileID: 2708535198319623563, guid: 02e2628647d18414f8b8cfeef3a520b1, type: 3}
+  - {fileID: 6939626159800628730, guid: 013a840c4d63f7d499c29d44e8c54e66, type: 3}
   - {fileID: 4297595811316896341, guid: fb2b06f9eb5043a4fb5b0a7112c32f35, type: 3}
   spawnPoint: {fileID: 837515468}
   minSpawnInterval: 1.5
