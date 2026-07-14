@@ -99,18 +99,22 @@ public class BinTrigger : MonoBehaviour
     }
 
     /// <summary>
-    /// String karşılaştırmaları yerine Unity'nin GC üretmeyen CompareTag metodunu kullanır.
-    /// Prefab'ların ana gövdesine (Root) konan Tag'leri okuyabilmek için yukarı doğru tarar.
+    /// Objenin neresine (Root, Mesh, Collider) Tag konulduğunu bilemeyeceğimiz için,
+    /// objenin tamamını (kendisini ve tüm alt çocuklarını) tarayıp Tag'i bulur. (Foolproof)
     /// </summary>
     private WasteType GetWasteTypeFromCollider(Collider col)
     {
-        // 1. Önce doğrudan çarpan parçaya veya onun Rigidbody'sine bakalım
-        GameObject directObj = col.attachedRigidbody != null ? col.attachedRigidbody.gameObject : col.gameObject;
-        if (CheckTag(directObj, out WasteType type)) return type;
+        // En dış (Root) objeyi bul (Bu sayede prefab'ın en tepesine ulaşırız)
+        Transform rootTransform = col.transform.root;
 
-        // 2. Eğer bulamadıysa, kesin Tag'i en dıştaki (Root) objeye koymuştur. Oraya bakalım:
-        GameObject rootObj = col.transform.root.gameObject;
-        if (CheckTag(rootObj, out WasteType rootType)) return rootType;
+        // Root objenin kendisine ve BÜTÜN alt objelerine (çocuklarına) sırayla bak
+        foreach (Transform child in rootTransform.GetComponentsInChildren<Transform>(true))
+        {
+            if (CheckTag(child.gameObject, out WasteType type)) 
+            {
+                return type;
+            }
+        }
 
         return WasteType.Untagged;
     }
