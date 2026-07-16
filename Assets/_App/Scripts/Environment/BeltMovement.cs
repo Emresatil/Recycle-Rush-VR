@@ -11,11 +11,37 @@ public class BeltMovement : MonoBehaviour
     public Vector3 direction = Vector3.right;
 
     private Rigidbody rb;
+    private float _baseSpeed;
+
+    void Awake()
+    {
+        rb = GetComponent<Rigidbody>();
+        _baseSpeed = speed; // Orijinal hızı önbelleğe (Cache) alıyoruz
+    }
+
+    private void OnEnable()
+    {
+        // Event dinleyicisini ekle
+        DifficultyManager.OnDifficultyLevelChanged += UpdateBeltSpeed;
+    }
+
+    private void OnDisable()
+    {
+        // Script veya obje kapandığında Event aboneliğini kaldır
+        DifficultyManager.OnDifficultyLevelChanged -= UpdateBeltSpeed;
+    }
+
+    /// <summary>
+    /// DifficultyManager'dan gelen hız çarpanına göre bant hızını günceller.
+    /// </summary>
+    private void UpdateBeltSpeed(float multiplier)
+    {
+        speed = _baseSpeed * multiplier;
+        Debug.Log($"<color=cyan>[BeltMovement]</color> Yeni zorluğa uyarlandı! Bant Hızı: {speed:F1}");
+    }
 
     void Start()
     {
-        rb = GetComponent<Rigidbody>();
-        
         // Bandın fiziksel olarak düşmemesi ve sabit kalması için isKinematic yapıyoruz
         rb.isKinematic = true;
         rb.useGravity = false;
