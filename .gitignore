@@ -152,3 +152,5 @@ Assets/TextMesh Pro/Shaders/TMPro_Surface.cginc
 Assets/TextMesh Pro/Shaders/TMPro_Surface.cginc.meta
 Assets/CompositionLayers.meta
 Assets/TextMesh Pro.meta
+assets/XR/Settings/OpenXRPackageSettings.asset
+Assets/XR/Settings/OpenXRPackageSettings.asset
