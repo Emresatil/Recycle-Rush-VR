@@ -25,16 +25,40 @@ public class WasteSpawner : MonoBehaviour
 
     private Coroutine _spawnCoroutine;
 
+    private float _baseMinSpawnInterval;
+    private float _baseMaxSpawnInterval;
+
+    private void Awake()
+    {
+        // Zorluk seviyesi değiştikçe baz alınacak orijinal değerleri önbelleğe (Cache) alıyoruz.
+        _baseMinSpawnInterval = minSpawnInterval;
+        _baseMaxSpawnInterval = maxSpawnInterval;
+    }
+
     private void OnEnable()
     {
         // Event dinleyicisini ekle (Abone ol)
         GameManager.OnGameStateChanged += HandleGameStateChanged;
+        DifficultyManager.OnDifficultyLevelChanged += UpdateSpawnSpeed;
     }
 
     private void OnDisable()
     {
         // Script veya obje kapandığında Event aboneliğini kaldır (Memory leak önlemi)
         GameManager.OnGameStateChanged -= HandleGameStateChanged;
+        DifficultyManager.OnDifficultyLevelChanged -= UpdateSpawnSpeed;
+    }
+
+    /// <summary>
+    /// DifficultyManager'dan gelen hız çarpanına göre atık üretme sıklığını günceller.
+    /// </summary>
+    private void UpdateSpawnSpeed(float multiplier)
+    {
+        // Zorluk çarpanı arttıkça (örn: 1.5x) bekleme süresi kısalmalıdır. Bu yüzden böleriz.
+        minSpawnInterval = _baseMinSpawnInterval / multiplier;
+        maxSpawnInterval = _baseMaxSpawnInterval / multiplier;
+        
+        Debug.Log($"<color=cyan>[WasteSpawner]</color> Yeni zorluğa uyarlandı! Üretim süresi: {minSpawnInterval:F1}s - {maxSpawnInterval:F1}s");
     }
 
     private void Start()

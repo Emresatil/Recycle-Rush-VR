@@ -52,12 +52,15 @@ namespace RecycleRush.Core
         {
             // Gün 9'da yazılan BinTrigger kodundaki statik sinyali (Event) dinlemeye başla
             BinTrigger.OnWasteProcessed += HandleWasteProcessed;
+            // Gün 11'de eklenen DestroyZone sinyalini dinlemeye başla (Kaçırılan atıklar)
+            DestroyZone.OnWasteMissed += HandleWasteMissed;
         }
 
         private void OnDisable()
         {
             // Memory leak (Bellek sızıntısı) önlemek için obje kapanırken dinlemeyi bırak
             BinTrigger.OnWasteProcessed -= HandleWasteProcessed;
+            DestroyZone.OnWasteMissed -= HandleWasteMissed;
         }
 
         /// <summary>
@@ -76,6 +79,15 @@ namespace RecycleRush.Core
                 // data.ScoreChange eksi bir sayı (-5) olarak geldiği için onu Mathf.Abs ile pozitife çevirip siliyoruz.
                 SubtractScore(Mathf.Abs(data.ScoreChange));
             }
+        }
+
+        /// <summary>
+        /// DestroyZone'dan (Bant Sonu) kaçırılan atıklar için gelen ceza puanını işler.
+        /// </summary>
+        private void HandleWasteMissed(int penaltyScore)
+        {
+            // penaltyScore negatif geldiği için (-5) Mutlak değerini alıyoruz.
+            SubtractScore(Mathf.Abs(penaltyScore));
         }
 
         /// <summary>
