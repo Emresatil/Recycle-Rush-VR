@@ -38,6 +38,12 @@ public class BinTrigger : MonoBehaviour
     [SerializeField] private float _incorrectHapticDuration = 0.4f;
     [SerializeField] private float _incorrectHapticAmplitude = 0.8f;
 
+    [Header("Görsel Efektler (VFX)")]
+    [Tooltip("Doğru kutuya atıldığında çıkacak yeşil patlama efekti (Prefab)")]
+    [SerializeField] private GameObject _successParticlePrefab;
+    [Tooltip("Yanlış kutuya atıldığında çıkacak kırmızı duman efekti (Prefab)")]
+    [SerializeField] private GameObject _failParticlePrefab;
+
     // Sistemler arası spagetti bağlantıları engelleyen (Loose Coupling) statik Action Event'imiz.
     // ScoreManager, AudioManager ve HapticManager sadece bu event'e Abone (Subscribe) olacaktır.
     public static event Action<SortResultData> OnWasteProcessed;
@@ -74,6 +80,24 @@ public class BinTrigger : MonoBehaviour
 
         // Doğruluk mantığı: Giren atığın türü, kutunun kabul ettiği türe eşit mi?
         bool isCorrect = (incomingType == _acceptedWasteType);
+        
+        // --- GÖRSEL EFEKT (PARTİCÜL) ÇAĞIRMA ---
+        GameObject particleToSpawn = isCorrect ? _successParticlePrefab : _failParticlePrefab;
+        if (particleToSpawn != null)
+        {
+            // Kutunun merkezinden yarım metre yukarıda oluştur
+            Vector3 spawnPosition = transform.position + new Vector3(0, 0.5f, 0);
+            GameObject spawnedParticle = Instantiate(particleToSpawn, spawnPosition, Quaternion.identity);
+            
+            Debug.Log($"<color=white>[VFX]</color> Partikül oluşturuldu: {spawnedParticle.name} at {spawnPosition}");
+            
+            // Sahne kirlenmesin diye efekti 3 saniye sonra otomatik sil
+            Destroy(spawnedParticle, 3f);
+        }
+        else
+        {
+            Debug.LogWarning($"<color=yellow>[VFX]</color> Kutuda {(isCorrect ? "Success" : "Fail")} particle prefab'i eksik!");
+        }
         
         Debug.Log($"<color=cyan>[BinTrigger]</color> Kutu Türü: {_acceptedWasteType} | Gelen Çöp Türü: {incomingType} | Eşleşme: {isCorrect}");
 
