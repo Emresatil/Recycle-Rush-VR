@@ -49,9 +49,9 @@ public class GameManager : MonoBehaviour
         // Oyun ilk açıldığında hazırlık evresinden geçer, ardından ana menü (veya doğrudan oyun) başlar.
         ChangeState(GameState.Initialization);
         
-        // Şimdilik test için oyun doğrudan Playing state'i ile başlatılıyor.
-        // İleride MainMenu yapıldığında bu kısım ChangeState(GameState.MainMenu); olacak.
-        StartGame();
+        // Oyun artık otomatik BAŞLAMAYACAK. 
+        // Oyuncunun makinedeki kolu (Lever) çekmesini beklemek için MainMenu (veya bekleme) durumunda kalıyoruz.
+        ChangeState(GameState.MainMenu);
     }
 
     private void Update()

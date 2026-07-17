@@ -33,6 +33,9 @@ public class MachineLever : MonoBehaviour
         _interactable.selectEntered.RemoveListener(OnLeverPulled);
     }
 
+    // Sabri'nin yazacağı AudioManager'ın bu kol çekildiğinde (Klik sesi için) dinleyeceği özel Event
+    public static event System.Action OnLeverPulledAction;
+
     private void OnLeverPulled(SelectEnterEventArgs args)
     {
         // Animator'daki tetikleyiciyi (Trigger) ateşle
@@ -41,7 +44,15 @@ public class MachineLever : MonoBehaviour
             _animator.SetTrigger(animationTriggerName);
             Debug.Log($"<color=green>[MachineLever]</color> Kol çekildi! '{animationTriggerName}' animasyonu başlatılıyor.");
             
-            // Eğer ileride bu kolu çekince oyunu başlatmak falan isterseniz, Event'leri buraya yazabilirsiniz.
+            // Kol her çekildiğinde mekanik klik sesi çalınması için anons (Broadcast) yapıyoruz.
+            OnLeverPulledAction?.Invoke();
+
+            // Eğer oyun henüz başlamadıysa (Örneğin MainMenu/Bekleme durumundaysa) oyunu BAŞLAT!
+            if (GameManager.Instance != null && GameManager.Instance.CurrentState != GameState.Playing)
+            {
+                GameManager.Instance.StartGame();
+                Debug.Log("<color=yellow>[MachineLever]</color> Vardiya başlatıldı! GameManager tetiklendi.");
+            }
         }
     }
 }
