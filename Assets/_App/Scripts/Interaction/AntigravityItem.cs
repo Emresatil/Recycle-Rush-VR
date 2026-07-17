@@ -100,6 +100,12 @@ public class AntigravityItem : MonoBehaviour
         _isGrabbed = true;
         // Not: XRGrabInteractable zaten rigidbody kinematiğini veya hareket tipini
         // (Velocity Tracking) kendi yönettiği için burada extradan fizikle oynamıyoruz.
+        
+        // Ses efekti (SFX) çal
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayGrabSound(transform.position);
+        }
     }
 
     /// <summary>
@@ -114,6 +120,12 @@ public class AntigravityItem : MonoBehaviour
         if (_rb != null)
         {
             _rb.useGravity = true;
+        }
+
+        // Ses efekti (SFX) çal
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayReleaseSound(transform.position);
         }
     }
 }
