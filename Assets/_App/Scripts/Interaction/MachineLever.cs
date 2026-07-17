@@ -15,6 +15,9 @@ public class MachineLever : MonoBehaviour
     [Tooltip("Animator penceresinde oluşturacağınız Trigger parametresinin tam adı.")]
     public string animationTriggerName = "Pull";
 
+    // Ses sistemi ve diğer yöneticiler için dışarıya açılan Sinyal (Event)
+    public static event System.Action OnLeverPulledAction;
+
     private void Awake()
     {
         _animator = GetComponent<Animator>();

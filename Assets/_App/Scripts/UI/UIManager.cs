@@ -20,13 +20,16 @@ namespace RecycleRush.UI
 
         private void OnEnable()
         {
-            // Event'leri dinlemeye başla
+            // Event'leri dinlemeye başla (Eventler statik olduğu için Instance beklemeden abone olabiliriz)
+            GameManager.OnGameStateChanged += HandleGameState;
+            GameManager.OnGameTimeUpdated += UpdateTimeDisplay;
+        }
+
+        private void Start()
+        {
+            // Başlangıç durumunu hemen ekrana yansıt
             if (GameManager.Instance != null)
             {
-                GameManager.OnGameStateChanged += HandleGameState;
-                GameManager.OnGameTimeUpdated += UpdateTimeDisplay;
-                
-                // Başlangıç durumunu hemen ekrana yansıt
                 HandleGameState(GameManager.Instance.CurrentState);
             }
         }
@@ -47,7 +50,7 @@ namespace RecycleRush.UI
             {
                 case GameState.Initialization:
                 case GameState.MainMenu:
-                    if (statusText != null) statusText.text = "SISTEM HAZIR\nBASLAMAK ICIN BUTONA BAS";
+                    if (statusText != null) statusText.text = "SYSTEM READY\nPRESS BUTTON TO START";
                     if (timeText != null) timeText.text = "60";
                     
                     // Restart butonunu ana menüde gizle
@@ -55,16 +58,16 @@ namespace RecycleRush.UI
                     break;
                     
                 case GameState.Playing:
-                    if (statusText != null) statusText.text = "GERI DONUSUM BASLADI";
+                    if (statusText != null) statusText.text = "RECYCLING STARTED";
                     if (restartButtonObj != null) restartButtonObj.SetActive(false);
                     break;
                     
                 case GameState.Paused:
-                    if (statusText != null) statusText.text = "SISTEM DURAKLATILDI";
+                    if (statusText != null) statusText.text = "SYSTEM PAUSED";
                     break;
 
                 case GameState.GameOver:
-                    if (statusText != null) statusText.text = "<color=red>SURE BITTI!</color>\nBAND DURDURULDU";
+                    if (statusText != null) statusText.text = "<color=red>TIME'S UP!</color>\nCONVEYOR STOPPED";
                     
                     // Oyun bittiğinde Restart butonunu ortaya çıkar!
                     if (restartButtonObj != null) restartButtonObj.SetActive(true);
