@@ -8,7 +8,7 @@ namespace RecycleRush.UI
     /// ScoreManager'dan gelen (Event) sinyallerini dinleyip ekrandaki yazıyı güncelleyen UI sınıfı.
     /// Profesyonel Lerp (Matematiksel İnterpolasyon) kullanılarak pürüzsüz animasyonlar sağlanır.
     /// </summary>
-    [RequireComponent(typeof(TextMeshProUGUI))] // Hata önleyici: Bu script sadece TextMeshPro olan objeye eklenebilir.
+    [RequireComponent(typeof(TextMeshProUGUI))] 
     public class ScoreUI : MonoBehaviour
     {
         [Header("Arayüz Hissiyatı (Juice) Ayarları")]
@@ -70,7 +70,7 @@ namespace RecycleRush.UI
 
         private void UpdateScoreDisplay(int newScore)
         {
-            _scoreText.text = $"Puan: {newScore}";
+            _scoreText.text = $"Score: {newScore}";
 
             if (_previousScore != 0 || newScore != 0) 
             {
