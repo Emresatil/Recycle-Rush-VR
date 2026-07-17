@@ -188,4 +188,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2dbbc6897acb7284594c8b0c7915b594, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RecycleRush.Core.ScoreManager
-  _startingScore: 200
+  _startingScore: 53
