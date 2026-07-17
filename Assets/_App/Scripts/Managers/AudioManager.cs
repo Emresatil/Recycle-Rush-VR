@@ -18,6 +18,14 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private AudioClip _uiClickClip;
     [SerializeField, Range(0f, 1f)] private float _uiVolume = 0.8f;
 
+    [Header("Machine Sounds")]
+    [Tooltip("Sürekli çalışan bant/motor sesi için Hoparlör")]
+    [SerializeField] private AudioSource _engineSource;
+    [Tooltip("Sürekli çalışan motorun MP3 dosyası")]
+    [SerializeField] private AudioClip _engineClip;
+    [Tooltip("Kolu çektiğimizde çıkacak mekanik ses")]
+    [SerializeField] private AudioClip _leverClip;
+
     [Header("SFX Clips")]
     [Tooltip("Doğru atık atıldığında çalacak (Ding) ses")]
     [SerializeField] private AudioClip _dingClip;
@@ -46,18 +54,31 @@ public class AudioManager : MonoBehaviour
             _bgmSource.loop = true;
             _bgmSource.Play();
         }
+
+        // Motor (Engine Hum) Ayarlarını Koddan Yapalım (Kullanıcı arayüzle uğraşmasın)
+        if (_engineSource != null && _engineClip != null)
+        {
+            _engineSource.clip = _engineClip;
+            _engineSource.loop = true; // Döngüyü koddan açtık
+        }
     }
 
     private void OnEnable()
     {
         // BinTrigger'daki spagetti olmayan OnWasteProcessed event'ini dinlemeye başla
         BinTrigger.OnWasteProcessed += HandleWasteProcessed;
+        
+        // Hakan'ın kurduğu altyapıdaki eventlere abone ol (Motor ve Kol sesleri)
+        GameManager.OnGameStateChanged += HandleGameStateChanged;
+        MachineLever.OnLeverPulledAction += PlayLeverSound;
     }
 
     private void OnDisable()
     {
         // Dinlemeyi bırak (Memory Leak önlemi)
         BinTrigger.OnWasteProcessed -= HandleWasteProcessed;
+        GameManager.OnGameStateChanged -= HandleGameStateChanged;
+        MachineLever.OnLeverPulledAction -= PlayLeverSound;
     }
 
     /// <summary>
@@ -71,6 +92,36 @@ public class AudioManager : MonoBehaviour
         {
             // 3D ses çok kısıldığı için bunu her yerden duyulabilen 2D Arcade sese çevirdik
             _uiSource.PlayOneShot(clipToPlay, 1.0f);
+        }
+    }
+
+    /// <summary>
+    /// Oyun durumu değiştiğinde Motor sesini (Engine Hum) açıp kapatır.
+    /// </summary>
+    private void HandleGameStateChanged(GameState state)
+    {
+        if (_engineSource == null) return;
+
+        if (state == GameState.Playing)
+        {
+            if (!_engineSource.isPlaying)
+                _engineSource.Play();
+        }
+        else if (state == GameState.GameOver)
+        {
+            if (_engineSource.isPlaying)
+                _engineSource.Stop();
+        }
+    }
+
+    /// <summary>
+    /// Hakan'ın yazdığı kol çekilme sinyali geldiğinde mekanik "çotank" sesini çalar.
+    /// </summary>
+    private void PlayLeverSound()
+    {
+        if (_uiSource != null && _leverClip != null)
+        {
+            _uiSource.PlayOneShot(_leverClip, 1.0f);
         }
     }
 
