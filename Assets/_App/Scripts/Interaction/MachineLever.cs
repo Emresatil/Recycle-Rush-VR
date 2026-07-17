@@ -15,6 +15,9 @@ public class MachineLever : MonoBehaviour
     [Tooltip("Animator penceresinde oluşturacağınız Trigger parametresinin tam adı.")]
     public string animationTriggerName = "Pull";
 
+    // Ses sistemi ve diğer yöneticiler için dışarıya açılan Sinyal (Event)
+    public static event System.Action OnLeverPulledAction;
+
     private void Awake()
     {
         _animator = GetComponent<Animator>();
@@ -41,7 +44,8 @@ public class MachineLever : MonoBehaviour
             _animator.SetTrigger(animationTriggerName);
             Debug.Log($"<color=green>[MachineLever]</color> Kol çekildi! '{animationTriggerName}' animasyonu başlatılıyor.");
             
-            // Eğer ileride bu kolu çekince oyunu başlatmak falan isterseniz, Event'leri buraya yazabilirsiniz.
+            // Hakan'ın altyapısını kurduğu Event'i ateşle (Sesi tetikleyecek)
+            OnLeverPulledAction?.Invoke();
         }
     }
 }
