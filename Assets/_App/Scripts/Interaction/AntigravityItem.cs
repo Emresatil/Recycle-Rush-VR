@@ -106,6 +106,14 @@ public class AntigravityItem : MonoBehaviour
         {
             AudioManager.Instance.PlayGrabSound(transform.position);
         }
+
+        // Dokunsal Geri Bildirim (Haptic Feedback)
+        if (RecycleRush.Core.HapticManager.Instance != null && 
+            args.interactorObject is UnityEngine.XR.Interaction.Toolkit.Interactors.XRBaseInputInteractor controllerInteractor)
+        {
+            // Tutma anında hafif, kısa bir 'Pop' titreşimi (0.3 şiddet, 0.1 saniye)
+            RecycleRush.Core.HapticManager.Instance.TriggerHaptic(controllerInteractor, 0.3f, 0.1f);
+        }
     }
 
     /// <summary>
