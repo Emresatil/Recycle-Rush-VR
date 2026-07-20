@@ -8,6 +8,10 @@ public class DestroyZone : MonoBehaviour
     [Tooltip("Bu alana (bandın sonuna) düşen kaçırılmış atıklar için oyuncudan düşülecek ceza puanı")]
     [SerializeField] private int _penaltyScore = -5;
 
+    [Header("Öğütücü (Crusher) Görsel Efekti")]
+    [Tooltip("Çöp aşağı düştüğünde patlayacak olan ateş/elektrik/parçalanma efekti (Prefab)")]
+    [SerializeField] private GameObject _crusherVFXPrefab;
+
     // ScoreManager'ın dinleyebilmesi için statik Action Event (Gevşek Bağlılık / Loose Coupling)
     // Bu sayede DestroyZone, ScoreManager'ın varlığından haberdar olmadan işini yapar.
     public static event Action<int> OnWasteMissed;
@@ -33,32 +37,51 @@ public class DestroyZone : MonoBehaviour
             // 2. ScoreManager'a puan düşmesi için event fırlat (-5 puan gönder)
             OnWasteMissed?.Invoke(_penaltyScore);
 
-            // 3. Çöpü tamamen sahnede yok et (Alt objesi çarpmış olsa bile Root'unu bularak sil)
+            // 3. Görsel Efekti (Crusher VFX) Çöplerin düştüğü noktada patlat
+            if (_crusherVFXPrefab != null)
+            {
+                // Efekti bandın hizasında, çöpün hemen üstünde oluştur (Yükseklik normale döndürüldü)
+                Vector3 spawnPosition = transform.position + new Vector3(0, 0.5f, 0);
+                GameObject crusherVfx = Instantiate(_crusherVFXPrefab, spawnPosition, Quaternion.identity);
+                
+                // Efektin boyutunu zorla orijinal haline getir
+                crusherVfx.transform.localScale = Vector3.one;
+                
+                // Sahneyi kirletmemesi için efekt bittikten 3 saniye sonra otomatik sil
+                Destroy(crusherVfx, 3f);
+                
+                Debug.Log($"<color=orange>[Crusher]</color> Atık parçalandı! Patlayan efekt: {crusherVfx.name} | Konum: {spawnPosition}");
+            }
+
+            // 4. Çöpü tamamen sahnede yok et (Alt objesi çarpmış olsa bile Root'unu bularak sil)
             // Bu kısım daha önce konuştuğumuz sonsuza kadar asılı kalan görünmez obje (Memory Leak) hatasını önler.
             Destroy(other.transform.root.gameObject);
         }
     }
 
     /// <summary>
-    /// Çarpan nesnenin geri dönüşüm atığı olup olmadığını hızlıca kontrol eder (GC Dostu).
+    /// Çarpan nesnenin geri dönüşüm atığı olup olmadığını tüm alt objelerini (çocuklarını) tarayarak kontrol eder.
+    /// (BinTrigger'daki Foolproof mantığıyla aynı)
     /// </summary>
     private bool IsWaste(Collider col)
     {
-        // 1. Önce doğrudan çarpan parçaya veya onun Rigidbody'sine bakalım
-        GameObject directObj = col.attachedRigidbody != null ? col.attachedRigidbody.gameObject : col.gameObject;
-        if (HasWasteTag(directObj)) return true;
+        // En dış (Root) objeyi bul (Bu sayede prefab'ın en tepesine ulaşırız)
+        Transform rootTransform = col.transform.root;
 
-        // 2. Eğer bulamadıysa, tag en dıştaki (Root) objede olabilir. Oraya bakalım:
-        GameObject rootObj = col.transform.root.gameObject;
-        if (HasWasteTag(rootObj)) return true;
+        // Root objenin kendisine ve BÜTÜN alt objelerine (çocuklarına) sırayla bak
+        foreach (Transform child in rootTransform.GetComponentsInChildren<Transform>(true))
+        {
+            if (HasWasteTag(child.gameObject)) 
+            {
+                return true;
+            }
+        }
 
         return false; // Hiçbiri değilse bu bir atık değildir
     }
 
     private bool HasWasteTag(GameObject obj)
     {
-        // Unity'nin CompareTag fonksiyonu string karşılaştırmasından (obj.tag == "Paper") 
-        // çok daha performanslıdır ve arkada çöp bellek (Garbage) üretmez.
         return obj.CompareTag("Paper") || 
                obj.CompareTag("Glass") || 
                obj.CompareTag("Plastic") || 
