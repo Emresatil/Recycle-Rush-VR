@@ -582,6 +582,8 @@ GameObject:
   - component: {fileID: 7973048135897962401}
   - component: {fileID: 7686923885425367981}
   - component: {fileID: 3995315049791293518}
+  - component: {fileID: 1820922703400005604}
+  - component: {fileID: 4827524897566591208}
   m_Layer: 0
   m_Name: ground
   m_TagString: Untagged
@@ -599,7 +601,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 7.11542, y: -3.32694, z: 8.66459}
-  m_LocalScale: {x: 5.77, y: 1, z: 12.93}
+  m_LocalScale: {x: 5.77, y: 0.01, z: 12.93}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1390665118711016382}
@@ -680,9 +682,44 @@ MeshCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 5
-  m_Convex: 0
+  m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &1820922703400005604
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6883331445484130444}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 88dcf8ecce3b2294c9039bc532e95547, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RecycleRush.Environment.FloorZone
+  _penaltyScore: -5
+  _gracePeriod: 3
+--- !u!65 &4827524897566591208
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6883331445484130444}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 9.999999, y: 2.220446e-16, z: 9.999999}
+  m_Center: {x: -0.00000011920929, y: 0, z: -0.000000011175871}
 --- !u!1 &7818359749074595482
 GameObject:
   m_ObjectHideFlags: 0

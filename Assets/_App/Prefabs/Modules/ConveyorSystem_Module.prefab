@@ -460,7 +460,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9bc34340138f88647bac6de7a0e07dc3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DestroyZone
-  _penaltyScore: -2
+  _penaltyScore: -5
 --- !u!1 &8468954230229748353
 GameObject:
   m_ObjectHideFlags: 0
