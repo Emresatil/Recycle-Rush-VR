@@ -36,8 +36,6 @@ public class MachineLever : MonoBehaviour
         _interactable.selectEntered.RemoveListener(OnLeverPulled);
     }
 
-    // Sabri'nin yazacağı AudioManager'ın bu kol çekildiğinde (Klik sesi için) dinleyeceği özel Event
-    public static event System.Action OnLeverPulledAction;
 
     private void OnLeverPulled(SelectEnterEventArgs args)
     {
