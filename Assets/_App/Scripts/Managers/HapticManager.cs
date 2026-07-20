@@ -1,11 +1,11 @@
 using UnityEngine;
-
+using UnityEngine.XR;
+using System.Collections.Generic;
 
 namespace RecycleRush.Core
 {
     /// <summary>
-    /// XR API kullanarak kontrolcü titreşimlerini (Haptic Feedback) merkezi olarak yöneten sistem.
-    /// Singleton mimarisi ile her yerden erişilebilir.
+    /// VR donanım seviyesinde (Native XR API) kontrolcü titreşimlerini yöneten profesyonel Singleton sınıfı.
     /// </summary>
     public class HapticManager : MonoBehaviour
     {
@@ -23,7 +23,6 @@ namespace RecycleRush.Core
 
         private void OnEnable()
         {
-            // BinTrigger'dan gelen kutuya atılma sinyallerini dinle
             BinTrigger.OnWasteProcessed += HandleWasteProcessed;
         }
 
@@ -32,20 +31,18 @@ namespace RecycleRush.Core
             BinTrigger.OnWasteProcessed -= HandleWasteProcessed;
         }
 
-        /// <summary>
-        /// Obje kutuya girdiğinde skora göre farklı titreşimler verir.
-        /// </summary>
         private void HandleWasteProcessed(SortResultData data)
         {
+            Debug.Log($"<color=magenta>[Haptic/Global]</color> Kutuya atıldı! Doğru mu: {data.IsCorrect}");
             if (data.IsCorrect)
             {
-                // Doğru Kutu: Tatmin edici, orta şiddette kısa titreşim
-                TriggerGlobalHaptic(0.5f, 0.2f);
+                // Doğru Kutu: Tok ve kısa 'Ding' hissi (Şiddet: 0.6, Süre: 0.15s)
+                TriggerGlobalHaptic(0.6f, 0.15f);
             }
             else
             {
-                // Yanlış Kutu: Rahatsız edici, yüksek şiddette uzun titreşim (Buzzer hissi)
-                TriggerGlobalHaptic(0.8f, 0.4f);
+                // Yanlış Kutu: Rahatsız edici, güçlü ve uzun 'Buzzer' hissi (Şiddet: 1.0, Süre: 0.5s)
+                TriggerGlobalHaptic(1.0f, 0.5f);
             }
         }
 
@@ -59,15 +56,33 @@ namespace RecycleRush.Core
         }
 
         /// <summary>
-        /// Önemli anlarda her iki eldeki kontrolcüyü birden titreştirir.
+        /// Doğrudan donanım API'sine inerek (Native XR) tüm bağlı VR kontrolcülerini aynı anda titreştirir.
+        /// Unity'nin standart cihaz listesinden (InputDevices) donanımı bulduğu için %100 güvenilir ve profesyoneldir.
         /// </summary>
         public void TriggerGlobalHaptic(float intensity, float duration)
         {
-            // Sahnede olan tüm Controller Interactor'ları bul (Sağ ve Sol el)
-            var interactors = FindObjectsByType<UnityEngine.XR.Interaction.Toolkit.Interactors.XRBaseInputInteractor>(FindObjectsSortMode.None);
-            foreach (var interactor in interactors)
+            List<InputDevice> devices = new List<InputDevice>();
+            // Sadece kontrolcü özelliklerine sahip cihazları (Quest Sağ/Sol Kol) tespit et
+            InputDevices.GetDevicesWithCharacteristics(InputDeviceCharacteristics.Controller, devices);
+            
+            Debug.Log($"<color=magenta>[Haptic/Global]</color> Bulunan VR Kontrolcü Sayısı: {devices.Count}");
+
+            foreach (var device in devices)
             {
-                interactor.SendHapticImpulse(intensity, duration);
+                HapticCapabilities capabilities;
+                // Cihaz titreşim motoruna (Haptic) sahipse doğrudan donanıma elektrik (Impulse) yolla
+                if (device.TryGetHapticCapabilities(out capabilities))
+                {
+                    Debug.Log($"<color=magenta>[Haptic/Global]</color> Cihaz: {device.name}, Titreşim Özelliği var mı: {capabilities.supportsImpulse}");
+                    if (capabilities.supportsImpulse)
+                    {
+                        device.SendHapticImpulse(0, intensity, duration);
+                    }
+                }
+                else
+                {
+                    Debug.LogWarning($"<color=red>[Haptic/Global]</color> Cihaz: {device.name} için titreşim özelliği okunamadı!");
+                }
             }
         }
     }
