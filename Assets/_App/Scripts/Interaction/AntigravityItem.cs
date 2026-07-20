@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
+using UnityEngine.XR.Interaction.Toolkit.Interactors;
 
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable))]
@@ -105,6 +106,19 @@ public class AntigravityItem : MonoBehaviour
         if (AudioManager.Instance != null)
         {
             AudioManager.Instance.PlayGrabSound(transform.position);
+        }
+
+        // Dokunsal Geri Bildirim (Haptic Feedback)
+        if (RecycleRush.Core.HapticManager.Instance != null && 
+            args.interactorObject is XRBaseInputInteractor controllerInteractor)
+        {
+            Debug.Log($"<color=magenta>[Haptic/Grab]</color> {gameObject.name} tutuldu! Titreşim yollanıyor.");
+            // Tutma anında kesin hissedilir bir 'Pop' titreşimi (0.5 şiddet, 0.1 saniye)
+            RecycleRush.Core.HapticManager.Instance.TriggerHaptic(controllerInteractor, 0.5f, 0.1f);
+        }
+        else
+        {
+            Debug.LogWarning($"<color=red>[Haptic/Grab]</color> Titreşim tetiklenemedi! HapticManager={RecycleRush.Core.HapticManager.Instance != null}, InteractorCast={args.interactorObject is XRBaseInputInteractor}");
         }
     }
 
