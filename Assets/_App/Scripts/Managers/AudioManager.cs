@@ -60,6 +60,7 @@ public class AudioManager : MonoBehaviour
         {
             _engineSource.clip = _engineClip;
             _engineSource.loop = true; // Döngüyü koddan açtık
+            _engineSource.Stop(); // Başlangıçta oynamasın (Play On Awake açıksa diye)
         }
     }
 
@@ -102,12 +103,12 @@ public class AudioManager : MonoBehaviour
     {
         if (_engineSource == null) return;
 
-        if (state == GameState.Playing)
+        if (state == GameState.Playing || state == GameState.Tutorial)
         {
             if (!_engineSource.isPlaying)
                 _engineSource.Play();
         }
-        else if (state == GameState.GameOver)
+        else if (state == GameState.GameOver || state == GameState.MainMenu || state == GameState.Initialization)
         {
             if (_engineSource.isPlaying)
                 _engineSource.Stop();

@@ -64,8 +64,10 @@ public class BinTrigger : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        // GÜVENLİK: Eğer oyun aktif değilse (Örn: GameOver) puan hesaplama ve atığı yoksay!
-        if (GameManager.Instance != null && GameManager.Instance.CurrentState != GameState.Playing)
+        // GÜVENLİK: Eğer oyun aktif veya öğretici modunda değilse puan hesaplama ve atığı yoksay!
+        if (GameManager.Instance != null && 
+            GameManager.Instance.CurrentState != GameState.Playing && 
+            GameManager.Instance.CurrentState != GameState.Tutorial)
         {
             Debug.Log("<color=red>[BinTrigger]</color> Oyun aktif değil! Atık kutuya girse de puan kazandırmaz.");
             return;
