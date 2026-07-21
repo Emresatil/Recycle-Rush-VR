@@ -53,9 +53,8 @@ public class DestroyZone : MonoBehaviour
                 Debug.Log($"<color=orange>[Crusher]</color> Atık parçalandı! Patlayan efekt: {crusherVfx.name} | Konum: {spawnPosition}");
             }
 
-            // 4. Çöpü tamamen sahnede yok et (Alt objesi çarpmış olsa bile Root'unu bularak sil)
-            // Bu kısım daha önce konuştuğumuz sonsuza kadar asılı kalan görünmez obje (Memory Leak) hatasını önler.
-            Destroy(other.transform.root.gameObject);
+            // 4. Çöpü tamamen silme, havuza geri gönder (Object Pooling)
+            ObjectPoolManager.Instance.ReturnToPool(other.transform.root.gameObject);
         }
     }
 

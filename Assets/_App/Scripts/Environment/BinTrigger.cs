@@ -127,8 +127,8 @@ public class BinTrigger : MonoBehaviour
 
         // İşlem tamamlandıktan sonra atık objesini sahneden yok et.
         // Çöplerin içi içe geçmiş prefablar olma ihtimaline karşı her zaman en dıştaki (Root) objeyi siliyoruz.
-        Debug.Log($"<color=green>[BinTrigger]</color> {other.transform.root.name} objesi tamamen yok edildi.");
-        Destroy(other.transform.root.gameObject);
+        Debug.Log($"<color=green>[BinTrigger]</color> {other.transform.root.name} objesi havuza geri gönderildi.");
+        ObjectPoolManager.Instance.ReturnToPool(other.transform.root.gameObject);
     }
 
     /// <summary>

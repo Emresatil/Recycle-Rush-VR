@@ -125,8 +125,8 @@ public class WasteSpawner : MonoBehaviour
         // Eskiden Random.rotation idi, bu yüzden şişeler yan veya ters doğuyordu.
         Quaternion uprightRandomRotation = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
 
-        // Obje üretimi
-        Instantiate(selectedPrefab, finalSpawnPosition, uprightRandomRotation);
+        // Obje üretimi yerine havuzdan çek (Daha performanslı)
+        ObjectPoolManager.Instance.SpawnFromPool(selectedPrefab.tag, selectedPrefab, finalSpawnPosition, uprightRandomRotation);
     }
 
     // Üst üste aynı objenin gelmesini engelleyen özel fonksiyon
