@@ -6,6 +6,7 @@ public enum GameState
 {
     Initialization,
     MainMenu,
+    Tutorial,
     Playing,
     Paused,
     GameOver
@@ -78,12 +79,20 @@ public class GameManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Oyunu başlatır ve sayacı sıfırlar.
+    /// Oyunu (veya gerekirse öğreticiyi) başlatır.
     /// </summary>
     public void StartGame()
     {
-        RemainingTime = _gameDuration;
-        ChangeState(GameState.Playing);
+        // Eğitimi hiç tamamlamamışsa (0 ise) veya anahtar yoksa Tutorial'e geç
+        if (PlayerPrefs.GetInt("TutorialDone", 0) == 0)
+        {
+            ChangeState(GameState.Tutorial);
+        }
+        else
+        {
+            RemainingTime = _gameDuration;
+            ChangeState(GameState.Playing);
+        }
     }
 
     /// <summary>
