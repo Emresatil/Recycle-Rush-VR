@@ -74,7 +74,13 @@ namespace RecycleRush.UI
             {
                 case GameState.Initialization:
                 case GameState.MainMenu:
-                    if (statusText != null) statusText.text = "SYSTEM READY\nPRESS BUTTON TO START";
+                    if (statusText != null) 
+                    {
+                        if (PlayerPrefs.GetInt("TutorialDone", 0) == 0)
+                            statusText.text = "<color=yellow>TUTORIAL</color>\nPULL THE LEVER TO START";
+                        else
+                            statusText.text = "SYSTEM READY\nPULL THE LEVER TO START";
+                    }
                     if (timeText != null) timeText.text = "Time: 60";
                     
                     // Restart butonunu ana menüde gizle
@@ -83,6 +89,11 @@ namespace RecycleRush.UI
                     
                 case GameState.Playing:
                     if (statusText != null) statusText.text = "RECYCLING STARTED";
+                    if (restartButtonObj != null) restartButtonObj.SetActive(false);
+                    break;
+                    
+                case GameState.Tutorial:
+                    // TutorialManager yazıları kendisi yönetecek, burada sadece butonu gizliyoruz
                     if (restartButtonObj != null) restartButtonObj.SetActive(false);
                     break;
                     
@@ -184,6 +195,13 @@ namespace RecycleRush.UI
             }
 
             comboText.transform.localScale = originalScale;
+            
+            // Oyuncunun yazıyı okuyabilmesi için 1 saniye bekle
+            yield return new WaitForSeconds(1.0f);
+            
+            // Ekranda sürekli kalmaması için yazıyı gizle
+            comboText.gameObject.SetActive(false);
+            
             _comboAnimationCoroutine = null;
         }
     }
