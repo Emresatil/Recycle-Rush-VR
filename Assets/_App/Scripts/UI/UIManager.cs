@@ -75,7 +75,7 @@ namespace RecycleRush.UI
                 case GameState.Initialization:
                 case GameState.MainMenu:
                     if (statusText != null) statusText.text = "SYSTEM READY\nPRESS BUTTON TO START";
-                    if (timeText != null) timeText.text = "60";
+                    if (timeText != null) timeText.text = "Time: 60";
                     
                     // Restart butonunu ana menüde gizle
                     if (restartButtonObj != null) restartButtonObj.SetActive(false);
@@ -106,8 +106,8 @@ namespace RecycleRush.UI
         {
             if (timeText != null)
             {
-                // Süreyi tam sayıya (Örn: 59.4 -> 60) yuvarlayarak yazdır
-                timeText.text = Mathf.CeilToInt(remainingTime).ToString();
+                // Süreyi tam sayıya (Örn: 59.4 -> 60) yuvarlayarak başına 'Time:' ön ekiyle yazdır
+                timeText.text = $"Time: {Mathf.CeilToInt(remainingTime)}";
                 
                 // Vurgu (Juice): Son 10 saniye kala yazıyı kırmızı yap!
                 if (remainingTime <= 10f)
