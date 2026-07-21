@@ -112,8 +112,8 @@ namespace RecycleRush.Environment
                         
                         Debug.Log($"<color=red>[FloorZone]</color> {item.RootObject.name} çok uzun süre yerde kaldı! İmha ediliyor ve Ceza verildi.");
                         
-                        // Obje imha edilir
-                        Destroy(item.RootObject);
+                        // Obje imha edilmek yerine havuza gönderilir (Object Pooling)
+                        ObjectPoolManager.Instance.ReturnToPool(item.RootObject);
                     }
                     _itemsOnFloor.Remove(col);
                 }
