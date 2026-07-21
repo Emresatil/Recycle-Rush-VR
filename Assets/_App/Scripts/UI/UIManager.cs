@@ -74,8 +74,14 @@ namespace RecycleRush.UI
             {
                 case GameState.Initialization:
                 case GameState.MainMenu:
-                    if (statusText != null) statusText.text = "SYSTEM READY\nPRESS BUTTON TO START";
-                    if (timeText != null) timeText.text = "60";
+                    if (statusText != null) 
+                    {
+                        if (PlayerPrefs.GetInt("TutorialDone", 0) == 0)
+                            statusText.text = "<color=yellow>TUTORIAL</color>\nPULL THE LEVER TO START";
+                        else
+                            statusText.text = "SYSTEM READY\nPULL THE LEVER TO START";
+                    }
+                    if (timeText != null) timeText.text = "Time: 60";
                     
                     // Restart butonunu ana menüde gizle
                     if (restartButtonObj != null) restartButtonObj.SetActive(false);
@@ -83,6 +89,11 @@ namespace RecycleRush.UI
                     
                 case GameState.Playing:
                     if (statusText != null) statusText.text = "RECYCLING STARTED";
+                    if (restartButtonObj != null) restartButtonObj.SetActive(false);
+                    break;
+                    
+                case GameState.Tutorial:
+                    // TutorialManager yazıları kendisi yönetecek, burada sadece butonu gizliyoruz
                     if (restartButtonObj != null) restartButtonObj.SetActive(false);
                     break;
                     
@@ -106,8 +117,8 @@ namespace RecycleRush.UI
         {
             if (timeText != null)
             {
-                // Süreyi tam sayıya (Örn: 59.4 -> 60) yuvarlayarak yazdır
-                timeText.text = Mathf.CeilToInt(remainingTime).ToString();
+                // Süreyi tam sayıya (Örn: 59.4 -> 60) yuvarlayarak başına 'Time:' ön ekiyle yazdır
+                timeText.text = $"Time: {Mathf.CeilToInt(remainingTime)}";
                 
                 // Vurgu (Juice): Son 10 saniye kala yazıyı kırmızı yap!
                 if (remainingTime <= 10f)
@@ -184,6 +195,13 @@ namespace RecycleRush.UI
             }
 
             comboText.transform.localScale = originalScale;
+            
+            // Oyuncunun yazıyı okuyabilmesi için 1 saniye bekle
+            yield return new WaitForSeconds(1.0f);
+            
+            // Ekranda sürekli kalmaması için yazıyı gizle
+            comboText.gameObject.SetActive(false);
+            
             _comboAnimationCoroutine = null;
         }
     }

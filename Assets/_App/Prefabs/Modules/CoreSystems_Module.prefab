@@ -47,6 +47,7 @@ MonoBehaviour:
   timeText: {fileID: 0}
   statusText: {fileID: 0}
   restartButtonObj: {fileID: 0}
+  comboText: {fileID: 0}
 --- !u!1 &667207769190123117
 GameObject:
   m_ObjectHideFlags: 0
@@ -300,7 +301,6 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  comboText: {fileID: 0}
 --- !u!1 &752121229755793677
 GameObject:
   m_ObjectHideFlags: 0
@@ -385,6 +385,7 @@ Transform:
   - {fileID: 2729002289449368018}
   - {fileID: 2461137720937569884}
   - {fileID: 5486001278300182893}
+  - {fileID: 7153854190346469419}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1384410119265384506
@@ -489,3 +490,50 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RecycleRush.Core.ScoreManager
   _startingScore: 0
+--- !u!1 &7361185779319695345
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7153854190346469419}
+  - component: {fileID: 5632405196166839191}
+  m_Layer: 0
+  m_Name: TutorialManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7153854190346469419
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7361185779319695345}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4129714333503685258}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5632405196166839191
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7361185779319695345}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3bed734e40459d44599ef23dd1d797a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RecycleRush.Managers.TutorialManager
+  tutorialText: {fileID: 0}
+  tutorialWastePrefab: {fileID: 4297595811316896341, guid: fb2b06f9eb5043a4fb5b0a7112c32f35, type: 3}
+  spawnPoint: {fileID: 0}
