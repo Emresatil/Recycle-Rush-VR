@@ -45,6 +45,7 @@ GameObject:
   - component: {fileID: 2750712252441328624}
   - component: {fileID: 4784565770404487825}
   - component: {fileID: -4790248545165474774}
+  - component: {fileID: 7116799503744999929}
   m_Layer: 0
   m_Name: Soda
   m_TagString: Plastic
@@ -303,3 +304,15 @@ MonoBehaviour:
   m_LimitAngularVelocity: 0
   m_MaxLinearVelocityDelta: 10
   m_MaxAngularVelocityDelta: 20
+--- !u!114 &7116799503744999929
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8134708681774675193}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3f7e43b076dfaf45b644e877de6ae09, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RecycleRush.Interaction.WasteAudioFeedback

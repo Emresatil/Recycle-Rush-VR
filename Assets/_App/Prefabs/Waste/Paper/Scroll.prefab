@@ -45,6 +45,7 @@ GameObject:
   - component: {fileID: 1890010170784880180}
   - component: {fileID: 3035712192245711675}
   - component: {fileID: 516516671194760353}
+  - component: {fileID: 2268173186226482141}
   m_Layer: 0
   m_Name: Scroll
   m_TagString: Paper
@@ -305,3 +306,15 @@ MonoBehaviour:
   m_LimitAngularVelocity: 0
   m_MaxLinearVelocityDelta: 10
   m_MaxAngularVelocityDelta: 20
+--- !u!114 &2268173186226482141
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4297595811316896341}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3f7e43b076dfaf45b644e877de6ae09, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RecycleRush.Interaction.WasteAudioFeedback
