@@ -114,7 +114,7 @@ BoxCollider:
   m_Enabled: 1
   serializedVersion: 3
   m_Size: {x: 0.64300585, y: 1.173587, z: 0.7297379}
-  m_Center: {x: 0.00000017881393, y: 0.58679336, z: -0.042004004}
+  m_Center: {x: 0, y: 0.58679336, z: 0}
 --- !u!114 &1624837076637410857
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -134,6 +134,8 @@ MonoBehaviour:
   _incorrectScore: -5
   _incorrectHapticDuration: 0.4
   _incorrectHapticAmplitude: 0.8
+  _successParticlePrefab: {fileID: 0}
+  _failParticlePrefab: {fileID: 0}
 --- !u!1 &3655041661194210085
 GameObject:
   m_ObjectHideFlags: 0
