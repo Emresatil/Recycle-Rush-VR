@@ -134,6 +134,8 @@ MonoBehaviour:
   _incorrectScore: -5
   _incorrectHapticDuration: 0.4
   _incorrectHapticAmplitude: 0.8
+  _successParticlePrefab: {fileID: 0}
+  _failParticlePrefab: {fileID: 0}
 --- !u!1 &4029916364427953561
 GameObject:
   m_ObjectHideFlags: 0
