@@ -110,6 +110,11 @@ namespace RecycleRush.Environment
                         // ScoreManager'a -5 puan sinyali gönder
                         OnWasteMissedFloor?.Invoke(_penaltyScore);
                         
+                        if (AudioManager.Instance != null)
+                        {
+                            AudioManager.Instance.PlayFloorPenaltySound();
+                        }
+
                         Debug.Log($"<color=red>[FloorZone]</color> {item.RootObject.name} çok uzun süre yerde kaldı! İmha ediliyor ve Ceza verildi.");
                         
                         // Obje imha edilmek yerine havuza gönderilir (Object Pooling)

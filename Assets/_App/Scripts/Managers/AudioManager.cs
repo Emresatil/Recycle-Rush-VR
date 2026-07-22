@@ -35,6 +35,8 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private AudioClip _grabClip;
     [Tooltip("Obje bırakıldığında (Release) çalacak ses")]
     [SerializeField] private AudioClip _releaseClip;
+    [Tooltip("Obje yere düştüğünde ve ceza kesildiğinde çalacak ses")]
+    [SerializeField] private AudioClip _floorPenaltyClip;
 
     private void Awake()
     {
@@ -158,6 +160,17 @@ public class AudioManager : MonoBehaviour
         {
             // PlayOneShot, arkaplanı durdurmadan sadece tek seferlik sesi çalar (2D)
             _uiSource.PlayOneShot(_uiClickClip, _uiVolume);
+        }
+    }
+
+    /// <summary>
+    /// Obje yere düştüğünde ve cezalandırıldığında çalacak sesi çıkarır.
+    /// </summary>
+    public void PlayFloorPenaltySound()
+    {
+        if (_floorPenaltyClip != null && _uiSource != null)
+        {
+            _uiSource.PlayOneShot(_floorPenaltyClip, 1.0f);
         }
     }
 }

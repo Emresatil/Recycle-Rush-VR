@@ -99,6 +99,11 @@ namespace RecycleRush.UI
                     if (restartButtonObj != null) restartButtonObj.SetActive(false);
                     break;
                     
+                case GameState.Countdown:
+                    if (restartButtonObj != null) restartButtonObj.SetActive(false);
+                    StartCoroutine(StartCountdownAnimation());
+                    break;
+                    
                 case GameState.Tutorial:
                     // TutorialManager yazıları kendisi yönetecek, burada sadece butonu gizliyoruz
                     if (restartButtonObj != null) restartButtonObj.SetActive(false);
@@ -166,6 +171,60 @@ namespace RecycleRush.UI
             {
                 // Katlayıcı yoksa (Kombo sıfırlandıysa) yazıyı gizle
                 comboText.gameObject.SetActive(false);
+            }
+        }
+
+        /// <summary>
+        /// 3-2-1-BAŞLA şeklinde profesyonel, animasyonlu (Pop & Lerp) geri sayım yapar.
+        /// </summary>
+        private IEnumerator StartCountdownAnimation()
+        {
+            // Eğer Unity'de arayüz yazısı (statusText) atanmamışsa, oyunu kitlememek için direkt başlat
+            if (statusText == null) 
+            {
+                Debug.LogWarning("<color=orange>[UIManager]</color> statusText atanmamış! Geri sayım atlanıp oyun başlatılıyor.");
+                if (GameManager.Instance != null) GameManager.Instance.FinishCountdown();
+                yield break;
+            }
+
+            string[] countTexts = { "<color=yellow>3</color>", "<color=orange>2</color>", "<color=red>1</color>", "<color=green>GO!</color>" };
+            Vector3 originalScale = Vector3.one;
+            Vector3 targetScale = originalScale * 2f; // %100 büyüt (Daha vurucu bir etki için)
+
+            foreach (string text in countTexts)
+            {
+                statusText.text = text;
+                
+                // TODO: AudioManager üzerinden "Bip" sesi çaldırma buraya eklenecek
+                
+                // Büyüme (Scale Up) - Hızlıca patlama efekti (Pop)
+                float elapsed = 0f;
+                float duration = 0.15f;
+                while (elapsed < duration)
+                {
+                    statusText.transform.localScale = Vector3.Lerp(originalScale, targetScale, elapsed / duration);
+                    elapsed += Time.deltaTime;
+                    yield return null;
+                }
+                statusText.transform.localScale = targetScale;
+
+                // Küçülme (Scale Down) - Yavaşça eski haline dönme ve bekleme
+                elapsed = 0f;
+                duration = 0.85f;
+                while (elapsed < duration)
+                {
+                    statusText.transform.localScale = Vector3.Lerp(targetScale, originalScale, elapsed / duration);
+                    elapsed += Time.deltaTime;
+                    yield return null;
+                }
+                statusText.transform.localScale = originalScale;
+            }
+
+            // Geri sayım bitti, yazıyı temizle ve oyunu asıl şimdi başlat!
+            statusText.text = ""; 
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.FinishCountdown();
             }
         }
 
