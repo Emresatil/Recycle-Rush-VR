@@ -76,15 +76,22 @@ namespace RecycleRush.UI
                 case GameState.MainMenu:
                     if (statusText != null) 
                     {
-                        if (PlayerPrefs.GetInt("TutorialDone", 0) == 0)
-                            statusText.text = "<color=yellow>TUTORIAL</color>\nPULL THE LEVER TO START";
-                        else
-                            statusText.text = "SYSTEM READY\nPULL THE LEVER TO START";
+                        statusText.text = "SYSTEM ONLINE\n<color=yellow>PRESS PLAY BUTTON</color>";
                     }
                     if (timeText != null) timeText.text = "Time: 60";
                     
                     // Restart butonunu ana menüde gizle
                     if (restartButtonObj != null) restartButtonObj.SetActive(false);
+                    break;
+                    
+                case GameState.ReadyToStart:
+                    if (statusText != null) 
+                    {
+                        if (PlayerPrefs.GetInt("TutorialDone", 0) == 0)
+                            statusText.text = "<color=yellow>TUTORIAL</color>\nPULL THE LEVER TO START";
+                        else
+                            statusText.text = "SYSTEM READY\nPULL THE LEVER TO START";
+                    }
                     break;
                     
                 case GameState.Playing:

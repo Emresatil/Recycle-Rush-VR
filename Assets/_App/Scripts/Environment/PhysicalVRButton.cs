@@ -20,6 +20,15 @@ namespace RecycleRush.Environment
         [Tooltip("Butonun aşağı inme ve eski haline dönme (yaylanma) animasyon hızı")]
         [SerializeField] private float _springSpeed = 0.05f;
 
+        public enum ButtonType { Custom, Play, Pause, Retry, Settings }
+
+        [Header("Game Actions & Feedback")]
+        [Tooltip("Butonun oyun içindeki görevi (Özel bir görevse Custom seçip OnPressed eventini kullanın)")]
+        public ButtonType buttonType = ButtonType.Custom;
+        
+        [Tooltip("Butona basıldığında çıkacak görsel efekt Prefab'ı (Oyun içinde otomatik doğup silinecektir)")]
+        [SerializeField] private GameObject _pressVFXPrefab;
+
         [Header("Events (Olaylar)")]
         [Tooltip("Butona tam olarak basıldığında tetiklenecek fonksiyonlar (Örn: GameManager.StartGame)")]
         public UnityEvent OnPressed;
@@ -81,8 +90,10 @@ namespace RecycleRush.Environment
             }
         }
 
-        private void PressButton()
+        public void PressButton()
         {
+            if (_isPressed) return; // Zaten basılıysa tekrar basma
+            
             _isPressed = true;
             
             // Klik sesi çal
@@ -95,12 +106,41 @@ namespace RecycleRush.Environment
             StopAllCoroutines();
             StartCoroutine(MoveButtonRoutine(_originalLocalPos.y - _pressDistance));
             
-            // Inspector'dan atanan fonksiyonları (Örn: StartGame) tetikle!
+            // --- GÖRSEL VE DOKUNSAL (HAPTIC) EFEKTLER ---
+            if (_pressVFXPrefab != null)
+            {
+                // Efekti butonun ortasında yoktan var et (Instantiate)
+                GameObject vfxObj = Instantiate(_pressVFXPrefab, transform.position, Quaternion.identity);
+                
+                // Eğer içinde ParticleSystem varsa otomatik çalışıp süresi bitince yok olsun
+                ParticleSystem ps = vfxObj.GetComponentInChildren<ParticleSystem>();
+                if (ps != null)
+                {
+                    Destroy(vfxObj, ps.main.duration + ps.main.startLifetime.constantMax);
+                }
+                else
+                {
+                    // Her ihtimale karşı 2 saniye sonra sil ki sahnede çöp kalmasın
+                    Destroy(vfxObj, 2f);
+                }
+            }
+
+            if (RecycleRush.Core.HapticManager.Instance != null)
+            {
+                // Butona basıldığında tok bir dokunsal geri bildirim ver (Şiddet: 0.3, Süre: 0.1s)
+                RecycleRush.Core.HapticManager.Instance.TriggerGlobalHaptic(0.3f, 0.1f);
+            }
+            
+            // Otomatik GameManager Aksiyonları
+            ExecuteAction();
+
+            // Inspector'dan atanan özel fonksiyonları tetikle!
             OnPressed?.Invoke();
         }
 
-        private void ReleaseButton()
+        public void ReleaseButton()
         {
+            if (!_isPressed) return;
             _isPressed = false;
 
             // Butonu fiziksel olarak yukarı çek (Yaylanma hissi)
@@ -130,6 +170,35 @@ namespace RecycleRush.Environment
             }
 
             _pushPart.localPosition = endPos;
+        }
+
+        /// <summary>
+        /// Butonun seçilen türüne göre GameManager aksiyonlarını otomatik çalıştırır.
+        /// </summary>
+        private void ExecuteAction()
+        {
+            if (GameManager.Instance == null) return;
+
+            switch (buttonType)
+            {
+                case ButtonType.Play:
+                case ButtonType.Retry:
+                    GameManager.Instance.PrepareToStart();
+                    break;
+                case ButtonType.Pause:
+                    if (GameManager.Instance.CurrentState == GameState.Paused)
+                        GameManager.Instance.ResumeGame();
+                    else
+                        GameManager.Instance.PauseGame();
+                    break;
+                case ButtonType.Settings:
+                    Debug.Log("<color=cyan>[PhysicalVRButton]</color> Settings (Ayarlar) menüsü tetiklendi.");
+                    break;
+                case ButtonType.Custom:
+                default:
+                    // Sadece UnityEvent (OnPressed) çalışır
+                    break;
+            }
         }
     }
 }
