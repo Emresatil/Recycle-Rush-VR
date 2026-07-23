@@ -44,11 +44,16 @@ namespace RecycleRush.UI
 
         private void UpdateHighScoreDisplay()
         {
-            // Cihaz hafızasından rekoru çek (Eğer hiç oynanmamışsa 0 döndürür)
-            int highScore = PlayerPrefs.GetInt("HighScore", 0);
+            // Cihaz hafızasından ilk 3 rekoru çek
+            int score1 = PlayerPrefs.GetInt("HighScore1", 0);
+            int score2 = PlayerPrefs.GetInt("HighScore2", 0);
+            int score3 = PlayerPrefs.GetInt("HighScore3", 0);
             
-            // Etkileyici bir Arcade tasarımıyla ekrana yazdır (Skor kısmı Altın Sarısı olacak)
-            _text.text = $"BEST SCORE\n<color=#FFD700>{highScore}</color>";
+            // Etkileyici bir Arcade tasarımıyla 3 satır halinde ekrana yazdır (Skor kısmı Altın Sarısı olacak)
+            _text.text = $"BEST SCORES\n" +
+                         $"<color=#FFD700>1.</color> {score1}\n" +
+                         $"<color=#FFD700>2.</color> {score2}\n" +
+                         $"<color=#FFD700>3.</color> {score3}";
         }
     }
 }
