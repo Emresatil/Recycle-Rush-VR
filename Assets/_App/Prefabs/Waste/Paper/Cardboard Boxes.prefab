@@ -42,7 +42,6 @@ GameObject:
   - component: {fileID: 2340028002856041122}
   - component: {fileID: 7922988491816279357}
   - component: {fileID: -8601865163043018134}
-  - component: {fileID: -2716368009731474940}
   m_Layer: 0
   m_Name: Cardboard Boxes
   m_TagString: Paper
@@ -223,18 +222,6 @@ MonoBehaviour:
   m_LimitAngularVelocity: 0
   m_MaxLinearVelocityDelta: 10
   m_MaxAngularVelocityDelta: 20
---- !u!114 &-2716368009731474940
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1467448516992097433}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b3f7e43b076dfaf45b644e877de6ae09, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RecycleRush.Interaction.WasteAudioFeedback
 --- !u!1 &1840842626431931620
 GameObject:
   m_ObjectHideFlags: 0

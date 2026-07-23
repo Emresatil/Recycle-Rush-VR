@@ -267,6 +267,8 @@ namespace RecycleRush.UI
             if (statusText == null) 
             {
                 Debug.LogWarning("<color=orange>[UIManager]</color> statusText atanmamış! Geri sayım atlanıp oyun başlatılıyor.");
+                // C# Event çakışmasını önlemek için (Reentrancy Bug) 1 frame bekleyip öyle başlatıyoruz
+                yield return null; 
                 if (GameManager.Instance != null) GameManager.Instance.FinishCountdown();
                 yield break;
             }

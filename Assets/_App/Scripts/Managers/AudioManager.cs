@@ -37,6 +37,8 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private AudioClip _releaseClip;
     [Tooltip("Obje yere düştüğünde ve ceza kesildiğinde çalacak ses")]
     [SerializeField] private AudioClip _floorPenaltyClip;
+    [Tooltip("Kombo yapıldığında çalacak özel (Combo!) sesi")]
+    [SerializeField] private AudioClip _comboClip;
 
     private void Awake()
     {
@@ -163,9 +165,6 @@ public class AudioManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Obje yere düştüğünde ve cezalandırıldığında çalacak sesi çıkarır.
-    /// </summary>
     public void PlayFloorPenaltySound()
     {
         if (_floorPenaltyClip != null && _uiSource != null)
@@ -175,6 +174,13 @@ public class AudioManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Oyuncu ardışık doğru atışlar yapıp kombo eşiklerine ulaştığında çalacak sesi çıkarır.
+    /// </summary>
+    public void PlayComboSound()
+    {
+        if (_comboClip != null && _uiSource != null)
+        {
+            _uiSource.PlayOneShot(_comboClip, 1.0f);
     /// Arkaplan müziğinin (BGM) ses seviyesini ayarlar. UI Slider OnValueChanged eventine bağlanmalıdır.
     /// </summary>
     public void SetBGMVolume(float volume)
