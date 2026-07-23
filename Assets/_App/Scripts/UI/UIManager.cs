@@ -1,6 +1,8 @@
 using UnityEngine;
 using TMPro; // TextMeshPro (Yazılar) için gerekli
 using System.Collections; // Coroutine (Lerp animasyonları) için gerekli
+using UnityEngine.UI;
+using UnityEngine.InputSystem;
 
 namespace RecycleRush.UI
 {
@@ -9,6 +11,9 @@ namespace RecycleRush.UI
     /// </summary>
     public class UIManager : MonoBehaviour
     {
+        // Singleton Instance (Objeleri Destroy etmeden, panelleri dolu olana öncelik verir)
+        public static UIManager Instance { get; private set; }
+
         [Header("Ekran (Monitör) Yazıları")]
         [Tooltip("Süreyi gösterecek olan yazı bileşeni (Örn: 60)")]
         public TextMeshProUGUI timeText;
@@ -23,13 +28,45 @@ namespace RecycleRush.UI
         [Tooltip("Kombo yazısını gösterecek TextMeshPro bileşeni")]
         public TextMeshProUGUI comboText;
         
+        [Header("Paneller ve Arayüz Kontrolleri")]
+        [Tooltip("Ayarlar (Settings) Paneli")]
+        public GameObject settingsPanel;
+        [Tooltip("Duraklatma (Pause) Paneli")]
+        public GameObject pausePanel;
+        [Tooltip("Oyun içi UI Duraklatma (Pause) Butonu objesi")]
+        public GameObject pauseButtonUIObj;
+        
+        [Tooltip("Müzik (BGM) seviyesi için Slider")]
+        public Slider bgmSlider;
+        [Tooltip("Ses Efektleri (SFX) seviyesi için Slider")]
+        public Slider sfxSlider;
+
+        [Header("VR Girdi (Input)")]
+        [Tooltip("VR Menü/Geri tuşu (ESC) Input Action referansı")]
+        public InputActionReference menuPauseAction;
+
         private Coroutine _comboAnimationCoroutine;
+
+        private void Awake()
+        {
+            // Panelleri dolu olan UIManager'ı öncelikli olarak Instance kabul et (Hiçbir objeyi silmeden)
+            if (Instance == null || settingsPanel != null)
+            {
+                Instance = this;
+            }
+        }
 
         private void OnEnable()
         {
             // Event'leri dinlemeye başla (Eventler statik olduğu için Instance beklemeden abone olabiliriz)
             GameManager.OnGameStateChanged += HandleGameState;
             GameManager.OnGameTimeUpdated += UpdateTimeDisplay;
+
+            if (menuPauseAction != null && menuPauseAction.action != null)
+            {
+                menuPauseAction.action.Enable();
+                menuPauseAction.action.performed += OnMenuButtonPressed;
+            }
         }
 
         private void Start()
@@ -51,6 +88,32 @@ namespace RecycleRush.UI
             {
                 comboText.gameObject.SetActive(false);
             }
+
+            // Sliderları AudioManager'a bağla
+            if (bgmSlider != null && AudioManager.Instance != null)
+            {
+                bgmSlider.onValueChanged.AddListener(AudioManager.Instance.SetBGMVolume);
+                AudioManager.Instance.SetBGMVolume(bgmSlider.value);
+            }
+            if (sfxSlider != null && AudioManager.Instance != null)
+            {
+                sfxSlider.onValueChanged.AddListener(AudioManager.Instance.SetSFXVolume);
+                AudioManager.Instance.SetSFXVolume(sfxSlider.value);
+            }
+            
+            // Panelleri başlangıçta gizle
+            if (settingsPanel != null) settingsPanel.SetActive(false);
+            if (pausePanel != null) pausePanel.SetActive(false);
+            if (pauseButtonUIObj != null) pauseButtonUIObj.SetActive(false);
+        }
+
+        private void Update()
+        {
+            // PC testi için klavyeden ESC tuşu (Yeni Input System kullanılarak)
+            if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+            {
+                HandleMenuPauseToggle();
+            }
         }
 
         private void OnDisable()
@@ -62,6 +125,12 @@ namespace RecycleRush.UI
             if (Core.ScoreManager.Instance != null)
             {
                 Core.ScoreManager.Instance.OnComboChanged -= HandleComboChanged;
+            }
+
+            if (menuPauseAction != null && menuPauseAction.action != null)
+            {
+                menuPauseAction.action.performed -= OnMenuButtonPressed;
+                menuPauseAction.action.Disable();
             }
         }
 
@@ -80,8 +149,9 @@ namespace RecycleRush.UI
                     }
                     if (timeText != null) timeText.text = "Time: 60";
                     
-                    // Restart butonunu ana menüde gizle
+                    // Restart ve Pause butonlarını gizle
                     if (restartButtonObj != null) restartButtonObj.SetActive(false);
+                    if (pauseButtonUIObj != null) pauseButtonUIObj.SetActive(false);
                     break;
                     
                 case GameState.ReadyToStart:
@@ -92,25 +162,37 @@ namespace RecycleRush.UI
                         else
                             statusText.text = "SYSTEM READY\nPULL THE LEVER TO START";
                     }
+                    if (pauseButtonUIObj != null) pauseButtonUIObj.SetActive(true); // Butona basılınca da Pause butonu görünsün!
                     break;
                     
                 case GameState.Playing:
                     if (statusText != null) statusText.text = "RECYCLING STARTED";
                     if (restartButtonObj != null) restartButtonObj.SetActive(false);
+                    if (pausePanel != null) pausePanel.SetActive(false);
+                    if (pauseButtonUIObj != null) 
+                        pauseButtonUIObj.SetActive(true);
+                    else
+                        Debug.LogWarning("<color=red>[UIManager]</color> Pause Button UI Obj atanmamış (None)! Pause butonu görünmüyor olabilir.");
                     break;
                     
                 case GameState.Countdown:
                     if (restartButtonObj != null) restartButtonObj.SetActive(false);
+                    if (pausePanel != null) pausePanel.SetActive(false);
+                    if (pauseButtonUIObj != null) pauseButtonUIObj.SetActive(false);
                     StartCoroutine(StartCountdownAnimation());
                     break;
                     
                 case GameState.Tutorial:
                     // TutorialManager yazıları kendisi yönetecek, burada sadece butonu gizliyoruz
                     if (restartButtonObj != null) restartButtonObj.SetActive(false);
+                    if (pausePanel != null) pausePanel.SetActive(false);
+                    if (pauseButtonUIObj != null) pauseButtonUIObj.SetActive(false);
                     break;
                     
                 case GameState.Paused:
                     if (statusText != null) statusText.text = "SYSTEM PAUSED";
+                    if (pausePanel != null) pausePanel.SetActive(true);
+                    if (pauseButtonUIObj != null) pauseButtonUIObj.SetActive(false);
                     break;
 
                 case GameState.GameOver:
@@ -118,6 +200,8 @@ namespace RecycleRush.UI
                     
                     // Oyun bittiğinde Restart butonunu ortaya çıkar!
                     if (restartButtonObj != null) restartButtonObj.SetActive(true);
+                    if (pausePanel != null) pausePanel.SetActive(false);
+                    if (pauseButtonUIObj != null) pauseButtonUIObj.SetActive(false);
                     break;
             }
         }
@@ -269,6 +353,64 @@ namespace RecycleRush.UI
             comboText.gameObject.SetActive(false);
             
             _comboAnimationCoroutine = null;
+        }
+
+        // --- YENİ EKLENEN PANEL VE MENÜ KONTROL METOTLARI ---
+
+        private void OnMenuButtonPressed(InputAction.CallbackContext context)
+        {
+            HandleMenuPauseToggle();
+        }
+
+        private void HandleMenuPauseToggle()
+        {
+            if (settingsPanel != null && settingsPanel.activeSelf)
+            {
+                CloseSettingsPanel();
+                return;
+            }
+
+            if (GameManager.Instance != null && 
+                (GameManager.Instance.CurrentState == GameState.Playing || GameManager.Instance.CurrentState == GameState.Paused))
+            {
+                GameManager.Instance.TogglePauseGame();
+            }
+        }
+
+        public void OpenSettingsPanel()
+        {
+            if (settingsPanel != null)
+            {
+                settingsPanel.SetActive(true);
+            }
+            else
+            {
+                Debug.LogWarning("<color=red>[UIManager]</color> Settings Panel açılmaya çalışıldı ancak Inspector'da 'Settings Panel' değişkeni ATANMAMIŞ (None)! Lütfen UIManager bileşenindeki boşluğa paneli sürükleyin.");
+            }
+        }
+
+        public void CloseSettingsPanel()
+        {
+            if (settingsPanel != null) settingsPanel.SetActive(false);
+        }
+
+        public void PauseGameUI()
+        {
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.PauseGame();
+            }
+        }
+
+        public void ResumeGameUI()
+        {
+            if (GameManager.Instance != null) GameManager.Instance.ResumeGame();
+        }
+
+        public void QuitApplication()
+        {
+            Debug.Log("[UIManager] Uygulamadan Çıkılıyor... (Exit Butonu Tetiklendi)");
+            Application.Quit();
         }
     }
 }

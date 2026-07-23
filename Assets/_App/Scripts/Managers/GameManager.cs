@@ -180,6 +180,21 @@ public class GameManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Oyunu durdurur veya devam ettirir (VR menü tuşu için idealdir).
+    /// </summary>
+    public void TogglePauseGame()
+    {
+        if (CurrentState == GameState.Playing)
+        {
+            PauseGame();
+        }
+        else if (CurrentState == GameState.Paused)
+        {
+            ResumeGame();
+        }
+    }
+
+    /// <summary>
     /// Geri sayım sistemini günceller.
     /// </summary>
     private void UpdateTimer()
