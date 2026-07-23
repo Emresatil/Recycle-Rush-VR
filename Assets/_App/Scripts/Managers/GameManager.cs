@@ -6,6 +6,7 @@ public enum GameState
 {
     Initialization,
     MainMenu,
+    ReadyToStart,
     Tutorial,
     Countdown, // YENİ: Oyun tam başlamadan önceki 3-2-1 sayacı
     Playing,
@@ -21,6 +22,15 @@ public class GameManager : MonoBehaviour
     [Header("Oyun Ayarları")]
     [Tooltip("Oyunun toplam süresi (saniye cinsinden)")]
     [SerializeField] private float _gameDuration = 60f;
+    
+    [Header("UI / Modüller")]
+    [Tooltip("Fiziksel butonların bulunduğu modül (Play, Settings vb.)")]
+    public GameObject buttonsModule;
+    
+    private Vector3 _buttonsOriginalPos;
+    private Quaternion _buttonsOriginalRot;
+    private bool _hasSavedButtonsTransform = false;
+    private Coroutine _hideButtonsCoroutine;
     
     // Oyun durumunun okunabilmesi ama sadece bu sınıf tarafından değiştirilebilmesi için Property
     public GameState CurrentState { get; private set; }
@@ -75,8 +85,55 @@ public class GameManager : MonoBehaviour
         CurrentState = newState;
         Debug.Log($"[GameManager] Oyun durumu değişti: {CurrentState}");
         
+        // Modülleri Duruma Göre Otomatik Yönet (Butonlar vb.)
+        if (buttonsModule != null)
+        {
+            if (!_hasSavedButtonsTransform)
+            {
+                _buttonsOriginalPos = buttonsModule.transform.position;
+                _buttonsOriginalRot = buttonsModule.transform.rotation;
+                _hasSavedButtonsTransform = true;
+            }
+
+            if (CurrentState == GameState.MainMenu || CurrentState == GameState.GameOver)
+            {
+                if (_hideButtonsCoroutine != null)
+                {
+                    StopCoroutine(_hideButtonsCoroutine);
+                    _hideButtonsCoroutine = null;
+                }
+                
+                // Eski haline (dik konumuna ve orijinal pozisyonuna) geri getir
+                buttonsModule.transform.position = _buttonsOriginalPos;
+                buttonsModule.transform.rotation = _buttonsOriginalRot;
+                buttonsModule.SetActive(true);
+            }
+            else if (CurrentState == GameState.ReadyToStart)
+            {
+                // Hemen gizlemek yerine devrilme animasyonu başlat
+                if (_hideButtonsCoroutine != null) StopCoroutine(_hideButtonsCoroutine);
+                _hideButtonsCoroutine = StartCoroutine(HideButtonsRoutine());
+            }
+            else
+            {
+                if (_hideButtonsCoroutine != null) StopCoroutine(_hideButtonsCoroutine);
+                buttonsModule.SetActive(false);
+            }
+        }
+
         // Durum değişikliğini tüm sisteme yayınla (Broadcast)
         OnGameStateChanged?.Invoke(CurrentState);
+    }
+
+    /// <summary>
+    /// Play butonuna basıldığında sistemi kol çekilmeye (Vardiya başlangıcına) hazırlar.
+    /// </summary>
+    public void PrepareToStart()
+    {
+        if (CurrentState == GameState.MainMenu || CurrentState == GameState.GameOver)
+        {
+            ChangeState(GameState.ReadyToStart);
+        }
     }
 
     /// <summary>
@@ -152,5 +209,63 @@ public class GameManager : MonoBehaviour
     {
         ChangeState(GameState.GameOver);
         // İstenirse burada oyun sonunda yapılacak özel işlemler çağrılabilir.
+    }
+
+    /// <summary>
+    /// Butonların arkaya doğru taş gibi devrilip (Domino etkisi) bir süre sonra kaybolmasını sağlar.
+    /// </summary>
+    private System.Collections.IEnumerator HideButtonsRoutine()
+    {
+        if (buttonsModule == null) yield break;
+
+        // 1) Butonların gerçek merkezini bul (Pivot 0,0,0 olduğu için devrilme bozuluyordu)
+        Vector3 center = Vector3.zero;
+        int count = 0;
+        foreach (Transform child in buttonsModule.transform)
+        {
+            if (child.name != "EventSystem")
+            {
+                center += child.position;
+                count++;
+            }
+        }
+        if (count > 0) center /= count;
+
+        // 2) Devrilme noktasını (Pivot) merkezin yarım metre altı (sanki zemine değdiği yer) olarak ayarla
+        Vector3 pivotPoint = center + Vector3.down * 0.5f;
+        
+        // 3) Hangi eksen etrafında dönecek? (Kendi sağına doğru olan eksen etrafında dönerse arkaya yatar)
+        Vector3 rotationAxis = buttonsModule.transform.right;
+
+        float duration = 1.0f; // 1 saniyede devrilir
+        float elapsed = 0f;
+        
+        float totalAngle = 90f; // Arkaya tam yatması için 90 derece
+        float currentAngle = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            
+            // Düşme hızını ivmelendirmek için t'nin karesini (Ease-In) alıyoruz
+            float t = elapsed / duration;
+            t = t * t; 
+            
+            float targetAngle = Mathf.Lerp(0f, totalAngle, t);
+            float deltaAngle = targetAngle - currentAngle;
+            
+            // Objeyi kendi merkezi etrafında devir!
+            buttonsModule.transform.RotateAround(pivotPoint, rotationAxis, deltaAngle);
+            currentAngle = targetAngle;
+            
+            yield return null;
+        }
+
+        // Tamamen yere çarptıktan sonra oyuncunun bunu algılaması için 1 saniye yerde beklesin
+        yield return new WaitForSeconds(1.0f);
+
+        // Son olarak sahneden gizle
+        buttonsModule.SetActive(false);
+        _hideButtonsCoroutine = null;
     }
 }
