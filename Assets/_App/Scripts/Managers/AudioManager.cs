@@ -181,6 +181,30 @@ public class AudioManager : MonoBehaviour
         if (_comboClip != null && _uiSource != null)
         {
             _uiSource.PlayOneShot(_comboClip, 1.0f);
+    /// Arkaplan müziğinin (BGM) ses seviyesini ayarlar. UI Slider OnValueChanged eventine bağlanmalıdır.
+    /// </summary>
+    public void SetBGMVolume(float volume)
+    {
+        _bgmVolume = Mathf.Clamp01(volume);
+        if (_bgmSource != null)
+        {
+            _bgmSource.volume = _bgmVolume;
+        }
+    }
+
+    /// <summary>
+    /// Tüm ses efektlerinin (SFX) ses seviyesini ayarlar. UI Slider OnValueChanged eventine bağlanmalıdır.
+    /// </summary>
+    public void SetSFXVolume(float volume)
+    {
+        _uiVolume = Mathf.Clamp01(volume);
+        if (_uiSource != null)
+        {
+            _uiSource.volume = _uiVolume;
+        }
+        if (_engineSource != null)
+        {
+            _engineSource.volume = _uiVolume;
         }
     }
 }

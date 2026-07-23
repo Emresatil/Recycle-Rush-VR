@@ -102,9 +102,9 @@ namespace RecycleRush.Environment
                 _audioSource.PlayOneShot(_clickSound);
             }
 
-            // Butonu fiziksel olarak aşağı itmek için çalışan eski animasyonları durdur ve yenisini başlat
+            // Butonu aşağı it ve lazerle basıldıysa otomatik geri yaylandır (Auto-Release)
             StopAllCoroutines();
-            StartCoroutine(MoveButtonRoutine(_originalLocalPos.y - _pressDistance));
+            StartCoroutine(PressAndAutoReleaseRoutine());
             
             // --- GÖRSEL VE DOKUNSAL (HAPTIC) EFEKTLER ---
             if (_pressVFXPrefab != null)
@@ -136,6 +136,23 @@ namespace RecycleRush.Environment
 
             // Inspector'dan atanan özel fonksiyonları tetikle!
             OnPressed?.Invoke();
+        }
+
+        /// <summary>
+        /// Lazer ışınıyla (XR Raycast) basıldığında butonun çöktükten 0.2 saniye sonra otomatik yaylanıp yukarı çıkmasını sağlar.
+        /// </summary>
+        private IEnumerator PressAndAutoReleaseRoutine()
+        {
+            yield return StartCoroutine(MoveButtonRoutine(_originalLocalPos.y - _pressDistance));
+            
+            // 0.2 saniye çökük vaziyette kalsın (Tok basılma hissi için)
+            yield return new WaitForSeconds(0.2f);
+
+            // Eğer içeride fiziksel bir el yoksa (lazerle basıldıysa) otomatik geri kaldır!
+            if (_collidersInTrigger == 0 && _isPressed)
+            {
+                ReleaseButton();
+            }
         }
 
         public void ReleaseButton()
@@ -192,7 +209,30 @@ namespace RecycleRush.Environment
                         GameManager.Instance.PauseGame();
                     break;
                 case ButtonType.Settings:
-                    Debug.Log("<color=cyan>[PhysicalVRButton]</color> Settings (Ayarlar) menüsü tetiklendi.");
+                    // Sahnede panelleri atanmış olan UIManager'ı bul
+                    RecycleRush.UI.UIManager targetManager = RecycleRush.UI.UIManager.Instance;
+                    
+                    if (targetManager == null || targetManager.settingsPanel == null)
+                    {
+                        RecycleRush.UI.UIManager[] managers = FindObjectsOfType<RecycleRush.UI.UIManager>();
+                        foreach (var mgr in managers)
+                        {
+                            if (mgr.settingsPanel != null)
+                            {
+                                targetManager = mgr;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (targetManager != null)
+                    {
+                        targetManager.OpenSettingsPanel();
+                    }
+                    else
+                    {
+                        Debug.LogWarning("<color=red>[PhysicalVRButton]</color> Settings Panel atanmış bir UIManager bulunamadı!");
+                    }
                     break;
                 case ButtonType.Custom:
                 default:
