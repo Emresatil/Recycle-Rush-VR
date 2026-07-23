@@ -78,11 +78,13 @@ public class WasteSpawner : MonoBehaviour
 
     private void HandleGameStateChanged(GameState newState)
     {
+        Debug.Log($"<color=magenta>[WasteSpawner]</color> Oyun Durumu Yakalandı: {newState}");
         if (newState == GameState.Playing)
         {
             // Sadece oyun aktifken spawn işlemini başlat
             if (_spawnCoroutine == null)
             {
+                Debug.Log("<color=magenta>[WasteSpawner]</color> Coroutine BAŞLATILIYOR!");
                 _spawnCoroutine = StartCoroutine(SpawnRoutine());
             }
         }
@@ -91,6 +93,7 @@ public class WasteSpawner : MonoBehaviour
             // Pause veya GameOver durumunda üretimi durdur
             if (_spawnCoroutine != null)
             {
+                Debug.Log("<color=magenta>[WasteSpawner]</color> Coroutine DURDURULUYOR!");
                 StopCoroutine(_spawnCoroutine);
                 _spawnCoroutine = null;
             }
@@ -114,6 +117,7 @@ public class WasteSpawner : MonoBehaviour
 
     void SpawnWaste()
     {
+        Debug.Log("<color=magenta>[WasteSpawner]</color> Çöp üretimi tetiklendi!");
         // 2. Özellik: Anti-Tekrar Sistemi
         GameObject selectedPrefab = GetRandomPrefab();
 
