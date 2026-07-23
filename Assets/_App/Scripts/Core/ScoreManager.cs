@@ -176,6 +176,15 @@ namespace RecycleRush.Core
             // UI'a kombonun arttığını haber ver
             OnComboChanged?.Invoke(ComboCount, CurrentMultiplier);
             
+            // Eğer oyuncu tam çarpan (multiplier) eşiklerine ulaştıysa KOMBO SESİNİ çal!
+            if (ComboCount == 3 || ComboCount == 5)
+            {
+                if (AudioManager.Instance != null)
+                {
+                    AudioManager.Instance.PlayComboSound();
+                }
+            }
+            
             Debug.Log($"<color=orange>[ScoreManager]</color> Kombo: {ComboCount} | Çarpan: x{CurrentMultiplier}");
         }
 
