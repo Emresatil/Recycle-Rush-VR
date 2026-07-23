@@ -31,6 +31,9 @@ namespace RecycleRush.Core
         // Event: Kombo değiştiğinde UI'a haber verecek olan sinyal. Parametreler: (ComboCount, Multiplier)
         public Action<int, int> OnComboChanged;
 
+        // YENİ: En Yüksek Skor (High Score) Verisi
+        public int HighScore { get; private set; }
+
         private void Awake()
         {
             // Singleton Kurulumu
@@ -47,6 +50,9 @@ namespace RecycleRush.Core
             }
 
             CurrentScore = _startingScore;
+            
+            // Adım 1: Oyun başlarken hafızadaki eski rekoru yükle
+            HighScore = PlayerPrefs.GetInt("HighScore", 0);
         }
 
         private void Start()
@@ -63,6 +69,12 @@ namespace RecycleRush.Core
             DestroyZone.OnWasteMissed += HandleWasteMissed;
             // Anti-Cheat: Yere düşüp zamanı dolan atıklar için FloorZone sinyalini dinle
             RecycleRush.Environment.FloorZone.OnWasteMissedFloor += HandleWasteMissed;
+            
+            // YENİ: Oyunun durum değişikliklerini dinle (GameOver olduğunda skoru kaydetmek için)
+            if (GameManager.Instance != null || true) // GameManager statik event olduğu için direkt sınıftan da dinlenebilir
+            {
+                GameManager.OnGameStateChanged += HandleGameStateChanged;
+            }
         }
 
         private void OnDisable()
@@ -71,6 +83,38 @@ namespace RecycleRush.Core
             BinTrigger.OnWasteProcessed -= HandleWasteProcessed;
             DestroyZone.OnWasteMissed -= HandleWasteMissed;
             RecycleRush.Environment.FloorZone.OnWasteMissedFloor -= HandleWasteMissed;
+            
+            GameManager.OnGameStateChanged -= HandleGameStateChanged;
+        }
+
+        /// <summary>
+        /// GameManager'dan gelen oyun durumu değişikliklerini yakalar.
+        /// </summary>
+        private void HandleGameStateChanged(GameState state)
+        {
+            if (state == GameState.GameOver)
+            {
+                SaveHighScore();
+            }
+        }
+
+        /// <summary>
+        /// Oyun bittiğinde güncel skoru kontrol eder, rekor kırıldıysa cihaz hafızasına kalıcı olarak kaydeder.
+        /// </summary>
+        private void SaveHighScore()
+        {
+            if (CurrentScore > HighScore)
+            {
+                HighScore = CurrentScore;
+                PlayerPrefs.SetInt("HighScore", HighScore);
+                PlayerPrefs.Save(); // Veriyi anında diske yazmayı garantiler
+                
+                Debug.Log($"<color=green>[ScoreManager]</color> YENİ REKOR! Skor: {HighScore} cihaz hafızasına kaydedildi.");
+            }
+            else
+            {
+                Debug.Log($"[ScoreManager] Oyun bitti. Skor: {CurrentScore}. Rekor kırılamadı (Rekor: {HighScore}).");
+            }
         }
 
         /// <summary>
