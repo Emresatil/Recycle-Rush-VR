@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 1061668011245160013}
   - component: {fileID: 6021365327930196045}
   - component: {fileID: 295135201443652798}
-  - component: {fileID: -5213685946248388692}
   m_Layer: 0
   m_Name: Shampoo Bottle Variant A
   m_TagString: Plastic
@@ -192,18 +191,6 @@ MonoBehaviour:
   m_LimitAngularVelocity: 0
   m_MaxLinearVelocityDelta: 10
   m_MaxAngularVelocityDelta: 20
---- !u!114 &-5213685946248388692
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1712690235699389714}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b3f7e43b076dfaf45b644e877de6ae09, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RecycleRush.Interaction.WasteAudioFeedback
 --- !u!1 &5916829785637130947
 GameObject:
   m_ObjectHideFlags: 0
