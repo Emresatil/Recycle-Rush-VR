@@ -48,6 +48,12 @@ MonoBehaviour:
   statusText: {fileID: 0}
   restartButtonObj: {fileID: 0}
   comboText: {fileID: 0}
+  settingsPanel: {fileID: 0}
+  pausePanel: {fileID: 0}
+  pauseButtonUIObj: {fileID: 0}
+  bgmSlider: {fileID: 0}
+  sfxSlider: {fileID: 0}
+  menuPauseAction: {fileID: 0}
 --- !u!1 &667207769190123117
 GameObject:
   m_ObjectHideFlags: 0
@@ -101,12 +107,14 @@ MonoBehaviour:
   _uiClickClip: {fileID: 8300000, guid: 7480ddf1f056e304eb9d09b59a713ccf, type: 3}
   _uiVolume: 0.8
   _engineSource: {fileID: 0}
-  _engineClip: {fileID: 0}
-  _leverClip: {fileID: 0}
+  _engineClip: {fileID: 8300000, guid: 432b8184db3017847bb21d74c748afbb, type: 3}
+  _leverClip: {fileID: 8300000, guid: 9fd032a548d321642ba194794128c1f9, type: 3}
   _dingClip: {fileID: 8300000, guid: 46e84f7f1d0a7984cb8af989c5d59499, type: 3}
   _buzzerClip: {fileID: 8300000, guid: 5812b599f0b70374e9ee1dc4dda029ce, type: 3}
   _grabClip: {fileID: 8300000, guid: 5e5908eed6c434f45a46e42edc1aca0f, type: 3}
   _releaseClip: {fileID: 8300000, guid: 3163e918b0b2b594391af2a7d5295e09, type: 3}
+  _floorPenaltyClip: {fileID: 8300000, guid: e733fb34f58bc794185e79c892e501d1, type: 3}
+  _comboClip: {fileID: 8300000, guid: 406b74154f18b974fa9014b9792ee218, type: 3}
 --- !u!82 &6416310895067585280
 AudioSource:
   m_ObjectHideFlags: 0
@@ -447,6 +455,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
   _gameDuration: 60
+  buttonsModule: {fileID: 0}
 --- !u!1 &5433758103073617026
 GameObject:
   m_ObjectHideFlags: 0

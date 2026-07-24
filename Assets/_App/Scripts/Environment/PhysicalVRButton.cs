@@ -20,7 +20,7 @@ namespace RecycleRush.Environment
         [Tooltip("Butonun aşağı inme ve eski haline dönme (yaylanma) animasyon hızı")]
         [SerializeField] private float _springSpeed = 0.05f;
 
-        public enum ButtonType { Custom, Play, Pause, Retry, Settings }
+        public enum ButtonType { Custom, Play, Pause, Retry, Settings, Exit }
 
         [Header("Game Actions & Feedback")]
         [Tooltip("Butonun oyun içindeki görevi (Özel bir görevse Custom seçip OnPressed eventini kullanın)")]
@@ -233,6 +233,14 @@ namespace RecycleRush.Environment
                     {
                         Debug.LogWarning("<color=red>[PhysicalVRButton]</color> Settings Panel atanmış bir UIManager bulunamadı!");
                     }
+                    break;
+                case ButtonType.Exit:
+                    Debug.Log("<color=red>[PhysicalVRButton]</color> Exit butonuna basıldı. Oyundan/Editörden çıkılıyor...");
+                    #if UNITY_EDITOR
+                        UnityEditor.EditorApplication.isPlaying = false;
+                    #else
+                        Application.Quit();
+                    #endif
                     break;
                 case ButtonType.Custom:
                 default:

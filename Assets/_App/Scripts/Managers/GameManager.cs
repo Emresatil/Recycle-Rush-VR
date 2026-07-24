@@ -8,7 +8,7 @@ public enum GameState
     MainMenu,
     ReadyToStart,
     Tutorial,
-    Countdown, // YENİ: Oyun tam başlamadan önceki 3-2-1 sayacı
+    Countdown, // Eklendi: UIManager'ın kullandığı geri sayım durumu
     Playing,
     Paused,
     GameOver
@@ -126,12 +126,20 @@ public class GameManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Play butonuna basıldığında sistemi kol çekilmeye (Vardiya başlangıcına) hazırlar.
+    /// Play veya Restart butonuna basıldığında sistemi kol çekilmeye (Vardiya başlangıcına) hazırlar.
     /// </summary>
     public void PrepareToStart()
     {
         if (CurrentState == GameState.MainMenu || CurrentState == GameState.GameOver)
         {
+            RemainingTime = _gameDuration;
+            OnGameTimeUpdated?.Invoke(RemainingTime); // Ekrandaki zaman yazısını anında 60 yap
+
+            if (RecycleRush.Core.ScoreManager.Instance != null)
+            {
+                RecycleRush.Core.ScoreManager.Instance.ResetScore(); // Skoru ve komboyu sıfırla
+            }
+
             ChangeState(GameState.ReadyToStart);
         }
     }
@@ -141,9 +149,16 @@ public class GameManager : MonoBehaviour
     /// </summary>
     public void StartGame()
     {
-        // Şimdilik Tutorial (Eğitim) kısmını atlıyoruz çünkü eksik atamalar var ve hata veriyor.
-        // Direkt olarak GERİ SAYIM durumuna geçir.
-        ChangeState(GameState.Countdown);
+        // Eğitimi hiç tamamlamamışsa (0 ise) veya anahtar yoksa Tutorial'e geç
+        if (PlayerPrefs.GetInt("TutorialDone", 0) == 0)
+        {
+            ChangeState(GameState.Tutorial);
+        }
+        else
+        {
+            RemainingTime = _gameDuration;
+            ChangeState(GameState.Playing);
+        }
     }
 
     /// <summary>
