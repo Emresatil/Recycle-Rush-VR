@@ -12,9 +12,9 @@ public class WasteSpawner : MonoBehaviour
     
     [Header("Organik Zamanlama (Zorluk)")]
     [Tooltip("En az kaç saniyede bir atık düşsün?")]
-    public float minSpawnInterval = 1.5f;
+    public float minSpawnInterval = 0.8f;
     [Tooltip("En fazla kaç saniyede bir atık düşsün?")]
-    public float maxSpawnInterval = 3.5f;
+    public float maxSpawnInterval = 1.5f;
 
     [Header("Organik Konum (Dağılım)")]
     [Tooltip("Çöpler bandın sağına/soluna ne kadar kayarak düşebilir?")]
@@ -117,41 +117,58 @@ public class WasteSpawner : MonoBehaviour
 
     void SpawnWaste()
     {
-        Debug.Log("<color=magenta>[WasteSpawner]</color> Çöp üretimi tetiklendi!");
-        // 2. Özellik: Anti-Tekrar Sistemi
+        // Null koruması
+        if (spawnPoint == null || wastePrefabs == null || wastePrefabs.Length == 0) return;
+
+        // 2. Özellik: Anti-Tekrar Sistemli Geçerli Prefab Seçimi
         GameObject selectedPrefab = GetRandomPrefab();
 
-        // 3. Özellik: Rastgele Konum (Offset). Genişlik 0.1'e düşürüldü ki bandı aşmasınlar
-        Vector3 randomOffset = new Vector3(Random.Range(-spawnWidthOffset, spawnWidthOffset), 0f, 0f);
+        if (selectedPrefab == null)
+        {
+            Debug.LogWarning("<color=yellow>[WasteSpawner]</color> Atık üretilemedi! Prefab listesinde geçerli obje bulunamadı.");
+            return;
+        }
+
+        Debug.Log($"<color=magenta>[WasteSpawner]</color> Çöp üretimi tetiklendi: {selectedPrefab.name}");
+
+        // 3. Özellik: Rastgele Konum (Z ekseninde genişlik offseti)
+        Vector3 randomOffset = new Vector3(0f, 0f, Random.Range(-spawnWidthOffset, spawnWidthOffset));
         Vector3 finalSpawnPosition = spawnPoint.position + randomOffset;
 
-        // 4. Özellik: DÜZELTME - Çöpler yatay düşmesin diye sadece Y ekseninde (kendi etrafında) döndürüyoruz!
-        // Eskiden Random.rotation idi, bu yüzden şişeler yan veya ters doğuyordu.
+        // 4. Özellik: Dik Rotasyon
         Quaternion uprightRandomRotation = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
 
-        // Obje üretimi yerine havuzdan çek (Daha performanslı)
+        // Obje üretimi veya havuzdan çekim
         ObjectPoolManager.Instance.SpawnFromPool(selectedPrefab.tag, selectedPrefab, finalSpawnPosition, uprightRandomRotation);
     }
 
-    // Üst üste aynı objenin gelmesini engelleyen özel fonksiyon
+    // Üst üste aynı objenin gelmesini engelleyen ve NULL elemanları süzcen fonksiyon
     GameObject GetRandomPrefab()
     {
+        // 1) Önce listedeki sadece NULL OLMAYAN (geçerli) prefab'ları topla
+        System.Collections.Generic.List<GameObject> validPrefabs = new System.Collections.Generic.List<GameObject>();
+        foreach (var p in wastePrefabs)
+        {
+            if (p != null) validPrefabs.Add(p);
+        }
+
+        if (validPrefabs.Count == 0) return null;
+
         GameObject selected = null;
-        int maxAttempts = 3; // Sonsuz döngüyü önlemek için 3 deneme hakkı
+        int maxAttempts = 3;
         
         for (int i = 0; i < maxAttempts; i++)
         {
-            int randomIndex = Random.Range(0, wastePrefabs.Length);
-            selected = wastePrefabs[randomIndex];
+            int randomIndex = Random.Range(0, validPrefabs.Count);
+            selected = validPrefabs[randomIndex];
             
-            // Eğer seçilen obje bir öncekiyle aynı DEĞİLSE döngüden çık ve onu kullan
-            if (selected != _lastSpawnedPrefab)
+            if (selected != _lastSpawnedPrefab || validPrefabs.Count == 1)
             {
                 break;
             }
         }
 
-        _lastSpawnedPrefab = selected; // Hafızayı güncelle
+        _lastSpawnedPrefab = selected;
         return selected;
     }
 }
