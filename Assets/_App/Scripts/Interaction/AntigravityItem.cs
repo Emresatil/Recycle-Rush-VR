@@ -7,6 +7,9 @@ using UnityEngine.XR.Interaction.Toolkit.Interactors;
 public class AntigravityItem : MonoBehaviour
 {
     [Header("Antigravity Settings")]
+    [SerializeField, Tooltip("Havada süzülme aktif mi? (Bant üzerindeki atıklar için FALSE olmalıdır)")]
+    private bool _enableFloating = false;
+
     [SerializeField, Tooltip("Havada süzülürken uygulanacak yukarı yönlü kuvvet.")]
     private float _floatForce = 0.5f;
 
@@ -22,7 +25,17 @@ public class AntigravityItem : MonoBehaviour
     {
         // Önbellekleme (Caching) - Garbage Collection'ı yormamak için
         _rb = GetComponent<Rigidbody>();
+        if (_rb == null) _rb = GetComponentInChildren<Rigidbody>();
+        
+        // Prefab yapısına göre XRGrabInteractable root'ta, alt objede veya üst objede olabilir. Hepsini tara!
         _grabInteractable = GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>();
+        if (_grabInteractable == null) _grabInteractable = GetComponentInChildren<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>();
+        if (_grabInteractable == null) _grabInteractable = GetComponentInParent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>();
+
+        if (_grabInteractable == null)
+        {
+            Debug.LogError($"[AntigravityItem] KRİTİK HATA! {gameObject.name} üzerinde XRGrabInteractable bulunamadı! Tutma sesleri ve titreşim çalışmayacak.");
+        }
     }
 
     private void OnEnable()
@@ -66,7 +79,14 @@ public class AntigravityItem : MonoBehaviour
         
         if (_rb != null)
         {
-            _rb.useGravity = false; // Yerçekimini kapat (Antigravity başlangıcı)
+            if (_enableFloating)
+            {
+                _rb.useGravity = false; // Yerçekimini kapat (Antigravity başlangıcı)
+            }
+            else
+            {
+                _rb.useGravity = true; // Süzülme kapalıysa yerçekiminin AÇIK olduğundan emin ol!
+            }
             _rb.linearVelocity = Vector3.zero; // Önceki hareketleri sıfırla
             _rb.angularVelocity = Vector3.zero;
         }
@@ -84,7 +104,7 @@ public class AntigravityItem : MonoBehaviour
     /// </summary>
     private void ApplyAntigravity()
     {
-        if (_rb == null) return;
+        if (_rb == null || !_enableFloating) return;
 
         // Yukarı doğru hafif süzülme kuvveti
         _rb.AddForce(Vector3.up * _floatForce, ForceMode.Force);
