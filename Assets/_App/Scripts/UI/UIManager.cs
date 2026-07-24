@@ -33,6 +33,10 @@ namespace RecycleRush.UI
         public GameObject settingsPanel;
         [Tooltip("Duraklatma (Pause) Paneli")]
         public GameObject pausePanel;
+        [Tooltip("Oyun Bitti (GameOver) Paneli")]
+        public GameObject gameOverPanel;
+        [Tooltip("Oyun Bittiğinde son skoru gösterecek TextMeshProUGUI bileşeni")]
+        public TextMeshProUGUI gameOverFinalScoreText;
         [Tooltip("Oyun içi UI Duraklatma (Pause) Butonu objesi")]
         public GameObject pauseButtonUIObj;
         
@@ -104,6 +108,7 @@ namespace RecycleRush.UI
             // Panelleri başlangıçta gizle
             if (settingsPanel != null) settingsPanel.SetActive(false);
             if (pausePanel != null) pausePanel.SetActive(false);
+            if (gameOverPanel != null) gameOverPanel.SetActive(false);
             if (pauseButtonUIObj != null) pauseButtonUIObj.SetActive(false);
         }
 
@@ -152,6 +157,7 @@ namespace RecycleRush.UI
                     // Restart ve Pause butonlarını gizle
                     if (restartButtonObj != null) restartButtonObj.SetActive(false);
                     if (pauseButtonUIObj != null) pauseButtonUIObj.SetActive(false);
+                    if (gameOverPanel != null) gameOverPanel.SetActive(false);
                     break;
                     
                 case GameState.ReadyToStart:
@@ -163,12 +169,14 @@ namespace RecycleRush.UI
                             statusText.text = "SYSTEM READY\nPULL THE LEVER TO START";
                     }
                     if (pauseButtonUIObj != null) pauseButtonUIObj.SetActive(true); // Butona basılınca da Pause butonu görünsün!
+                    if (gameOverPanel != null) gameOverPanel.SetActive(false);
                     break;
                     
                 case GameState.Playing:
                     if (statusText != null) statusText.text = "RECYCLING STARTED";
                     if (restartButtonObj != null) restartButtonObj.SetActive(false);
                     if (pausePanel != null) pausePanel.SetActive(false);
+                    if (gameOverPanel != null) gameOverPanel.SetActive(false);
                     if (pauseButtonUIObj != null) 
                         pauseButtonUIObj.SetActive(true);
                     else
@@ -178,6 +186,7 @@ namespace RecycleRush.UI
                 case GameState.Countdown:
                     if (restartButtonObj != null) restartButtonObj.SetActive(false);
                     if (pausePanel != null) pausePanel.SetActive(false);
+                    if (gameOverPanel != null) gameOverPanel.SetActive(false);
                     if (pauseButtonUIObj != null) pauseButtonUIObj.SetActive(false);
                     StartCoroutine(StartCountdownAnimation());
                     break;
@@ -186,19 +195,30 @@ namespace RecycleRush.UI
                     // TutorialManager yazıları kendisi yönetecek, burada sadece butonu gizliyoruz
                     if (restartButtonObj != null) restartButtonObj.SetActive(false);
                     if (pausePanel != null) pausePanel.SetActive(false);
+                    if (gameOverPanel != null) gameOverPanel.SetActive(false);
                     if (pauseButtonUIObj != null) pauseButtonUIObj.SetActive(false);
                     break;
                     
                 case GameState.Paused:
                     if (statusText != null) statusText.text = "SYSTEM PAUSED";
                     if (pausePanel != null) pausePanel.SetActive(true);
+                    if (gameOverPanel != null) gameOverPanel.SetActive(false);
                     if (pauseButtonUIObj != null) pauseButtonUIObj.SetActive(false);
                     break;
 
                 case GameState.GameOver:
                     if (statusText != null) statusText.text = "<color=red>TIME'S UP!</color>\nCONVEYOR STOPPED";
                     
-                    // Oyun bittiğinde Restart butonunu ortaya çıkar!
+                    // Oyun bittiğinde GameOver panelini aç ve son skoru yazdır!
+                    if (gameOverPanel != null) 
+                    {
+                        gameOverPanel.SetActive(true);
+                    }
+                    if (gameOverFinalScoreText != null && RecycleRush.Core.ScoreManager.Instance != null)
+                    {
+                        gameOverFinalScoreText.text = $"FINAL SCORE: {RecycleRush.Core.ScoreManager.Instance.CurrentScore}";
+                    }
+
                     if (restartButtonObj != null) restartButtonObj.SetActive(true);
                     if (pausePanel != null) pausePanel.SetActive(false);
                     if (pauseButtonUIObj != null) pauseButtonUIObj.SetActive(false);
@@ -401,6 +421,14 @@ namespace RecycleRush.UI
             if (GameManager.Instance != null)
             {
                 GameManager.Instance.PauseGame();
+            }
+        }
+
+        public void RestartGameUI()
+        {
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.PrepareToStart();
             }
         }
 
