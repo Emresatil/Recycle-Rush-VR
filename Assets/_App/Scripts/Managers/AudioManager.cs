@@ -181,6 +181,8 @@ public class AudioManager : MonoBehaviour
         if (_comboClip != null && _uiSource != null)
         {
             _uiSource.PlayOneShot(_comboClip, 1.0f);
+        }
+    }
     /// Arkaplan müziğinin (BGM) ses seviyesini ayarlar. UI Slider OnValueChanged eventine bağlanmalıdır.
     /// </summary>
     public void SetBGMVolume(float volume)
