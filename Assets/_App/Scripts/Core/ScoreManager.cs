@@ -251,6 +251,16 @@ namespace RecycleRush.Core
         }
 
         /// <summary>
+        /// Oyunu yeniden başlatırken skoru ve komboyu sıfırlar.
+        /// </summary>
+        public void ResetScore()
+        {
+            CurrentScore = _startingScore;
+            ResetCombo();
+            OnScoreChanged?.Invoke(CurrentScore);
+        }
+
+        /// <summary>
         /// Yanlış atık eşleşmesinde çağrılır ve puan düşer.
         /// </summary>
         /// <param name="amount">Silinecek puan miktarı</param>

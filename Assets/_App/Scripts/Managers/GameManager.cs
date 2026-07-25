@@ -126,12 +126,20 @@ public class GameManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Play butonuna basıldığında sistemi kol çekilmeye (Vardiya başlangıcına) hazırlar.
+    /// Play veya Restart butonuna basıldığında sistemi kol çekilmeye (Vardiya başlangıcına) hazırlar.
     /// </summary>
     public void PrepareToStart()
     {
         if (CurrentState == GameState.MainMenu || CurrentState == GameState.GameOver)
         {
+            RemainingTime = _gameDuration;
+            OnGameTimeUpdated?.Invoke(RemainingTime); // Ekrandaki zaman yazısını anında 60 yap
+
+            if (RecycleRush.Core.ScoreManager.Instance != null)
+            {
+                RecycleRush.Core.ScoreManager.Instance.ResetScore(); // Skoru ve komboyu sıfırla
+            }
+
             ChangeState(GameState.ReadyToStart);
         }
     }
