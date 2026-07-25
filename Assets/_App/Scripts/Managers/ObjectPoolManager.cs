@@ -29,39 +29,46 @@ public class ObjectPoolManager : MonoBehaviour
     /// </summary>
     public GameObject SpawnFromPool(string tag, GameObject prefab, Vector3 position, Quaternion rotation)
     {
-        // Havuzda bu tag için bir kuyruk yoksa ilk defa oluştur
-        if (!_poolDictionary.ContainsKey(tag))
+        if (prefab == null) return null;
+
+        // Tag yerine Prefab ismini key olarak kullanıyoruz (Farklı objeler aynı tag'de karışmasın!)
+        string poolKey = prefab.name.Replace("(Clone)", "").Trim();
+
+        if (!_poolDictionary.ContainsKey(poolKey))
         {
-            _poolDictionary[tag] = new Queue<GameObject>();
-            _prefabDictionary[tag] = prefab;
+            _poolDictionary[poolKey] = new Queue<GameObject>();
+            _prefabDictionary[poolKey] = prefab;
         }
 
-        GameObject objToSpawn;
+        GameObject objToSpawn = null;
 
-        // Havuzda kullanılmayan obje varsa onu al
-        if (_poolDictionary[tag].Count > 0)
+        // Havuzdaki ölü/silinmiş referansları temizleyerek ilk geçerli canlı objeyi bul
+        while (_poolDictionary[poolKey].Count > 0)
         {
-            objToSpawn = _poolDictionary[tag].Dequeue();
+            objToSpawn = _poolDictionary[poolKey].Dequeue();
+            if (objToSpawn != null) break;
         }
-        else
+
+        // Eğer havuz boşsa veya içindekilerin hepsi ölmüşse, yeni taze obje yarat
+        if (objToSpawn == null)
         {
-            // Havuz boşsa (hepsi sahnede aktifse), mecbur 1 tane yeni obje yarat ve kapasiteyi artır
-            // NOT: SetParent KULLANMIYORUZ! Çünkü BinTrigger gibi sistemler transform.root ile objeyi arıyor.
-            // Eğer bunu ObjectPoolManager'ın altına atarsak, root ObjectPoolManager olur ve sistem kendi kendini imha eder!
             objToSpawn = Instantiate(prefab);
+            objToSpawn.name = poolKey; // (Clone) takısını temiz tut
         }
 
-        // Objenin pozisyonunu ve açısını ayarla
         objToSpawn.transform.position = position;
         objToSpawn.transform.rotation = rotation;
         objToSpawn.SetActive(true);
 
-        // Önceki hareketinden kalan Fiziksel (Hız) etkilerini sıfırla ki havada uçmasın!
+        // Önceki hareketinden kalan Fiziksel etkileri ve kilitleri tam fabrika ayarlarına sıfırla
         Rigidbody rb = objToSpawn.GetComponent<Rigidbody>();
         if (rb != null)
         {
             rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
+            rb.isKinematic = false;
+            rb.useGravity = true;
+            rb.constraints = RigidbodyConstraints.None;
         }
 
         return objToSpawn;
@@ -72,18 +79,20 @@ public class ObjectPoolManager : MonoBehaviour
     /// </summary>
     public void ReturnToPool(GameObject obj)
     {
+        if (obj == null) return;
+
         obj.SetActive(false); // Görünmez yap
         
-        // Objenin tag'ine göre doğru havuza geri ekle
-        if (_poolDictionary.ContainsKey(obj.tag))
+        string poolKey = obj.name.Replace("(Clone)", "").Trim();
+
+        if (_poolDictionary.ContainsKey(poolKey))
         {
-            _poolDictionary[obj.tag].Enqueue(obj);
-            Debug.Log($"<color=green>[ObjectPoolManager]</color> {obj.name} objesi (Tag: {obj.tag}) havuza başarıyla eklendi. Kuyrukta {_poolDictionary[obj.tag].Count} obje var.");
+            _poolDictionary[poolKey].Enqueue(obj);
+            Debug.Log($"<color=green>[ObjectPoolManager]</color> {obj.name} havuza eklendi. ({poolKey} havuzunda {_poolDictionary[poolKey].Count} obje var)");
         }
         else
         {
-            // Eğer objenin tag'i havuzda yoksa (örneğin havuzdan çıkmamış harici bir objeyse) tamamen sil
-            Debug.Log($"<color=red>[ObjectPoolManager]</color> {obj.name} objesi (Tag: {obj.tag}) havuzda bulunamadığı için SİLİNİYOR! Mevcut Havuz Tagleri: {string.Join(", ", _poolDictionary.Keys)}");
+            Debug.Log($"<color=orange>[ObjectPoolManager]</color> {obj.name} için havuz bulunamadı, yok ediliyor.");
             Destroy(obj);
         }
     }

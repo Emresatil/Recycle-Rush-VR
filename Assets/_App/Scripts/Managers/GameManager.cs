@@ -8,7 +8,7 @@ public enum GameState
     MainMenu,
     ReadyToStart,
     Tutorial,
-    Countdown, // YENİ: Oyun tam başlamadan önceki 3-2-1 sayacı
+    Countdown, // Eklendi: UIManager'ın kullandığı geri sayım durumu
     Playing,
     Paused,
     GameOver
@@ -141,9 +141,16 @@ public class GameManager : MonoBehaviour
     /// </summary>
     public void StartGame()
     {
-        // Şimdilik Tutorial (Eğitim) kısmını atlıyoruz çünkü eksik atamalar var ve hata veriyor.
-        // Direkt olarak GERİ SAYIM durumuna geçir.
-        ChangeState(GameState.Countdown);
+        // Eğitimi hiç tamamlamamışsa (0 ise) veya anahtar yoksa Tutorial'e geç
+        if (PlayerPrefs.GetInt("TutorialDone", 0) == 0)
+        {
+            ChangeState(GameState.Tutorial);
+        }
+        else
+        {
+            RemainingTime = _gameDuration;
+            ChangeState(GameState.Playing);
+        }
     }
 
     /// <summary>
