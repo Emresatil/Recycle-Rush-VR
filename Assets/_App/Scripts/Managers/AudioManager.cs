@@ -63,8 +63,14 @@ public class AudioManager : MonoBehaviour
         if (_engineSource != null && _engineClip != null)
         {
             _engineSource.clip = _engineClip;
-            _engineSource.loop = true; // Döngüyü koddan açtık
             _engineSource.Stop(); // Başlangıçta oynamasın (Play On Awake açıksa diye)
+        }
+
+        // UI ve SFX (Grab, Release, Penalty) seslerinin sahnede mesafeden bağımsız net duyulması için 2D ayarı
+        if (_uiSource != null)
+        {
+            _uiSource.volume = _uiVolume;
+            _uiSource.spatialBlend = 0f; // 2D Ses: Sahnede nerede olunursa olunsun net duyulsun
         }
     }
 

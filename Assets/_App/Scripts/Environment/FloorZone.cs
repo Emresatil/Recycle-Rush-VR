@@ -50,6 +50,14 @@ namespace RecycleRush.Environment
                 GameObject rootObj = other.transform.root.gameObject;
                 XRGrabInteractable grabInteractable = rootObj.GetComponentInChildren<XRGrabInteractable>();
 
+                if (!_itemsOnFloor.ContainsKey(other))
+                {
+                    if (AudioManager.Instance != null)
+                    {
+                        AudioManager.Instance.PlayFloorPenaltySound();
+                    }
+                }
+
                 _itemsOnFloor[other] = new FloorItem
                 {
                     DropTime = Time.time,
@@ -90,6 +98,13 @@ namespace RecycleRush.Environment
                 if (item.Interactable != null && item.Interactable.isSelected)
                 {
                     item.DropTime = Time.time; // Süreyi sıfırlıyoruz ki elinde tuttuğu sürece patlamasın
+                    continue;
+                }
+
+                // 1.5 KORUMA: Eğer obje bant üzerindeyse veya banda değiyorsa ceza verme!
+                if (IsOnConveyorBelt(item.RootObject))
+                {
+                    item.DropTime = Time.time; // Banttayken süreyi sıfırla
                     continue;
                 }
 
@@ -145,6 +160,35 @@ namespace RecycleRush.Environment
                    obj.CompareTag("Glass") || 
                    obj.CompareTag("Plastic") || 
                    obj.CompareTag("Metal");
+        }
+
+        /// <summary>
+        /// Objenin şu an bant üzerinde hareket edip etmediğini kontrol eder.
+        /// </summary>
+        private bool IsOnConveyorBelt(GameObject rootObj)
+        {
+            if (rootObj == null) return false;
+
+            // Objenin merkezinden veya çocuklarından aşağıya ışın (Raycast) at
+            if (Physics.Raycast(rootObj.transform.position, Vector3.down, out RaycastHit hit, 0.8f))
+            {
+                if (hit.collider != null && hit.collider.GetComponentInParent<BeltMovement>() != null)
+                {
+                    return true;
+                }
+            }
+
+            // Ayrıca obje doğrudan BeltMovement ile temas ediyor mu kontrol et
+            Collider[] hits = Physics.OverlapSphere(rootObj.transform.position, 0.4f);
+            foreach (var c in hits)
+            {
+                if (c != null && c.GetComponentInParent<BeltMovement>() != null)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }
