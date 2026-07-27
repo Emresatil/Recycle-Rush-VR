@@ -49,66 +49,64 @@ public class BeltMovement : MonoBehaviour
 
     void FixedUpdate()
     {
-        // Fizik motorunda bandı ileri doğru hareket ettiriyoruz gibi gösterip, 
-        // sonra pozisyonunu geri alıyoruz. 
-        // Bu sayede bandın üzerindeki objeler sürtünmeyle o yöne doğru kayarken,
-        // bandın kendisi yerinde sabit kalıyor.
-        Vector3 movement = direction.normalized * speed * Time.fixedDeltaTime;
-        
-        // Bandı geriye çek...
-        rb.position -= movement;
-        
-        // ...ve tekrar ileriye doğru MovePosition ile taşı.
-        // MovePosition fizik motorunu tetikler ve üzerindeki objeleri de beraberinde sürükler.
-        rb.MovePosition(rb.position + movement);
+        // Bandın kendisini yerinde sabit tutuyoruz.
+        // Objelerin hareketi OnCollisionStay içinde fiziksel hız (linearVelocity) ile sağlanır.
     }
 
     // =====================================================
-    // İLK TEMAS ÇÖZÜMÜ (Bounce & Stabilize)
-    // Obje banda ilk çarptığı anda:
-    // 1. Dikey hızı (Y) sıfırlanır → sekme (bounce) olmaz
-    // 2. Dönme hızı sıfırlanır → savrulma olmaz
-    // 3. Rotasyon kilitlenir → titreme (jitter) olmaz
-    // 4. Obje dik pozisyona getirilir
-    // 5. Collision Detection "Continuous" yapılır → clipping engellenir
+    // BANT ÜZERİNDE HAREKET VE İLK TEMAS
+    // Obje banda çarptığında ve üzerinde kaldığı sürece:
+    // 1. Dikey hızı (Y) korunur, yatay hızı bandın yönü ve hızına eşitlenir.
+    // 2. Bandın üzerindeyse dik kalması için X ve Z rotasyonları kilitlenir.
     // =====================================================
-    void OnCollisionEnter(Collision collision)
+    private void OnCollisionEnter(Collision collision)
     {
         Rigidbody itemRb = collision.rigidbody;
         if (itemRb != null && !itemRb.isKinematic)
         {
-            // Sekmeyi önle: dikey hızı sıfırla, yatay hızı koru
+            // Sekmeyi önle: dikey hızı sıfırla
             Vector3 vel = itemRb.linearVelocity;
             vel.y = 0f;
             itemRb.linearVelocity = vel;
             
-            // Dönme hızını tamamen sıfırla
+            // Dönme hızını sıfırla
             itemRb.angularVelocity = Vector3.zero;
             
-            // Objeyi anında dik pozisyona getir (Y ekseni rotasyonunu koru)
+            // Objeyi anında dik pozisyona getir
             Vector3 currentEuler = itemRb.transform.eulerAngles;
             itemRb.transform.rotation = Quaternion.Euler(0f, currentEuler.y, 0f);
 
-            // Rotasyonu kilitle → Titreme (jitter) tamamen engellenir.
-            // Spawner'dan gelen tüm objeler otomatik olarak bu ayarı alır,
-            // tek tek Inspector'dan ayarlamaya gerek kalmaz.
-            itemRb.constraints = RigidbodyConstraints.FreezeRotation;
+            // Bant üzerindeyse devrilmemesi için rotasyonu kilitle
+            itemRb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
             
             // İçinden geçmeyi (clipping) önle
             itemRb.collisionDetectionMode = CollisionDetectionMode.Continuous;
         }
     }
 
+    private void OnCollisionStay(Collision collision)
+    {
+        Rigidbody itemRb = collision.rigidbody;
+        if (itemRb != null && !itemRb.isKinematic)
+        {
+            // Obje bant üzerindeyken bandın yönünde pürüzsüzce kaydır (Teleport/Fırlama tamamen engellenir)
+            Vector3 targetVel = direction.normalized * speed;
+            itemRb.linearVelocity = new Vector3(targetVel.x, itemRb.linearVelocity.y, targetVel.z);
+        }
+    }
+
     // =====================================================
     // BANTTAN ÇIKIŞ ÇÖZÜMÜ
-    // Obje banttan ayrıldığında (oyuncu eline aldığında veya
-    // bandın sonundan düştüğünde) rotasyon kilidini geri aç.
-    // Böylece oyuncu objeyi serbestçe döndürüp fırlatabilir.
+    // Obje banttan ayrıldığında (düştüğünde veya fırladığında)
+    // rotasyon kilidini aç, böylece doğal şekilde devrilebilir.
     // =====================================================
-    void OnCollisionExit(Collision collision)
+    private void OnCollisionExit(Collision collision)
     {
-        // Not: XRGrabInteractable nesne tutulduğunda kendi rotasyon/hareket kilitlerini
-        // otomatik yönettigi için burada mikro-sıçramalarda rotasyon kilidini hemen açmıyoruz.
-        // Böylece objeler bant üzerinde ilerlerken savrulmaz veya fırlamaz.
+        Rigidbody itemRb = collision.rigidbody;
+        if (itemRb != null && !itemRb.isKinematic)
+        {
+            // Banttan çıkınca kilitleri tamamen aç
+            itemRb.constraints = RigidbodyConstraints.None;
+        }
     }
 }

@@ -119,7 +119,7 @@ public class WasteSpawner : MonoBehaviour
         if (spawnPoint == null || wastePrefabs == null || wastePrefabs.Length == 0) return;
 
         // 1.5 Özellik: Doğma noktasının henüz boşalıp boşalmadığını kontrol et (Üst üste doğup patlamayı %100 engeller)
-        Collider[] existingColliders = Physics.OverlapSphere(spawnPoint.position, 0.25f);
+        Collider[] existingColliders = Physics.OverlapSphere(spawnPoint.position, 0.35f);
         foreach (var col in existingColliders)
         {
             if (col.transform.root != spawnPoint.root && !col.isTrigger && col.attachedRigidbody != null)
@@ -134,8 +134,8 @@ public class WasteSpawner : MonoBehaviour
 
         Debug.Log($"<color=magenta>[WasteSpawner]</color> Çöp üretimi tetiklendi: {selectedPrefab.name}");
 
-        // 3. Özellik: Sabit Konum (Y ekseninde çakışma önleyici hafif yükseklik)
-        Vector3 fixedOffset = new Vector3(0f, 0.05f, 0f);
+        // 3. Özellik: Sabit Konum (Y ekseninde çakışma önleyici 0.1m yükseklik)
+        Vector3 fixedOffset = new Vector3(0f, 0.1f, 0f);
         Vector3 finalSpawnPosition = spawnPoint.position + fixedOffset;
 
         // 4. Özellik: Dik Rotasyon

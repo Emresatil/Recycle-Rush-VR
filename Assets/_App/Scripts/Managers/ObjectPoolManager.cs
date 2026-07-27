@@ -11,6 +11,15 @@ public class ObjectPoolManager : MonoBehaviour
     // Hangi tag'e sahip objenin hangi prefab'dan üretileceğini hatırlamak için sözlük.
     private Dictionary<string, GameObject> _prefabDictionary = new Dictionary<string, GameObject>();
 
+    [Header("Güvenlik Sınırı (Kill-Z / Out of Bounds)")]
+    [Tooltip("Objeler bu Y koordinatının altına düşerse otomatik havuza döner (Örn: -2.0)")]
+    public float killZLevel = -2.0f;
+    [Tooltip("Objeler sahnede başlangıç noktasından ne kadar uzağa fırlarsa havuza döner (Örn: 12.0)")]
+    public float maxDistance = 12.0f;
+
+    // Sahnede aktif olan havuz objelerini takip etmek için liste
+    private List<GameObject> _activeObjects = new List<GameObject>();
+
     private void Awake()
     {
         // Singleton Deseni
@@ -69,7 +78,7 @@ public class ObjectPoolManager : MonoBehaviour
             rb.isKinematic = false;
             rb.useGravity = true;
             rb.constraints = RigidbodyConstraints.None;
-            rb.maxDepenetrationVelocity = 2.0f; // Çakışmalarda nesnelerin uzaya fırlatılmasını (Physics Explosion) engeller
+            rb.maxDepenetrationVelocity = 0.8f; // Çakışmalarda nesnelerin uzaya fırlatılmasını (Physics Explosion) tam korumayla engeller
         }
 
         // Tutma ve fırlatma seslerinin çalışması için WasteAudioFeedback bileşenini dinamik ekle
@@ -77,6 +86,12 @@ public class ObjectPoolManager : MonoBehaviour
             objToSpawn.GetComponentInChildren<RecycleRush.Interaction.WasteAudioFeedback>() == null)
         {
             objToSpawn.AddComponent<RecycleRush.Interaction.WasteAudioFeedback>();
+        }
+
+        // Aktif objeler listesine ekle (Kill-Z takibi için)
+        if (!_activeObjects.Contains(objToSpawn))
+        {
+            _activeObjects.Add(objToSpawn);
         }
 
         return objToSpawn;
@@ -88,6 +103,12 @@ public class ObjectPoolManager : MonoBehaviour
     public void ReturnToPool(GameObject obj)
     {
         if (obj == null) return;
+
+        // Kill-Z takibinden çıkar
+        if (_activeObjects.Contains(obj))
+        {
+            _activeObjects.Remove(obj);
+        }
 
         obj.SetActive(false); // Görünmez yap
         
@@ -121,6 +142,33 @@ public class ObjectPoolManager : MonoBehaviour
             {
                 Debug.Log($"<color=orange>[ObjectPoolManager]</color> {obj.name} için havuz bulunamadı, yok ediliyor.");
                 Destroy(obj);
+            }
+        }
+    }
+
+    private void Update()
+    {
+        // Geriye doğru döngü kullanıyoruz çünkü döngü içinde ReturnToPool çağırırsak listeden eleman silinecek.
+        for (int i = _activeObjects.Count - 1; i >= 0; i--)
+        {
+            GameObject obj = _activeObjects[i];
+            
+            // Eğer obje bir şekilde sahnede yok edildiyse veya kapatıldıysa listeden çıkar
+            if (obj == null || !obj.activeInHierarchy)
+            {
+                _activeObjects.RemoveAt(i);
+                continue;
+            }
+
+            Vector3 pos = obj.transform.position;
+            
+            // 1. Şart: Yüksekliği Kill-Z sınırının altına düştüyse (Yere düştü ve oyun alanından aşağı uçtuysa)
+            // 2. Şart: Orijinden çok fazla uzaklaştıysa (Fırlayıp uzağa gittiyse)
+            if (pos.y < killZLevel || pos.sqrMagnitude > maxDistance * maxDistance)
+            {
+                Debug.Log($"<color=orange>[ObjectPoolManager - Kill Z]</color> {obj.name} güvenlik sınırlarını aştı! (Konum: {pos}). Otomatik havuza çekiliyor.");
+                ReturnToPool(obj); 
+                // ReturnToPool metodu zaten '_activeObjects.Remove(obj)' yapacağı için listemiz temiz kalır.
             }
         }
     }
