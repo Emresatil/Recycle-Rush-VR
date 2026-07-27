@@ -122,7 +122,7 @@ public class WasteSpawner : MonoBehaviour
         Collider[] existingColliders = Physics.OverlapSphere(spawnPoint.position, 0.25f);
         foreach (var col in existingColliders)
         {
-            if (col.transform.root != spawnPoint.root && col.GetComponentInParent<AntigravityItem>() != null)
+            if (col.transform.root != spawnPoint.root && !col.isTrigger && col.attachedRigidbody != null)
             {
                 Debug.Log("<color=yellow>[WasteSpawner]</color> Doğma noktası henüz boşalmadı, üretim 1 kare ertelendi.");
                 return;
