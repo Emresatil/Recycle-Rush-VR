@@ -107,11 +107,8 @@ public class BeltMovement : MonoBehaviour
     // =====================================================
     void OnCollisionExit(Collision collision)
     {
-        Rigidbody itemRb = collision.rigidbody;
-        if (itemRb != null && !itemRb.isKinematic)
-        {
-            // Rotasyon kilidini kaldır (oyuncu serbestçe döndürebilsin)
-            itemRb.constraints = RigidbodyConstraints.None;
-        }
+        // Not: XRGrabInteractable nesne tutulduğunda kendi rotasyon/hareket kilitlerini
+        // otomatik yönettigi için burada mikro-sıçramalarda rotasyon kilidini hemen açmıyoruz.
+        // Böylece objeler bant üzerinde ilerlerken savrulmaz veya fırlamaz.
     }
 }

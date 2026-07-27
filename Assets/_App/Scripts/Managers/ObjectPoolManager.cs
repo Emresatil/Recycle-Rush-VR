@@ -69,6 +69,14 @@ public class ObjectPoolManager : MonoBehaviour
             rb.isKinematic = false;
             rb.useGravity = true;
             rb.constraints = RigidbodyConstraints.None;
+            rb.maxDepenetrationVelocity = 2.0f; // Çakışmalarda nesnelerin uzaya fırlatılmasını (Physics Explosion) engeller
+        }
+
+        // Tutma ve fırlatma seslerinin çalışması için WasteAudioFeedback bileşenini dinamik ekle
+        if (objToSpawn.GetComponent<RecycleRush.Interaction.WasteAudioFeedback>() == null &&
+            objToSpawn.GetComponentInChildren<RecycleRush.Interaction.WasteAudioFeedback>() == null)
+        {
+            objToSpawn.AddComponent<RecycleRush.Interaction.WasteAudioFeedback>();
         }
 
         return objToSpawn;
@@ -84,6 +92,7 @@ public class ObjectPoolManager : MonoBehaviour
         obj.SetActive(false); // Görünmez yap
         
         string poolKey = obj.name.Replace("(Clone)", "").Trim();
+        poolKey = System.Uri.UnescapeDataString(poolKey);
 
         if (_poolDictionary.ContainsKey(poolKey))
         {
@@ -92,8 +101,27 @@ public class ObjectPoolManager : MonoBehaviour
         }
         else
         {
-            Debug.Log($"<color=orange>[ObjectPoolManager]</color> {obj.name} için havuz bulunamadı, yok ediliyor.");
-            Destroy(obj);
+            // Eğer tam eşleşme bulunamadıysa (Model ismi / özel karakter farkları için) esnek eşleşme ara
+            string matchedKey = null;
+            foreach (var key in _poolDictionary.Keys)
+            {
+                if (poolKey.Contains(key) || key.Contains(poolKey))
+                {
+                    matchedKey = key;
+                    break;
+                }
+            }
+
+            if (matchedKey != null)
+            {
+                _poolDictionary[matchedKey].Enqueue(obj);
+                Debug.Log($"<color=green>[ObjectPoolManager]</color> {obj.name} (Esnek Eşleşen: {matchedKey}) havuza eklendi. ({matchedKey} havuzunda {_poolDictionary[matchedKey].Count} obje var)");
+            }
+            else
+            {
+                Debug.Log($"<color=orange>[ObjectPoolManager]</color> {obj.name} için havuz bulunamadı, yok ediliyor.");
+                Destroy(obj);
+            }
         }
     }
 }

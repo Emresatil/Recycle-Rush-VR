@@ -8,7 +8,6 @@ namespace RecycleRush.Interaction
     /// Sadece obje tutulduğunda ve bırakıldığında ses efektlerini çalar.
     /// Fiziğe veya başka bir şeye müdahale etmez.
     /// </summary>
-    [RequireComponent(typeof(XRGrabInteractable))]
     public class WasteAudioFeedback : MonoBehaviour
     {
         private XRGrabInteractable _grabInteractable;
@@ -16,6 +15,8 @@ namespace RecycleRush.Interaction
         private void Awake()
         {
             _grabInteractable = GetComponent<XRGrabInteractable>();
+            if (_grabInteractable == null) _grabInteractable = GetComponentInChildren<XRGrabInteractable>();
+            if (_grabInteractable == null) _grabInteractable = GetComponentInParent<XRGrabInteractable>();
         }
 
         private void OnEnable()
