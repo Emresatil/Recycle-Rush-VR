@@ -248,18 +248,23 @@ public class GameManager : MonoBehaviour
     {
         if (buttonsModule == null) yield break;
 
-        // 1) Butonların gerçek merkezini bul (Pivot 0,0,0 olduğu için devrilme bozuluyordu)
+        // 1) Butonların gerçek merkezini bul (3. butonun merkezi kaydırmaması için sadece Play ve Setting baz alınır)
         Vector3 center = Vector3.zero;
         int count = 0;
         foreach (Transform child in buttonsModule.transform)
         {
-            if (child.name != "EventSystem")
+            // Sadece isminde Play veya Setting geçen butonları merkeze dahil et (Exit butonunu yoksay)
+            if (child.name.Contains("Play") || child.name.Contains("Setting"))
             {
                 center += child.position;
                 count++;
             }
         }
-        if (count > 0) center /= count;
+        
+        if (count > 0) 
+            center /= count;
+        else 
+            center = buttonsModule.transform.position; // Fallback garantisi
 
         // 2) Devrilme noktasını (Pivot) merkezin yarım metre altı (sanki zemine değdiği yer) olarak ayarla
         Vector3 pivotPoint = center + Vector3.down * 0.5f;
