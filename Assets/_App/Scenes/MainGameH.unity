@@ -1638,7 +1638,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 318, y: -246}
+  m_AnchoredPosition: {x: 332, y: -397}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &673820099
@@ -3909,7 +3909,7 @@ PrefabInstance:
     - target: {fileID: 5826056641483426609, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
       propertyPath: m_RightHand
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 1586320037}
     - target: {fileID: 5944131804917401860, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
       propertyPath: m_IsActive
       value: 0
@@ -3922,6 +3922,11 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 2000306899}
   m_SourcePrefab: {fileID: 100100000, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
+--- !u!1 &1586320037 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1670256624, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
+  m_PrefabInstance: {fileID: 1586320036}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1668578870
 GameObject:
   m_ObjectHideFlags: 0
@@ -5599,7 +5604,8 @@ PrefabInstance:
       value: 4
       objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 1294509353707879863, guid: 8fbc6010c08a90f4ab98cd35f45349e3, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 8fbc6010c08a90f4ab98cd35f45349e3, type: 3}
