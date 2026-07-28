@@ -15,7 +15,7 @@ namespace RecycleRush.Environment
         [Header("Ceza Ayarları")]
         [Tooltip("Yerde kalan atık için kesilecek ceza puanı")]
         [SerializeField] private int _penaltyScore = -5;
-        
+
         [Tooltip("Atığın yerde kalmasına ne kadar süre tahammül edilecek? (Saniye)")]
         [SerializeField] private float _gracePeriod = 3f;
 
@@ -49,14 +49,6 @@ namespace RecycleRush.Environment
                 // Objenin en tepesindeki Root'u ve varsa tutma (Grab) bileşenini bul
                 GameObject rootObj = other.transform.root.gameObject;
                 XRGrabInteractable grabInteractable = rootObj.GetComponentInChildren<XRGrabInteractable>();
-
-                if (!_itemsOnFloor.ContainsKey(other))
-                {
-                    if (AudioManager.Instance != null)
-                    {
-                        AudioManager.Instance.PlayFloorPenaltySound();
-                    }
-                }
 
                 _itemsOnFloor[other] = new FloorItem
                 {
@@ -101,13 +93,6 @@ namespace RecycleRush.Environment
                     continue;
                 }
 
-                // 1.5 KORUMA: Eğer obje bant üzerindeyse veya banda değiyorsa ceza verme!
-                if (IsOnConveyorBelt(item.RootObject))
-                {
-                    item.DropTime = Time.time; // Banttayken süreyi sıfırla
-                    continue;
-                }
-
                 // 2. CEZA KONTROLÜ: Obje yerdeyse ve belirlenen süre (Grace Period) geçtiyse
                 if (Time.time - item.DropTime >= _gracePeriod)
                 {
@@ -124,14 +109,14 @@ namespace RecycleRush.Environment
                     {
                         // ScoreManager'a -5 puan sinyali gönder
                         OnWasteMissedFloor?.Invoke(_penaltyScore);
-                        
+
                         if (AudioManager.Instance != null)
                         {
                             AudioManager.Instance.PlayFloorPenaltySound();
                         }
 
                         Debug.Log($"<color=red>[FloorZone]</color> {item.RootObject.name} çok uzun süre yerde kaldı! İmha ediliyor ve Ceza verildi.");
-                        
+
                         // Obje imha edilmek yerine havuza gönderilir (Object Pooling)
                         ObjectPoolManager.Instance.ReturnToPool(item.RootObject);
                     }
@@ -156,39 +141,10 @@ namespace RecycleRush.Environment
 
         private bool HasWasteTag(GameObject obj)
         {
-            return obj.CompareTag("Paper") || 
-                   obj.CompareTag("Glass") || 
-                   obj.CompareTag("Plastic") || 
+            return obj.CompareTag("Paper") ||
+                   obj.CompareTag("Glass") ||
+                   obj.CompareTag("Plastic") ||
                    obj.CompareTag("Metal");
-        }
-
-        /// <summary>
-        /// Objenin şu an bant üzerinde hareket edip etmediğini kontrol eder.
-        /// </summary>
-        private bool IsOnConveyorBelt(GameObject rootObj)
-        {
-            if (rootObj == null) return false;
-
-            // Objenin merkezinden veya çocuklarından aşağıya ışın (Raycast) at
-            if (Physics.Raycast(rootObj.transform.position, Vector3.down, out RaycastHit hit, 0.8f))
-            {
-                if (hit.collider != null && hit.collider.GetComponentInParent<BeltMovement>() != null)
-                {
-                    return true;
-                }
-            }
-
-            // Ayrıca obje doğrudan BeltMovement ile temas ediyor mu kontrol et
-            Collider[] hits = Physics.OverlapSphere(rootObj.transform.position, 0.4f);
-            foreach (var c in hits)
-            {
-                if (c != null && c.GetComponentInParent<BeltMovement>() != null)
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
     }
 }
