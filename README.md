@@ -18,9 +18,7 @@ This project was developed with a strong focus on **performance optimization, sc
 
 ## 🎥 Gameplay Trailer
 
-[> 📹 **Watch the Recycle Rush VR Gameplay Trailer on YouTube**](https://youtube.com/your-video-link-here)
-
-*(Trailer placeholder: Once you edit your video with Vizard/CapCut, paste your YouTube link here. You can also replace this text with a GIF!)*
+[> 📹 **Watch the Recycle Rush VR Gameplay Trailer on YouTube**](https://youtu.be/5NyKryOn9x8)
 
 ---
 
