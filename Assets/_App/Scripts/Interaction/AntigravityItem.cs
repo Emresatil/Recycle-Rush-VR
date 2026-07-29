@@ -21,6 +21,9 @@ public class AntigravityItem : MonoBehaviour
     private bool _isGrabbed = false;
     private Vector3 _randomTorqueDirection;
 
+    public bool IsGrabbed => _isGrabbed;
+    public static event System.Action<GameObject> OnItemGrabbed;
+
     private void Awake()
     {
         // Önbellekleme (Caching) - Garbage Collection'ı yormamak için
@@ -119,6 +122,7 @@ public class AntigravityItem : MonoBehaviour
     private void OnGrabbed(SelectEnterEventArgs args)
     {
         _isGrabbed = true;
+        OnItemGrabbed?.Invoke(gameObject);
         // Not: XRGrabInteractable zaten rigidbody kinematiğini veya hareket tipini
         // (Velocity Tracking) kendi yönettiği için burada extradan fizikle oynamıyoruz.
         
