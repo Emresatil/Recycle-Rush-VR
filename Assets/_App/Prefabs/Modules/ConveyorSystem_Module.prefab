@@ -71,7 +71,6 @@ MonoBehaviour:
   spawnPoint: {fileID: 5168210256901742704}
   minSpawnInterval: 1.5
   maxSpawnInterval: 3.5
-  spawnWidthOffset: 0.1
 --- !u!54 &7795404501296069007
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -240,6 +239,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7c0d0d24c670cb142a79245ae8608be6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AntigravityItem
+  _enableFloating: 0
   _floatForce: 0.5
   _spinTorque: 0.2
 --- !u!1 &4185045034578568647
@@ -572,10 +572,6 @@ PrefabInstance:
     m_TransformParent: {fileID: 7964433061002627107}
     m_Modifications:
     - target: {fileID: 7235504106917489385, guid: 0cbf8189007ea2042bac268ea5abc22c, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 0.78000003
-      objectReference: {fileID: 0}
-    - target: {fileID: 7235504106917489385, guid: 0cbf8189007ea2042bac268ea5abc22c, type: 3}
       propertyPath: m_LocalScale.y
       value: 0.78
       objectReference: {fileID: 0}
@@ -593,7 +589,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7235504106917489385, guid: 0cbf8189007ea2042bac268ea5abc22c, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 7.84459
+      value: 7.878
       objectReference: {fileID: 0}
     - target: {fileID: 7235504106917489385, guid: 0cbf8189007ea2042bac268ea5abc22c, type: 3}
       propertyPath: m_LocalRotation.w
@@ -622,10 +618,6 @@ PrefabInstance:
     - target: {fileID: 7235504106917489385, guid: 0cbf8189007ea2042bac268ea5abc22c, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7235504106917489385, guid: 0cbf8189007ea2042bac268ea5abc22c, type: 3}
-      propertyPath: m_ConstrainProportionsScale
-      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7855160230668677924, guid: 0cbf8189007ea2042bac268ea5abc22c, type: 3}
       propertyPath: m_ConstrainProportionsScale
@@ -712,8 +704,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1.6000004, y: 0.29737186, z: 11.92713}
-  m_Center: {x: -6.5526062e-15, y: 0.9988255, z: -1.939231}
+  m_Size: {x: 1.6495413, y: 0.29737186, z: 12.078925}
+  m_Center: {x: -0.0011183666, y: 0.9988255, z: -2.015128}
 --- !u!54 &6217400674419424725
 Rigidbody:
   m_ObjectHideFlags: 0

@@ -70,8 +70,8 @@ public class ObjectPoolManager : MonoBehaviour
         objToSpawn.SetActive(true);
 
         // Önceki hareketinden kalan Fiziksel etkileri ve kilitleri tam fabrika ayarlarına sıfırla
-        Rigidbody rb = objToSpawn.GetComponent<Rigidbody>();
-        if (rb != null)
+        Rigidbody[] rbs = objToSpawn.GetComponentsInChildren<Rigidbody>();
+        foreach (Rigidbody rb in rbs)
         {
             rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
