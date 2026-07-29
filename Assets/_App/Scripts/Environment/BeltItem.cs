@@ -34,6 +34,8 @@ public class BeltItem : MonoBehaviour
     private void Awake()
     {
         _rb = GetComponent<Rigidbody>();
+        if (_rb == null) _rb = GetComponentInChildren<Rigidbody>();
+        
         _grab = GetComponent<XRGrabInteractable>();
         if (_grab == null) _grab = GetComponentInChildren<XRGrabInteractable>();
     }
@@ -100,8 +102,8 @@ public class BeltItem : MonoBehaviour
         transform.rotation = Quaternion.Euler(0f, euler.y, 0f);
 
         // KİNETİK MOD — Fizik çarpışma hesaplaması tamamen devre dışı
-        _rb.linearVelocity = Vector3.zero;
-        _rb.angularVelocity = Vector3.zero;
+        // Not: Kinematic bir objeye hız (velocity) verilemez, bu Unity 6'da kırmızı hata verir.
+        // isKinematic = true yapıldığında zaten obje fizik motorundan kopup hızını sıfırlar.
         _rb.isKinematic = true;
         _rb.useGravity = false;
         _rb.constraints = RigidbodyConstraints.None;
@@ -124,8 +126,8 @@ public class BeltItem : MonoBehaviour
                 float diff = beltTopY - myBottomY;
                 transform.position += new Vector3(0, diff, 0);
                 
-                // Rigidbody pozisyonunu anında senkronize et
-                _rb.position = transform.position;
+                // Rigidbody pozisyonunu anında senkronize et (Eğer rb alt objedeyse pozisyonunu bozmamak için SyncTransforms kullanıyoruz)
+                Physics.SyncTransforms();
             }
         }
 
@@ -150,7 +152,24 @@ public class BeltItem : MonoBehaviour
     private void OnReleased(SelectExitEventArgs args)
     {
         _isGrabbed = false;
-        // Bırakıldığında banta geri dönmesini beklemeyeceğiz, direkt düşecek (Dynamic)
-        _rb.useGravity = true;
+        // EĞER obje deaktif edildiyse (örn: çöpe atılıp havuza döndüyse) Coroutine çalışamaz, o yüzden kontrol ediyoruz!
+        if (gameObject.activeInHierarchy)
+        {
+            StartCoroutine(ForceDynamicRoutine());
+        }
+    }
+
+    private System.Collections.IEnumerator ForceDynamicRoutine()
+    {
+        // XR sisteminin (GrabInteractable) kendi state geri yükleme işlemini 
+        // tamamlamasını kesin olarak beklemek için 0.1 saniye gecikme veriyoruz.
+        yield return new WaitForSeconds(0.1f);
+        
+        if (_rb != null && !_isGrabbed && !_isOnBelt)
+        {
+            _rb.isKinematic = false;
+            _rb.useGravity = true;
+            _rb.constraints = RigidbodyConstraints.None;
+        }
     }
 }

@@ -132,7 +132,7 @@ public class WasteSpawner : MonoBehaviour
         Vector3 finalSpawnPosition = spawnPoint.position + fixedOffset;
 
         // 1.5 Özellik: Doğma noktasının henüz boşalıp boşalmadığını kontrol et (Üst üste doğup patlamayı %100 engeller)
-        Collider[] existingColliders = Physics.OverlapSphere(finalSpawnPosition, 0.5f);
+        Collider[] existingColliders = Physics.OverlapSphere(finalSpawnPosition, 0.15f);
         foreach (var col in existingColliders)
         {
             if (col.transform.root != spawnPoint.root && !col.isTrigger && col.attachedRigidbody != null)
