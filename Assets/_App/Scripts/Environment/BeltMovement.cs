@@ -1,112 +1,144 @@
+using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// Bantın kendisinin scripti. BeltItem'ları FixedUpdate'te MovePosition ile taşır.
+/// </summary>
 [RequireComponent(typeof(Rigidbody))]
 public class BeltMovement : MonoBehaviour
 {
     [Header("Bant Ayarları")]
-    [Tooltip("Bandın objeleri taşıma hızı")]
     public float speed = 2f;
-    
-    [Tooltip("Taşıma yönü (X ekseninde hareket için 1, 0, 0)")]
     public Vector3 direction = Vector3.right;
 
-    private Rigidbody rb;
+    private Rigidbody _rb;
+    private Collider _beltCollider;
+    public Collider BeltCollider => _beltCollider;
     private float _baseSpeed;
+
+    // Banta kayıtlı ve taşınacak çöplerin listesi
+    private List<BeltItem> _trackedItems = new List<BeltItem>();
 
     void Awake()
     {
-        rb = GetComponent<Rigidbody>();
-        _baseSpeed = speed; // Orijinal hızı önbelleğe (Cache) alıyoruz
+        _rb = GetComponent<Rigidbody>();
+        // Bantın kendisi de Kinematic olmalı
+        _rb.isKinematic = true;
+        _rb.useGravity = false;
+        
+        _beltCollider = GetComponent<Collider>();
+        if (_beltCollider == null) _beltCollider = GetComponentInChildren<Collider>();
+        
+        _baseSpeed = speed;
     }
 
     private void OnEnable()
     {
-        // Event dinleyicisini ekle
+        BeltItem.RegisterBelt(this);
         DifficultyManager.OnDifficultyLevelChanged += UpdateBeltSpeed;
     }
 
     private void OnDisable()
     {
-        // Script veya obje kapandığında Event aboneliğini kaldır
+        BeltItem.UnregisterBelt(this);
         DifficultyManager.OnDifficultyLevelChanged -= UpdateBeltSpeed;
     }
 
-    /// <summary>
-    /// DifficultyManager'dan gelen hız çarpanına göre bant hızını günceller.
-    /// </summary>
     private void UpdateBeltSpeed(float multiplier)
     {
         speed = _baseSpeed * multiplier;
-        Debug.Log($"<color=cyan>[BeltMovement]</color> Yeni zorluğa uyarlandı! Bant Hızı: {speed:F1}");
     }
 
-    void Start()
+    public void TrackItem(BeltItem item)
     {
-        // Bandın fiziksel olarak düşmemesi ve sabit kalması için isKinematic yapıyoruz
-        rb.isKinematic = true;
-        rb.useGravity = false;
+        if (!_trackedItems.Contains(item))
+            _trackedItems.Add(item);
+    }
+
+    public void UntrackItem(BeltItem item)
+    {
+        if (_trackedItems.Contains(item))
+            _trackedItems.Remove(item);
     }
 
     void FixedUpdate()
     {
-        // Bandın kendisini yerinde sabit tutuyoruz.
-        // Objelerin hareketi OnCollisionStay içinde fiziksel hız (linearVelocity) ile sağlanır.
-    }
+        Vector3 moveDir = direction.normalized;
 
-    // =====================================================
-    // BANT ÜZERİNDE HAREKET VE İLK TEMAS
-    // Obje banda çarptığında ve üzerinde kaldığı sürece:
-    // 1. Dikey hızı (Y) korunur, yatay hızı bandın yönü ve hızına eşitlenir.
-    // 2. Bandın üzerindeyse dik kalması için X ve Z rotasyonları kilitlenir.
-    // =====================================================
-    private void OnCollisionEnter(Collision collision)
-    {
-        Rigidbody itemRb = collision.rigidbody;
-        if (itemRb != null && !itemRb.isKinematic)
+        // Bantın sonunu (kenarını) hesapla
+        float beltEdge = 0f;
+        if (_beltCollider != null)
         {
-            // Sekmeyi önle: dikey hızı sıfırla
-            Vector3 vel = itemRb.linearVelocity;
-            vel.y = 0f;
-            itemRb.linearVelocity = vel;
-            
-            // Dönme hızını sıfırla
-            itemRb.angularVelocity = Vector3.zero;
-            
-            // Objeyi anında dik pozisyona getir
-            Vector3 currentEuler = itemRb.transform.eulerAngles;
-            itemRb.transform.rotation = Quaternion.Euler(0f, currentEuler.y, 0f);
-
-            // Bant üzerindeyse devrilmemesi için rotasyonu kilitle
-            itemRb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
-            
-            // İçinden geçmeyi (clipping) önle
-            itemRb.collisionDetectionMode = CollisionDetectionMode.Continuous;
+            if (moveDir.x > 0) beltEdge = _beltCollider.bounds.max.x;
+            else if (moveDir.x < 0) beltEdge = _beltCollider.bounds.min.x;
+            else if (moveDir.z > 0) beltEdge = _beltCollider.bounds.max.z;
+            else if (moveDir.z < 0) beltEdge = _beltCollider.bounds.min.z;
         }
-    }
 
-    private void OnCollisionStay(Collision collision)
-    {
-        Rigidbody itemRb = collision.rigidbody;
-        if (itemRb != null && !itemRb.isKinematic)
+        // Listeyi sondan başa dönerek güvenli silme yapıyoruz
+        for (int i = _trackedItems.Count - 1; i >= 0; i--)
         {
-            // Obje bant üzerindeyken bandın yönünde pürüzsüzce kaydır (Teleport/Fırlama tamamen engellenir)
-            Vector3 targetVel = direction.normalized * speed;
-            itemRb.linearVelocity = new Vector3(targetVel.x, itemRb.linearVelocity.y, targetVel.z);
-        }
-    }
+            BeltItem item = _trackedItems[i];
+            
+            if (item == null || !item.gameObject.activeInHierarchy || !item.IsOnBelt || item.IsGrabbed)
+            {
+                _trackedItems.RemoveAt(i);
+                continue;
+            }
 
-    // =====================================================
-    // BANTTAN ÇIKIŞ ÇÖZÜMÜ
-    // Obje banttan ayrıldığında (düştüğünde veya fırladığında)
-    // rotasyon kilidini aç, böylece doğal şekilde devrilebilir.
-    // =====================================================
-    private void OnCollisionExit(Collision collision)
-    {
-        Rigidbody itemRb = collision.rigidbody;
-        if (itemRb != null && !itemRb.isKinematic)
-        {
-            // Banttan çıkınca kilitleri tamamen aç
-            itemRb.constraints = RigidbodyConstraints.None;
+            Rigidbody itemRb = item.GetComponentInChildren<Rigidbody>();
+            if (itemRb == null) continue;
+
+            // Bantın kenarına geldik mi? (Fiziksel merkeze göre kontrol et ki uzun objeler erken kopmasın)
+            if (_beltCollider != null)
+            {
+                bool pastEdge = false;
+                
+                // Objenin gerçek geometrik merkezini al (Eğer collider yoksa mecburen root pozisyonu)
+                Collider itemCol = item.GetComponentInChildren<Collider>();
+                Vector3 checkPos = itemCol != null ? itemCol.bounds.center : item.transform.position;
+
+                // Objenin ağırlık merkezi (center) bantın tam ucuna geldiğinde kopar
+                if (moveDir.x > 0 && checkPos.x >= beltEdge - 0.05f) pastEdge = true;
+                else if (moveDir.x < 0 && checkPos.x <= beltEdge + 0.05f) pastEdge = true;
+                else if (moveDir.z > 0 && checkPos.z >= beltEdge - 0.05f) pastEdge = true;
+                else if (moveDir.z < 0 && checkPos.z <= beltEdge + 0.05f) pastEdge = true;
+
+                if (pastEdge)
+                {
+                    // Bant sonu: Objeyi banttan kopar ve serbest düşüşe bırak
+                    item.DetachFromBelt();
+                    
+                    // Ağırlık merkezi zaten uçurumda olduğu için, bu hız onu mükemmel bir şekilde devirecektir
+                    itemRb.AddForce(moveDir * 2f, ForceMode.VelocityChange);
+                    
+                    // DetachFromBelt listeyi temizlediği için bu objeyi daha fazla işlemeyeceğiz
+                    continue;
+                }
+            }
+
+            // Önümüzde başka bir çöp var mı? (Çarpışma önleyici tren sistemi)
+            Vector3 aheadPos = item.transform.position + (moveDir * 0.3f);
+            Collider[] hits = Physics.OverlapSphere(aheadPos, 0.18f); 
+            bool blocked = false;
+            foreach (var h in hits)
+            {
+                if (h.transform.root == item.transform.root) continue;
+                
+                BeltItem other = h.GetComponentInParent<BeltItem>();
+                if (other != null && other != item && other.IsOnBelt)
+                {
+                    blocked = true; 
+                    break;
+                }
+            }
+
+            // Eğer önümüz boşsa, objenin ROOT transform'unu taşı (Kinematic olduğu için güvenli)
+            if (!blocked)
+            {
+                item.transform.position += moveDir * speed * Time.fixedDeltaTime;
+                Physics.SyncTransforms();
+            }
         }
     }
 }
