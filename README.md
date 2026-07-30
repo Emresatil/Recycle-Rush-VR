@@ -78,43 +78,7 @@ Concept presentation showing the background layer, foreground layer and the asse
 
 ![Layered App Icon](docs/assets/app-icon-showcase.png)
 
-### VR Mockup
-![VR Mockup](docs/assets/mockup-vr.png)
 
-### Main Menu Concept
-A concept showing how the Recycle Rush VR main menu may appear inside the Meta Quest environment.
-
-![Main Menu](docs/assets/mockup-home.png)
-
-### Gameplay Concept
-A concept visualization of the player sorting recyclable waste into the correct recycling bins.
-
-![Gameplay](docs/assets/mockup-gameplay.png)
-
-### Controller Interaction
-Example of XR grab interaction using Meta Quest Touch Plus controllers.
-
-![Interaction](docs/assets/mockup-interaction.png)
-
-### User Interface Concepts
-**Main Menu UI**  
-![Main Menu UI](docs/assets/ui-main-menu.png)
-
-**Gameplay HUD**  
-![Gameplay HUD](docs/assets/ui-gameplay.png)
-
-### 3D Game Assets
-Low-poly recycling bins used in the game environment, optimized for mobile VR.
-
-![Recycling Bins](docs/assets/recycle-bins.png)
-
-### Layered Logo Breakdown
-**Background**  
-![Background](docs/assets/logo-background.png)  
-**Foreground**  
-![Foreground](docs/assets/logo-foreground.png)
-
----
 
 ## 👥 The Team
 
