@@ -107,7 +107,21 @@ namespace RecycleRush.UI
             
             // Panelleri başlangıçta gizle
             if (settingsPanel != null) settingsPanel.SetActive(false);
-            if (pausePanel != null) pausePanel.SetActive(false);
+            if (pausePanel != null)
+            {
+                pausePanel.SetActive(false);
+                
+                UnityEngine.UI.Button[] buttons = pausePanel.GetComponentsInChildren<UnityEngine.UI.Button>(true);
+                foreach (var btn in buttons)
+                {
+                    if (btn.name.ToLower().Contains("exit") || btn.name.ToLower().Contains("quit"))
+                    {
+                        btn.onClick.RemoveAllListeners();
+                        btn.onClick.AddListener(QuitApplication);
+                        Debug.Log($"<color=green>[UIManager]</color> Pause Panel: '{btn.name}' butonu QuitApplication metoduna otomatik bağlandı!");
+                    }
+                }
+            }
             if (gameOverPanel != null)
             {
                 gameOverPanel.SetActive(false);
