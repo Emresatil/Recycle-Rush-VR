@@ -108,7 +108,22 @@ namespace RecycleRush.UI
             // Panelleri başlangıçta gizle
             if (settingsPanel != null) settingsPanel.SetActive(false);
             if (pausePanel != null) pausePanel.SetActive(false);
-            if (gameOverPanel != null) gameOverPanel.SetActive(false);
+            if (gameOverPanel != null)
+            {
+                gameOverPanel.SetActive(false);
+                
+                // Oyuncu Inspector'dan bağlamayı unutursa diye Game Over panelindeki Exit butonunu otomatik bulup bağlıyoruz:
+                UnityEngine.UI.Button[] buttons = gameOverPanel.GetComponentsInChildren<UnityEngine.UI.Button>(true);
+                foreach (var btn in buttons)
+                {
+                    if (btn.name.ToLower().Contains("exit") || btn.name.ToLower().Contains("quit"))
+                    {
+                        btn.onClick.RemoveAllListeners();
+                        btn.onClick.AddListener(QuitApplication);
+                        Debug.Log($"<color=green>[UIManager]</color> '{btn.name}' butonu QuitApplication metoduna otomatik bağlandı!");
+                    }
+                }
+            }
             if (pauseButtonUIObj != null) pauseButtonUIObj.SetActive(false);
         }
 
@@ -440,7 +455,12 @@ namespace RecycleRush.UI
         public void QuitApplication()
         {
             Debug.Log("[UIManager] Uygulamadan Çıkılıyor... (Exit Butonu Tetiklendi)");
+            
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+#else
             Application.Quit();
+#endif
         }
     }
 }
