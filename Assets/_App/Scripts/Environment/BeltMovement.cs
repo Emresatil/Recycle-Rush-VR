@@ -128,6 +128,9 @@ public class BeltMovement : MonoBehaviour
                 BeltItem other = h.GetComponentInParent<BeltItem>();
                 if (other != null && other != item && other.IsOnBelt)
                 {
+                    // Eğer iki çöp EXACTLY aynı koordinatta doğmuşsa birbirlerini bloklamasınlar
+                    if (Vector3.Distance(item.transform.position, other.transform.position) < 0.05f) continue;
+                    
                     blocked = true; 
                     break;
                 }
