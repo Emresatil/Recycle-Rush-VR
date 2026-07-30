@@ -18,7 +18,7 @@ This project was developed with a strong focus on **performance optimization, sc
 
 ## 🎥 Gameplay Trailer
 
-[> 📹 **Watch the Recycle Rush VR Gameplay Trailer on YouTube**](https://youtu.be/5NyKryOn9x8)
+[> 📹 **Watch the Recycle Rush VR Gameplay Trailer on YouTube**](https://youtu.be/2mVESY8Hb2Q)
 
 ---
 
