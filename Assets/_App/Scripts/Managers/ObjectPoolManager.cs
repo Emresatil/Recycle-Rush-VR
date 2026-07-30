@@ -65,23 +65,39 @@ public class ObjectPoolManager : MonoBehaviour
             objToSpawn.name = poolKey; // (Clone) takısını temiz tut
         }
 
+        // ÇOK KRİTİK: Objeyi aktifleştirmeden ÖNCE pozisyonunu ayarla.
+        // Çünkü SetActive(true) çağrıldığında BeltItem.OnEnable() çalışır ve AttachToBelt() metodu çalışır.
+        // Eğer pozisyonu sonradan ayarlarsak, AttachToBelt'in yaptığı hizalama ezilir!
         objToSpawn.transform.position = position;
         objToSpawn.transform.rotation = rotation;
+        
         objToSpawn.SetActive(true);
 
         // Önceki hareketinden kalan Fiziksel etkileri ve kilitleri tam fabrika ayarlarına sıfırla
-        Rigidbody[] rbs = objToSpawn.GetComponentsInChildren<Rigidbody>();
+        Rigidbody[] rbs = objToSpawn.GetComponentsInChildren<Rigidbody>(true);
         foreach (Rigidbody rb in rbs)
         {
+            // Unity 6 Uyarısını Çözümleme: Kinematic bir objenin hızını sıfırlamaya çalışmak uyarı verir.
+            // Bu yüzden önce geçici olarak kinematic'i kapatıp hızları sıfırlıyoruz, sonra tekrar açıyoruz.
+            bool wasKinematic = rb.isKinematic;
+            if (wasKinematic) rb.isKinematic = false;
+
             rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
-            rb.isKinematic = false;
+            
+            rb.isKinematic = true; // Banta sorunsuz oturması için başta Kinematic olmalı
             rb.useGravity = true;
             rb.constraints = RigidbodyConstraints.None;
-            rb.maxDepenetrationVelocity = 0.8f; // Çakışmalarda nesnelerin uzaya fırlatılmasını (Physics Explosion) tam korumayla engeller
+            rb.maxDepenetrationVelocity = 0.8f; 
         }
 
-        // Tutma ve fırlatma seslerinin çalışması için WasteAudioFeedback bileşenini dinamik ekle
+        // 1) BeltItem bileşeni yoksa otomatik ekle (Bu bileşen OnEnable'da banta kaydeder)
+        if (objToSpawn.GetComponent<BeltItem>() == null)
+        {
+            objToSpawn.AddComponent<BeltItem>();
+        }
+
+        // 2) Tutma ve fırlatma seslerinin çalışması için WasteAudioFeedback bileşenini dinamik ekle
         if (objToSpawn.GetComponent<RecycleRush.Interaction.WasteAudioFeedback>() == null &&
             objToSpawn.GetComponentInChildren<RecycleRush.Interaction.WasteAudioFeedback>() == null)
         {
