@@ -65,21 +65,32 @@ public class ObjectPoolManager : MonoBehaviour
             objToSpawn.name = poolKey; // (Clone) takısını temiz tut
         }
 
+        // 1) Önce Transform'u ayarla (obje henüz kapalı, fizik motoru çalışmıyor)
         objToSpawn.transform.position = position;
         objToSpawn.transform.rotation = rotation;
-        objToSpawn.SetActive(true);
 
-        // Önceki hareketinden kalan Fiziksel etkileri ve kilitleri tam fabrika ayarlarına sıfırla
-        Rigidbody[] rbs = objToSpawn.GetComponentsInChildren<Rigidbody>();
+        // 2) Rigidbody'yi sıfırla — AKTIF ETMEDEN ÖNCE kinematic yap
+        //    Bu sayede obje aktifleştiği kare fizik motoruna sıfır hızla girer
+        Rigidbody[] rbs = objToSpawn.GetComponentsInChildren<Rigidbody>(true);
         foreach (Rigidbody rb in rbs)
         {
             rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
-            rb.isKinematic = false;
-            rb.useGravity = true;
+            rb.isKinematic = true;   // BeltItem OnEnable çağrılmadan önce Kinematic olsun
+            rb.useGravity = false;
             rb.constraints = RigidbodyConstraints.None;
-            rb.maxDepenetrationVelocity = 0.8f; // Çakışmalarda nesnelerin uzaya fırlatılmasını (Physics Explosion) tam korumayla engeller
+            rb.maxDepenetrationVelocity = 1f;
+            rb.mass = 1.0f;
         }
+
+        // 3) BeltItem bileşeni yoksa otomatik ekle (Bu bileşen OnEnable'da banta kaydeder)
+        if (objToSpawn.GetComponent<BeltItem>() == null)
+        {
+            objToSpawn.AddComponent<BeltItem>();
+        }
+
+        // 4) Şimdi aktif et — BeltItem.OnEnable çağrılır ve obje Kinematic olarak banta eklenir
+        objToSpawn.SetActive(true);
 
         // Tutma ve fırlatma seslerinin çalışması için WasteAudioFeedback bileşenini dinamik ekle
         if (objToSpawn.GetComponent<RecycleRush.Interaction.WasteAudioFeedback>() == null &&
@@ -162,11 +173,10 @@ public class ObjectPoolManager : MonoBehaviour
 
             Vector3 pos = obj.transform.position;
             
-            // 1. Şart: Yüksekliği Kill-Z sınırının altına düştüyse (Yere düştü ve oyun alanından aşağı uçtuysa)
-            // 2. Şart: Orijinden çok fazla uzaklaştıysa (Fırlayıp uzağa gittiyse)
-            if (pos.y < killZLevel || pos.sqrMagnitude > maxDistance * maxDistance)
+            // Sadece yükseklik sınırı kontrolü (Kill-Z). Uzaklık sınırını (maxDistance) kaldırdık çünkü spawn noktası merkeze çok uzak!
+            if (pos.y < killZLevel)
             {
-                Debug.Log($"<color=orange>[ObjectPoolManager - Kill Z]</color> {obj.name} güvenlik sınırlarını aştı! (Konum: {pos}). Otomatik havuza çekiliyor.");
+                Debug.Log($"<color=orange>[ObjectPoolManager - Kill Z]</color> {obj.name} yere düştü! (Konum: {pos}). Otomatik havuza çekiliyor.");
                 ReturnToPool(obj); 
                 // ReturnToPool metodu zaten '_activeObjects.Remove(obj)' yapacağı için listemiz temiz kalır.
             }

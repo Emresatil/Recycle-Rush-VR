@@ -27,6 +27,9 @@ public class GameManager : MonoBehaviour
     [Tooltip("Fiziksel butonların bulunduğu modül (Play, Settings vb.)")]
     public GameObject buttonsModule;
     
+    [Tooltip("Oyun başladığında animasyonla belirecek çevre modülleri (Boş bırakırsanız otomatik bulur)")]
+    public GameObject[] environmentModules;
+    
     private Vector3 _buttonsOriginalPos;
     private Quaternion _buttonsOriginalRot;
     private bool _hasSavedButtonsTransform = false;
@@ -58,6 +61,18 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
+        // Çevre modülleri inspector'dan atanmadıysa otomatik olarak bul
+        if (environmentModules == null || environmentModules.Length == 0)
+        {
+            environmentModules = new GameObject[]
+            {
+                GameObject.Find("ConveyorSystem_Module"),
+                GameObject.Find("RecyclingArea_Module"),
+                GameObject.Find("scoreboard"),
+                GameObject.Find("QC_Drone")
+            };
+        }
+
         // Oyun ilk açıldığında hazırlık evresinden geçer, ardından ana menü (veya doğrudan oyun) başlar.
         ChangeState(GameState.Initialization);
         
@@ -95,7 +110,7 @@ public class GameManager : MonoBehaviour
                 _hasSavedButtonsTransform = true;
             }
 
-            if (CurrentState == GameState.MainMenu || CurrentState == GameState.GameOver)
+            if (CurrentState == GameState.MainMenu)
             {
                 if (_hideButtonsCoroutine != null)
                 {
@@ -107,12 +122,24 @@ public class GameManager : MonoBehaviour
                 buttonsModule.transform.position = _buttonsOriginalPos;
                 buttonsModule.transform.rotation = _buttonsOriginalRot;
                 buttonsModule.SetActive(true);
+
+                // Eğer Ana Menüye dönüldüyse çevreyi tekrar gizle (Scale 0)
+                if (environmentModules != null)
+                {
+                    foreach (var module in environmentModules)
+                    {
+                        if (module != null) module.transform.localScale = Vector3.zero;
+                    }
+                }
             }
             else if (CurrentState == GameState.ReadyToStart)
             {
-                // Hemen gizlemek yerine devrilme animasyonu başlat
-                if (_hideButtonsCoroutine != null) StopCoroutine(_hideButtonsCoroutine);
-                _hideButtonsCoroutine = StartCoroutine(HideButtonsRoutine());
+                // Sadece Butonlar görünür durumdaysa devrilme animasyonu başlat (örn: MainMenu'den gelirsek)
+                if (buttonsModule.activeSelf)
+                {
+                    if (_hideButtonsCoroutine != null) StopCoroutine(_hideButtonsCoroutine);
+                    _hideButtonsCoroutine = StartCoroutine(HideButtonsRoutine());
+                }
             }
             else
             {
@@ -302,5 +329,55 @@ public class GameManager : MonoBehaviour
         // Son olarak sahneden gizle
         buttonsModule.SetActive(false);
         _hideButtonsCoroutine = null;
+
+        // Butonlar kaybolduktan sonra çevreyi Arcade animasyonla ortaya çıkar
+        StartCoroutine(RevealEnvironmentRoutine());
+    }
+
+    /// <summary>
+    /// Makine, bant ve kutuları "Pop-up" (büyüyerek ve yaylanarak) Arcade stiliyle ortaya çıkarır.
+    /// </summary>
+    private System.Collections.IEnumerator RevealEnvironmentRoutine()
+    {
+        float duration = 0.8f; // Animasyon süresi (0.8 saniye çok dinamik durur)
+        float elapsed = 0f;
+        
+        // EaseOutBack formülü için sabitler (Hafifçe 1.0'ı geçip geri döner)
+        float c1 = 1.70158f;
+        float c3 = c1 + 1f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / duration;
+            
+            // Ease Out Back matematiği
+            float t_minus_1 = t - 1f;
+            float scaleValue = 1f + c3 * Mathf.Pow(t_minus_1, 3f) + c1 * Mathf.Pow(t_minus_1, 2f);
+
+            // Çok küçülmesini engellemek için min 0 sınırla
+            if (scaleValue < 0f) scaleValue = 0f;
+
+            Vector3 currentScale = Vector3.one * scaleValue;
+
+            foreach (var module in environmentModules)
+            {
+                if (module != null)
+                {
+                    module.transform.localScale = currentScale;
+                }
+            }
+
+            yield return null;
+        }
+
+        // Animasyon bitince tam %100 (1.0) boyutuna sabitle
+        foreach (var module in environmentModules)
+        {
+            if (module != null)
+            {
+                module.transform.localScale = Vector3.one;
+            }
+        }
     }
 }
