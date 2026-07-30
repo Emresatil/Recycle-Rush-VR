@@ -178,11 +178,10 @@ public class ObjectPoolManager : MonoBehaviour
 
             Vector3 pos = obj.transform.position;
             
-            // 1. Şart: Yüksekliği Kill-Z sınırının altına düştüyse (Yere düştü ve oyun alanından aşağı uçtuysa)
-            // 2. Şart: Orijinden çok fazla uzaklaştıysa (Fırlayıp uzağa gittiyse)
-            if (pos.y < killZLevel || pos.sqrMagnitude > maxDistance * maxDistance)
+            // Sadece yükseklik sınırı kontrolü (Kill-Z). Uzaklık sınırını (maxDistance) kaldırdık çünkü spawn noktası merkeze çok uzak!
+            if (pos.y < killZLevel)
             {
-                Debug.Log($"<color=orange>[ObjectPoolManager - Kill Z]</color> {obj.name} güvenlik sınırlarını aştı! (Konum: {pos}). Otomatik havuza çekiliyor.");
+                Debug.Log($"<color=orange>[ObjectPoolManager - Kill Z]</color> {obj.name} yere düştü! (Konum: {pos}). Otomatik havuza çekiliyor.");
                 ReturnToPool(obj); 
                 // ReturnToPool metodu zaten '_activeObjects.Remove(obj)' yapacağı için listemiz temiz kalır.
             }
