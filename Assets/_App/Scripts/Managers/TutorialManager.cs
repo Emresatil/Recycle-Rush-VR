@@ -95,7 +95,7 @@ namespace RecycleRush.Managers
             // Oyuncu çöpü bandın sonundan düşürürse veya 3 saniye yerde bırakıp FloorZone tarafından silinirse
             if (_currentStep == TutorialStep.GrabWaste || _currentStep == TutorialStep.SortWaste)
             {
-                if (_spawnedWaste == null)
+                if ((_spawnedWaste == null || !_spawnedWaste.activeInHierarchy) && !_isSpawning)
                 {
                     _currentStep = TutorialStep.WaitingRetry;
                     BinTrigger.OnWasteProcessed -= OnWasteSorted;
@@ -165,7 +165,7 @@ namespace RecycleRush.Managers
         {
             if (PlayerPrefs.GetInt("TutorialDone", 0) == 1) return;
 
-            if (state == GameState.MainMenu)
+            if (state == GameState.ReadyToStart)
             {
                 _currentStep = TutorialStep.PullLever;
                 UpdateTutorialUI("<color=yellow>TUTORIAL</color>\nPULL THE LEVER TO START");
@@ -179,8 +179,11 @@ namespace RecycleRush.Managers
             }
         }
 
+        private bool _isSpawning = false;
+
         private IEnumerator StepGrabWaste()
         {
+            _isSpawning = true;
             _currentStep = TutorialStep.GrabWaste;
             UpdateTutorialUI("<color=yellow>TUTORIAL</color>\nWAITING FOR WASTE...");
             
@@ -193,7 +196,19 @@ namespace RecycleRush.Managers
             // Çöpü yarat
             if (tutorialWastePrefab != null && spawnPoint != null)
             {
-                _spawnedWaste = Instantiate(tutorialWastePrefab, spawnPoint.position, Quaternion.identity);
+                if (_spawnedWaste != null) 
+                {
+                    ObjectPoolManager.Instance.ReturnToPool(_spawnedWaste);
+                }
+                
+                _spawnedWaste = ObjectPoolManager.Instance.SpawnFromPool(
+                    tutorialWastePrefab.name, 
+                    tutorialWastePrefab, 
+                    spawnPoint.position, 
+                    Quaternion.identity
+                );
+                
+                _isSpawning = false;
                 
                 // Oyuncunun bunu eline alıp almadığını dinle
                 XRGrabInteractable grabInteractable = _spawnedWaste.GetComponentInChildren<XRGrabInteractable>();
