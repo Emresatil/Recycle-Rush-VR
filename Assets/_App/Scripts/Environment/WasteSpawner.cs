@@ -105,44 +105,58 @@ public class WasteSpawner : MonoBehaviour
 
         while (true)
         {
-            SpawnWaste();
+            bool spawned = SpawnWaste();
 
-            // 1. Özellik: Bir sonraki üretim için rastgele bir süre bekle
-            float randomWait = Random.Range(minSpawnInterval, maxSpawnInterval);
-            yield return new WaitForSeconds(randomWait);
+            if (spawned)
+            {
+                // 1. Özellik: Eşit zaman aralıkları. (Rastgelelik kaldırıldı, tam orta değer kullanılıyor)
+                float fixedWait = (minSpawnInterval + maxSpawnInterval) / 2f;
+                yield return new WaitForSeconds(fixedWait);
+            }
+            else
+            {
+                // Eğer doğma noktası doluysa tam tur (örn: 3 saniye) beklemek yerine 0.2sn sonra tekrar dene!
+                // Bu sayede aralarda oluşan devasa boşluklar (atlama sorunu) tamamen çözüldü.
+                yield return new WaitForSeconds(0.2f);
+            }
         }
     }
 
-    void SpawnWaste()
+    bool SpawnWaste()
     {
         // Null koruması
-        if (spawnPoint == null || wastePrefabs == null || wastePrefabs.Length == 0) return;
+        if (spawnPoint == null || wastePrefabs == null || wastePrefabs.Length == 0) return false;
+
+        // 3. Özellik: Sabit Konum (Y ekseninde çakışma önleyici 0.15m yükseklik)
+        Vector3 fixedOffset = new Vector3(0f, 0.15f, 0f);
+        Vector3 finalSpawnPosition = spawnPoint.position + fixedOffset;
 
         // 1.5 Özellik: Doğma noktasının henüz boşalıp boşalmadığını kontrol et (Üst üste doğup patlamayı %100 engeller)
-        Collider[] existingColliders = Physics.OverlapSphere(spawnPoint.position, 0.35f);
+        Collider[] existingColliders = Physics.OverlapSphere(finalSpawnPosition, 0.15f);
         foreach (var col in existingColliders)
         {
             if (col.transform.root != spawnPoint.root && !col.isTrigger && col.attachedRigidbody != null)
             {
-                Debug.Log("<color=yellow>[WasteSpawner]</color> Doğma noktası henüz boşalmadı, üretim 1 kare ertelendi.");
-                return;
+                // Sadece çöpler engellesin (Bandın kendisi engel sayılmasın!)
+                if (HasWasteTag(col.gameObject))
+                {
+                    return false; // Dolu olduğu için üretemedik
+                }
             }
         }
 
         GameObject selectedPrefab = GetRandomPrefab();
-        if (selectedPrefab == null) return;
+        if (selectedPrefab == null) return false;
 
         Debug.Log($"<color=magenta>[WasteSpawner]</color> Çöp üretimi tetiklendi: {selectedPrefab.name}");
-
-        // 3. Özellik: Sabit Konum (Y ekseninde çakışma önleyici 0.1m yükseklik)
-        Vector3 fixedOffset = new Vector3(0f, 0.1f, 0f);
-        Vector3 finalSpawnPosition = spawnPoint.position + fixedOffset;
 
         // 4. Özellik: Dik Rotasyon
         Quaternion uprightRandomRotation = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
 
         // Obje üretimi veya havuzdan çekim
         ObjectPoolManager.Instance.SpawnFromPool(selectedPrefab.tag, selectedPrefab, finalSpawnPosition, uprightRandomRotation);
+        
+        return true; // Başarıyla üretildi
     }
 
     // Üst üste aynı objenin gelmesini engelleyen ve NULL elemanları süzcen fonksiyon
@@ -173,5 +187,13 @@ public class WasteSpawner : MonoBehaviour
 
         _lastSpawnedPrefab = selected;
         return selected;
+    }
+
+    private bool HasWasteTag(GameObject obj)
+    {
+        return obj.CompareTag("Paper") || 
+               obj.CompareTag("Glass") || 
+               obj.CompareTag("Plastic") || 
+               obj.CompareTag("Metal");
     }
 }
