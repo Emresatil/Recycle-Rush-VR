@@ -7,6 +7,7 @@ using UnityEngine.XR.Interaction.Toolkit.Interactables;
 /// Her atık objeye otomatik eklenen bileşen.
 /// Spawn anında objeyi Kinematic yapar ve en yakın banta kaydeder.
 /// </summary>
+[RequireComponent(typeof(Rigidbody))]
 public class BeltItem : MonoBehaviour
 {
     private Rigidbody _rb;
@@ -102,6 +103,8 @@ public class BeltItem : MonoBehaviour
             _rb.useGravity = true;
             _rb.constraints = RigidbodyConstraints.None;
         }
+        _isOnBelt = false;
+        _isGrabbed = false;
     }
 
     private void AttachToBelt()

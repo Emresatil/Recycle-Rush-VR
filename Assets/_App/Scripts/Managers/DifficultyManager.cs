@@ -9,7 +9,7 @@ public class DifficultyManager : MonoBehaviour
 
     [Header("Zorluk Çarpanları")]
     [Tooltip("Sırasıyla Seviye 0, 1, 2 ve 3 (Arcade) hız/süre çarpanları.")]
-    [SerializeField] private float[] _difficultyMultipliers = new float[] { 1.0f, 1.2f, 1.5f, 2.0f };
+    [SerializeField] private float[] _difficultyMultipliers = new float[] { 1.0f, 1.15f, 1.3f, 1.45f };
 
     // Sadece okunabilir mevcut seviye değişkeni
     public int CurrentLevel { get; private set; } = 0;
