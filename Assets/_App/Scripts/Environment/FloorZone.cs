@@ -38,8 +38,34 @@ namespace RecycleRush.Environment
             _zoneCollider = GetComponent<Collider>();
             if (_zoneCollider != null)
             {
-                _zoneCollider.isTrigger = true; // Zemin bir tetikleyici olmalı
+                _zoneCollider.isTrigger = true;
+                
+                // 1) TETİKLEYİCİ KALINLAŞTIRMA (Görünmez alan tespiti)
+                if (_zoneCollider is BoxCollider box)
+                {
+                    box.size = new Vector3(box.size.x, 3f, box.size.z);
+                    box.center = new Vector3(box.center.x, 0.5f, box.center.z); // Alt sınır -1.0, Üst sınır +2.0
+                }
+                else
+                {
+                    // Eğer zemin bir MeshCollider ise onu kalınlaştıramayız! (Bu yüzden 3 saniye sayacı iptal oluyordu)
+                    // İncecik MeshCollider'ı kapatıp yerine bizim devasa BoxCollider sensörümüzü ekliyoruz.
+                    _zoneCollider.enabled = false; 
+                    BoxCollider newTrigger = gameObject.AddComponent<BoxCollider>();
+                    newTrigger.isTrigger = true;
+                    // Y ekseninde -1'den +2'ye uzanan devasa bir alan (Merkez 0.5, Boy 3)
+                    newTrigger.size = new Vector3(100f, 3f, 100f); 
+                    newTrigger.center = new Vector3(0, 0.5f, 0);
+                }
             }
+
+            // 2) FİZİKSEL KALINLAŞTIRMA (Tunneling engelleyici devasa güvenlik ağı):
+            // İnce objelerin zemini mermi gibi delip -50'lere düşmesini engellemek için
+            // tam zemin hizasına (Üst yüzeyi Y=0) 1 metre kalınlığında katı bir beton blok ekliyoruz.
+            GameObject safetyFloor = new GameObject("SafetyFloor_PhysicsFix");
+            safetyFloor.transform.position = new Vector3(0, -0.5f, 0); 
+            BoxCollider sc = safetyFloor.AddComponent<BoxCollider>();
+            sc.size = new Vector3(100f, 1f, 100f); 
         }
 
         private void OnTriggerEnter(Collider other)

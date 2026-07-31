@@ -7,13 +7,16 @@ using UnityEngine.XR.Interaction.Toolkit.Interactables;
 /// Her atık objeye otomatik eklenen bileşen.
 /// Spawn anında objeyi Kinematic yapar ve en yakın banta kaydeder.
 /// </summary>
-[RequireComponent(typeof(Rigidbody))]
 public class BeltItem : MonoBehaviour
 {
     private Rigidbody _rb;
     private XRGrabInteractable _grab;
     private bool _isOnBelt = false;
     private bool _isGrabbed = false;
+
+    private Vector3 _initialLocalPos;
+    private Quaternion _initialLocalRot;
+    private Transform _childRbTransform;
 
     private static List<BeltMovement> _allBelts = new List<BeltMovement>();
     private BeltMovement _currentBelt;
@@ -38,6 +41,14 @@ public class BeltItem : MonoBehaviour
         
         _grab = GetComponent<XRGrabInteractable>();
         if (_grab == null) _grab = GetComponentInChildren<XRGrabInteractable>();
+
+        Rigidbody childRb = GetComponentInChildren<Rigidbody>();
+        if (childRb != null && childRb.gameObject != this.gameObject)
+        {
+            _childRbTransform = childRb.transform;
+            _initialLocalPos = _childRbTransform.localPosition;
+            _initialLocalRot = _childRbTransform.localRotation;
+        }
     }
 
     private void OnEnable()
@@ -60,13 +71,37 @@ public class BeltItem : MonoBehaviour
             _grab.selectExited.RemoveListener(OnReleased);
         }
 
+        DetachFromBelt();
+
+        // Havuza dönerken orijinal offset'e dön (Kayma bug'ı çözümü)
+        // Çünkü oyuncu child Rigidbody'i tutup uzağa götürdüğünde root burada kalıyordu.
+        // Havuzdan tekrar çıktığında mesh'in kaymasını önlemek için fabrika ayarlarına döndürüyoruz.
+        if (_childRbTransform != null)
+        {
+            _childRbTransform.localPosition = _initialLocalPos;
+            _childRbTransform.localRotation = _initialLocalRot;
+        }
+    }
+
+    /// <summary>
+    /// Objeyi banttan zorla ayırır, fiziksel düşüşünü başlatır ve diğer objelerin önünü açar.
+    /// </summary>
+    public void DetachFromBelt()
+    {
+        _isOnBelt = false;
+        
         if (_currentBelt != null)
         {
             _currentBelt.UntrackItem(this);
             _currentBelt = null;
         }
-        _isOnBelt = false;
-        _isGrabbed = false;
+
+        if (_rb != null)
+        {
+            _rb.isKinematic = false;
+            _rb.useGravity = true;
+            _rb.constraints = RigidbodyConstraints.None;
+        }
     }
 
     private void AttachToBelt()
@@ -144,32 +179,29 @@ public class BeltItem : MonoBehaviour
         }
         _isOnBelt = false;
 
-        // Tutulduğunda fizik motoruna geri ver
-        _rb.isKinematic = false;
-        _rb.useGravity = true;
+        // Obje tutulduğunda fizik motorunu XR Interaction Toolkit yönetir. 
+        // Burada isKinematic'e dokunmak obje elinizdeyken fiziksel patlamalara (elden uçup kaybolmasına) sebep olur!
     }
 
     private void OnReleased(SelectExitEventArgs args)
     {
         _isGrabbed = false;
-        // EĞER obje deaktif edildiyse (örn: çöpe atılıp havuza döndüyse) Coroutine çalışamaz, o yüzden kontrol ediyoruz!
-        if (gameObject.activeInHierarchy)
-        {
-            StartCoroutine(ForceDynamicRoutine());
-        }
+        // XR Interaction Toolkit'in tutarsız geri yükleme işlemini ezmek için Update döngüsüne bırakıyoruz.
     }
 
-    private System.Collections.IEnumerator ForceDynamicRoutine()
+    private void Update()
     {
-        // XR sisteminin (GrabInteractable) kendi state geri yükleme işlemini 
-        // tamamlamasını kesin olarak beklemek için 0.1 saniye gecikme veriyoruz.
-        yield return new WaitForSeconds(0.1f);
-        
-        if (_rb != null && !_isGrabbed && !_isOnBelt)
+        // Eğer obje elde değilse VE banta kayıtlı değilse, KESİNLİKLE fiziksel olarak düşmeli!
+        // XR Interaction Toolkit bazen saniyeler sonra bile Kinematic durumunu geri yükleyebiliyor.
+        // Bu yüzden her karede kontrol edip gerekirse kilitleri zorla açıyoruz.
+        if (!_isGrabbed && !_isOnBelt && _rb != null)
         {
-            _rb.isKinematic = false;
-            _rb.useGravity = true;
-            _rb.constraints = RigidbodyConstraints.None;
+            if (_rb.isKinematic)
+            {
+                _rb.isKinematic = false;
+                _rb.useGravity = true;
+                _rb.constraints = RigidbodyConstraints.None;
+            }
         }
     }
 }

@@ -80,41 +80,46 @@ public class BeltMovement : MonoBehaviour
         {
             BeltItem item = _trackedItems[i];
             
-            // Obje silinmiş, havuza dönmüş veya deaktif olmuş olabilir
             if (item == null || !item.gameObject.activeInHierarchy || !item.IsOnBelt || item.IsGrabbed)
             {
                 _trackedItems.RemoveAt(i);
                 continue;
             }
 
-            Rigidbody itemRb = item.GetComponent<Rigidbody>();
+            Rigidbody itemRb = item.GetComponentInChildren<Rigidbody>();
             if (itemRb == null) continue;
 
-            // Bantın kenarına geldik mi?
+            // Bantın kenarına geldik mi? (Fiziksel merkeze göre kontrol et ki uzun objeler erken kopmasın)
             if (_beltCollider != null)
             {
                 bool pastEdge = false;
-                if (moveDir.x > 0 && itemRb.position.x >= beltEdge - 0.15f) pastEdge = true;
-                else if (moveDir.x < 0 && itemRb.position.x <= beltEdge + 0.15f) pastEdge = true;
-                else if (moveDir.z > 0 && itemRb.position.z >= beltEdge - 0.15f) pastEdge = true;
-                else if (moveDir.z < 0 && itemRb.position.z <= beltEdge + 0.15f) pastEdge = true;
+                
+                // Objenin gerçek geometrik merkezini al (Eğer collider yoksa mecburen root pozisyonu)
+                Collider itemCol = item.GetComponentInChildren<Collider>();
+                Vector3 checkPos = itemCol != null ? itemCol.bounds.center : item.transform.position;
+
+                // Objenin ağırlık merkezi (center) bantın tam ucuna geldiğinde kopar
+                if (moveDir.x > 0 && checkPos.x >= beltEdge - 0.05f) pastEdge = true;
+                else if (moveDir.x < 0 && checkPos.x <= beltEdge + 0.05f) pastEdge = true;
+                else if (moveDir.z > 0 && checkPos.z >= beltEdge - 0.05f) pastEdge = true;
+                else if (moveDir.z < 0 && checkPos.z <= beltEdge + 0.05f) pastEdge = true;
 
                 if (pastEdge)
                 {
-                    // Bant sonu: Kinematic'i kapat, serbest düşüşe (grinder'a) geçsin
-                    itemRb.isKinematic = false;
-                    itemRb.useGravity = true;
-                    itemRb.constraints = RigidbodyConstraints.None;
+                    // Bant sonu: Objeyi banttan kopar ve serbest düşüşe bırak
+                    item.DetachFromBelt();
                     
-                    _trackedItems.RemoveAt(i);
-                    continue; // Bu objeyi taşımayı bırak
+                    // Ağırlık merkezi zaten uçurumda olduğu için, bu hız onu mükemmel bir şekilde devirecektir
+                    itemRb.AddForce(moveDir * 2f, ForceMode.VelocityChange);
+                    
+                    // DetachFromBelt listeyi temizlediği için bu objeyi daha fazla işlemeyeceğiz
+                    continue;
                 }
             }
 
-            // Kilit nokta: Önünde başka bir çöp (BeltItem) var mı? (Çarpışma önleyici tren sistemi)
-            // Kinematic objeler birbirine çarpamayacağı için bunu OverlapSphere ile biz kontrol ediyoruz
-            Vector3 aheadPos = itemRb.position + (moveDir * 0.3f);
-            Collider[] hits = Physics.OverlapSphere(aheadPos, 0.18f); // 18cm ilerisini tara
+            // Önümüzde başka bir çöp var mı? (Çarpışma önleyici tren sistemi)
+            Vector3 aheadPos = item.transform.position + (moveDir * 0.3f);
+            Collider[] hits = Physics.OverlapSphere(aheadPos, 0.18f); 
             bool blocked = false;
             foreach (var h in hits)
             {
@@ -123,16 +128,19 @@ public class BeltMovement : MonoBehaviour
                 BeltItem other = h.GetComponentInParent<BeltItem>();
                 if (other != null && other != item && other.IsOnBelt)
                 {
-                    blocked = true; // Önümüzde yığılma var, dur!
+                    // Eğer iki çöp EXACTLY aynı koordinatta doğmuşsa birbirlerini bloklamasınlar
+                    if (Vector3.Distance(item.transform.position, other.transform.position) < 0.05f) continue;
+                    
+                    blocked = true; 
                     break;
                 }
             }
 
-            // Eğer önümüz boşsa, Kinematic objeyi MovePosition ile yumuşakça ileri taşı
+            // Eğer önümüz boşsa, objenin ROOT transform'unu taşı (Kinematic olduğu için güvenli)
             if (!blocked)
             {
-                Vector3 nextPos = itemRb.position + moveDir * speed * Time.fixedDeltaTime;
-                itemRb.MovePosition(nextPos);
+                item.transform.position += moveDir * speed * Time.fixedDeltaTime;
+                Physics.SyncTransforms();
             }
         }
     }

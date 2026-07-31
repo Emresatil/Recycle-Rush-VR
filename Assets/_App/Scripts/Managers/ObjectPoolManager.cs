@@ -65,34 +65,39 @@ public class ObjectPoolManager : MonoBehaviour
             objToSpawn.name = poolKey; // (Clone) takısını temiz tut
         }
 
-        // 1) Önce Transform'u ayarla (obje henüz kapalı, fizik motoru çalışmıyor)
+        // ÇOK KRİTİK: Objeyi aktifleştirmeden ÖNCE pozisyonunu ayarla.
+        // Çünkü SetActive(true) çağrıldığında BeltItem.OnEnable() çalışır ve AttachToBelt() metodu çalışır.
+        // Eğer pozisyonu sonradan ayarlarsak, AttachToBelt'in yaptığı hizalama ezilir!
         objToSpawn.transform.position = position;
         objToSpawn.transform.rotation = rotation;
+        
+        objToSpawn.SetActive(true);
 
-        // 2) Rigidbody'yi sıfırla — AKTIF ETMEDEN ÖNCE kinematic yap
-        //    Bu sayede obje aktifleştiği kare fizik motoruna sıfır hızla girer
+        // Önceki hareketinden kalan Fiziksel etkileri ve kilitleri tam fabrika ayarlarına sıfırla
         Rigidbody[] rbs = objToSpawn.GetComponentsInChildren<Rigidbody>(true);
         foreach (Rigidbody rb in rbs)
         {
+            // Unity 6 Uyarısını Çözümleme: Kinematic bir objenin hızını sıfırlamaya çalışmak uyarı verir.
+            // Bu yüzden önce geçici olarak kinematic'i kapatıp hızları sıfırlıyoruz, sonra tekrar açıyoruz.
+            bool wasKinematic = rb.isKinematic;
+            if (wasKinematic) rb.isKinematic = false;
+
             rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
-            rb.isKinematic = true;   // BeltItem OnEnable çağrılmadan önce Kinematic olsun
-            rb.useGravity = false;
+            
+            rb.isKinematic = true; // Banta sorunsuz oturması için başta Kinematic olmalı
+            rb.useGravity = true;
             rb.constraints = RigidbodyConstraints.None;
-            rb.maxDepenetrationVelocity = 1f;
-            rb.mass = 1.0f;
+            rb.maxDepenetrationVelocity = 0.8f; 
         }
 
-        // 3) BeltItem bileşeni yoksa otomatik ekle (Bu bileşen OnEnable'da banta kaydeder)
+        // 1) BeltItem bileşeni yoksa otomatik ekle (Bu bileşen OnEnable'da banta kaydeder)
         if (objToSpawn.GetComponent<BeltItem>() == null)
         {
             objToSpawn.AddComponent<BeltItem>();
         }
 
-        // 4) Şimdi aktif et — BeltItem.OnEnable çağrılır ve obje Kinematic olarak banta eklenir
-        objToSpawn.SetActive(true);
-
-        // Tutma ve fırlatma seslerinin çalışması için WasteAudioFeedback bileşenini dinamik ekle
+        // 2) Tutma ve fırlatma seslerinin çalışması için WasteAudioFeedback bileşenini dinamik ekle
         if (objToSpawn.GetComponent<RecycleRush.Interaction.WasteAudioFeedback>() == null &&
             objToSpawn.GetComponentInChildren<RecycleRush.Interaction.WasteAudioFeedback>() == null)
         {

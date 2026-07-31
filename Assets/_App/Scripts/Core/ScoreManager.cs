@@ -255,9 +255,18 @@ namespace RecycleRush.Core
         /// </summary>
         public void ResetScore()
         {
+            // Skoru sıfırlamadan önce eğer yeni bir rekor varsa kaydet
+            SaveHighScore();
+
             CurrentScore = _startingScore;
             ResetCombo();
             OnScoreChanged?.Invoke(CurrentScore);
+        }
+
+        private void OnApplicationQuit()
+        {
+            // Oyuncu oyunu aniden kapatırsa (Exit butonuna basarsa veya pencereyi kapatırsa) rekoru kaybetmemek için kaydet
+            SaveHighScore();
         }
 
         /// <summary>
