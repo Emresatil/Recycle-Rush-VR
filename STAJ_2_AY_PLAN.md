@@ -1,0 +1,5 @@
+# Emre Satıl - Beyin Fırtınası
+
+Stajımızın ikinci ay planlaması için hakan ile detaylı bir beyin fırtınası gerçekleştirdik. Sıfırdan yeni bir projeye başlamak yerine, ilk 20 günde temel mekaniklerini, obje havuzunu (Object Pooling) ve skor sistemini başarıyla oturttuğumuz Recycle Rush VR projesini genişletme kararı aldık. Bu kararı almamdaki en büyük etken, ilk aşamada konveyör bandı üzerinde yaşadığımız ve çözümü saatler süren kompleks fizik kilitlenmelerini (deadlock) ve çarpışma bug'larını tekrar yaşamamak için oyun tasarımını değiştirmektir.
+
+Projeyi bir VR deneyiminden, güncel Meta Passthrough teknolojisini kullanan bir AR (Karma Gerçeklik) deneyimine geçireceğiz. Konveyör bandı mekaniğini iptal ederek, geri dönüşüm kutularını Spatial Anchors (Uzamsal Çapalar) ile oyuncunun gerçek odasına yerleştiren, çok daha stabil ve performansı yüksek yeni bir oyun döngüsü kodlamaya odaklanacağız. Bu sayede hem yeni baştan model arama süresinden tasarruf edeceğiz hem de var olan stabil kod mimarisinin üzerine güncel XR teknolojilerini entegre ederek projenin ölçeklenebilirliğini (scalability) kanıtlamış olacağız.
