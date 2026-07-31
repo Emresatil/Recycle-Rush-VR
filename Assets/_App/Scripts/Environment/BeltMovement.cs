@@ -80,7 +80,6 @@ public class BeltMovement : MonoBehaviour
         {
             BeltItem item = _trackedItems[i];
             
-            // Obje silinmiş, havuza dönmüş veya deaktif olmuş olabilir
             if (item == null || !item.gameObject.activeInHierarchy || !item.IsOnBelt || item.IsGrabbed)
             {
                 _trackedItems.RemoveAt(i);
@@ -129,7 +128,10 @@ public class BeltMovement : MonoBehaviour
                 BeltItem other = h.GetComponentInParent<BeltItem>();
                 if (other != null && other != item && other.IsOnBelt)
                 {
-                    blocked = true; // Önümüzde yığılma var, dur!
+                    // Eğer iki çöp EXACTLY aynı koordinatta doğmuşsa birbirlerini bloklamasınlar
+                    if (Vector3.Distance(item.transform.position, other.transform.position) < 0.05f) continue;
+                    
+                    blocked = true; 
                     break;
                 }
             }
