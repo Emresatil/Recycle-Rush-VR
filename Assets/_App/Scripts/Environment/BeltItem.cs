@@ -102,6 +102,8 @@ public class BeltItem : MonoBehaviour
             _rb.useGravity = true;
             _rb.constraints = RigidbodyConstraints.None;
         }
+        _isOnBelt = false;
+        _isGrabbed = false;
     }
 
     private void AttachToBelt()
