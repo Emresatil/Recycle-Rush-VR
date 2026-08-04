@@ -156,13 +156,22 @@ namespace RecycleRush.Editor
                     if (mat != null && mat.shader != targetShader)
                     {
                         string matPath = AssetDatabase.GetAssetPath(mat);
-                        // Unity'nin dahili veya paket materyallerini değiştirmekten kaçın (Sarı uyarı çözümlemesi)
                         if (string.IsNullOrEmpty(matPath) || matPath.StartsWith("Packages/") || matPath.StartsWith("Resources/unity_builtin_extra"))
                         {
                             continue;
                         }
 
+                        // Eski renk ve texture değerlerini yedekle (Standard shader'dan URP'ye geçerken kaybolmaması için)
+                        Color oldColor = mat.HasProperty("_Color") ? mat.GetColor("_Color") : Color.white;
+                        Texture oldTex = mat.HasProperty("_MainTex") ? mat.GetTexture("_MainTex") : null;
+                        
+                        // Shader'ı değiştir
                         mat.shader = targetShader;
+
+                        // URP BaseColor ve BaseMap değişkenlerine eski değerleri geri yükle
+                        if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", oldColor);
+                        if (mat.HasProperty("_BaseMap")) mat.SetTexture("_BaseMap", oldTex);
+
                         EditorUtility.SetDirty(mat);
                         wasModified = true;
                     }
@@ -204,14 +213,28 @@ namespace RecycleRush.Editor
             GameObject shadowObj = GameObject.CreatePrimitive(PrimitiveType.Quad);
             shadowObj.name = "AR_BlobShadow";
             
-            Material shadowMat = new Material(Shader.Find("Universal Render Pipeline/Unlit"));
-            shadowMat.color = new Color(0, 0, 0, 0.4f);
-            
-            shadowMat.SetFloat("_Surface", 1); 
-            shadowMat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-            shadowMat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-            shadowMat.SetInt("_ZWrite", 0);
-            shadowMat.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+            // Gölge materyalini diskten yükle veya yeni oluşturup diske kaydet (Pembe materyal hatasını önlemek için)
+            string shadowMatPath = "Assets/_App/Materials/AR_BlobShadow.mat";
+            Material shadowMat = AssetDatabase.LoadAssetAtPath<Material>(shadowMatPath);
+
+            if (shadowMat == null)
+            {
+                if (!AssetDatabase.IsValidFolder("Assets/_App/Materials"))
+                {
+                    AssetDatabase.CreateFolder("Assets/_App", "Materials");
+                }
+
+                shadowMat = new Material(Shader.Find("Universal Render Pipeline/Unlit"));
+                shadowMat.color = new Color(0, 0, 0, 0.4f);
+                shadowMat.SetFloat("_Surface", 1); 
+                shadowMat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+                shadowMat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+                shadowMat.SetInt("_ZWrite", 0);
+                shadowMat.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+
+                AssetDatabase.CreateAsset(shadowMat, shadowMatPath);
+                AssetDatabase.SaveAssets();
+            }
 
             shadowObj.GetComponent<Renderer>().sharedMaterial = shadowMat;
             DestroyImmediate(shadowObj.GetComponent<Collider>(), true);
