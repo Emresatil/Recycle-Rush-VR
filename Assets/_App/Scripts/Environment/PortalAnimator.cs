@@ -20,6 +20,12 @@ namespace RecycleRush.Environment
         [Tooltip("Şişme sonrası eski haline dönme hızı")]
         public float effectRecoverySpeed = 5f;
 
+        [Header("AAA Polish (İsteğe Bağlı)")]
+        [Tooltip("Çöp çıktığında patlayacak partikül efekti")]
+        public ParticleSystem spawnParticles;
+        [Tooltip("Çöp çıktığında çalınacak ses efekti")]
+        public AudioSource spawnAudio;
+
         private Vector3 baseScale;
         private float currentEffectScale = 1f;
 
@@ -46,11 +52,21 @@ namespace RecycleRush.Environment
 
         /// <summary>
         /// Çöp üretildiği (Spawn) anında bu fonksiyon çağrılır.
-        /// Portalı aniden büyütür.
+        /// Portalı aniden büyütür, ses ve partikül efektlerini oynatır.
         /// </summary>
         public void PlaySpawnEffect()
         {
             currentEffectScale = spawnEffectScale;
+
+            if (spawnParticles != null)
+            {
+                spawnParticles.Play();
+            }
+
+            if (spawnAudio != null)
+            {
+                spawnAudio.Play();
+            }
         }
     }
 }
