@@ -43,12 +43,18 @@ namespace RecycleRush.Interaction
         {
             if (_rigidbody == null) return;
 
-            // Kütle ve sürtünme ayarları (Yerde sonsuza kadar yuvarlanmayı engeller)
-            // Unity 6 mimarisine uygun olarak Damping property'leri kullanılmıştır.
+            // Kütle ve sürtünme ayarları
             _rigidbody.mass = targetMass;
             _rigidbody.angularDamping = targetAngularDamping;
             
-            Debug.Log($"<color=green>[AR Physics]</color> {gameObject.name} fiziği AR için optimize edildi. (Mass: {targetMass}, AngularDamping: {targetAngularDamping})");
+            // --- AAA KALİTE FİZİK STANDARTLARI ---
+            // 1. Tünelleme Önleyici: Hızlı fırlatılan çöpün kutu duvarının içinden geçip gitmesini (Ghosting) engeller.
+            _rigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+            
+            // 2. Havada Yumuşatma: Çöp havada uçarken FPS takılmasını gizler, sinematik ve pürüzsüz bir uçuş sağlar.
+            _rigidbody.interpolation = RigidbodyInterpolation.Interpolate;
+            
+            Debug.Log($"<color=green>[AR Physics]</color> {gameObject.name} fiziği AR için optimize edildi. (Mass: {targetMass}, Damping: {targetAngularDamping}, ContinuousDynamic: Açık)");
         }
 
         private void ApplyARGrabCalibration()
