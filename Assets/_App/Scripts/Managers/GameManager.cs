@@ -132,7 +132,7 @@ public class GameManager : MonoBehaviour
                     }
                 }
             }
-            else if (CurrentState == GameState.ReadyToStart)
+            else if (CurrentState == GameState.ReadyToStart || CurrentState == GameState.Countdown)
             {
                 // Sadece Butonlar görünür durumdaysa devrilme animasyonu başlat (örn: MainMenu'den gelirsek)
                 if (buttonsModule.activeSelf)
@@ -167,7 +167,9 @@ public class GameManager : MonoBehaviour
                 RecycleRush.Core.ScoreManager.Instance.ResetScore(); // Skoru ve komboyu sıfırla
             }
 
-            ChangeState(GameState.ReadyToStart);
+            // Kol (Lever) konveyör bandı ile birlikte silindiği için 
+            // ReadyToStart yerine direkt Geri Sayım (Countdown) durumuna geçerek oyunu başlat.
+            ChangeState(GameState.Countdown);
         }
     }
 
