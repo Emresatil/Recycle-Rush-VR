@@ -44,6 +44,10 @@ namespace RecycleRush.AR_Features
             {
                 Debug.LogError("<color=red>[PortalSpawner]</color> Sahnede ObjectPoolManager bulunamadı! Lütfen Core sistemleri ekleyin.");
             }
+            
+            // DÜZELTME: Simülatörde kolay test edebilmen için otomatik başlatmayı geri ekledim!
+            // (İleride GameManager'a bağladığımızda burayı sileceğiz)
+            StartSpawning();
         }
 
         private void Update()
@@ -105,10 +109,33 @@ namespace RecycleRush.AR_Features
                 centerPos.z + randomZ
             );
 
-            // Rastgele bir standart atık (Kağıt/Cam/Plastik) seç
-            GameObject selectedPrefab = wastePrefabs[Random.Range(0, wastePrefabs.Length)];
+            // Golden Waste (Altın Çöp) İhtimal Hesaplama (RNG) Algoritması
+            GameObject selectedPrefab = null;
+            
+            // Mevcut seviyeyi al (DifficultyManager yoksa varsayılan 0 kabul et)
+            int currentLevel = 0;
+            if (DifficultyManager.Instance != null)
+            {
+                currentLevel = DifficultyManager.Instance.CurrentLevel;
+            }
 
-            // NOT: Gün 6 görevinde buraya Golden Waste (Altın Çöp) ihtimal hesaplama (RNG) algoritması eklenecek.
+            // Seviyeye göre altın çöp şansını hesapla (Level başına %5 artış)
+            // Örn: Lvl 0: %5, Lvl 1: %10, Lvl 2: %15, Lvl 3: %20, Maksimum: %25
+            float currentGoldenChance = Mathf.Clamp(goldenWasteChance + (currentLevel * 0.05f), goldenWasteChance, 0.25f);
+
+            // Rastgele zar at (0.0 ile 1.0 arası)
+            if (goldenWastePrefab != null && Random.value <= currentGoldenChance)
+            {
+                // Şans yaver gitti, Altın Çöp seçildi!
+                selectedPrefab = goldenWastePrefab;
+                // Konsola bilgi yazdır
+                Debug.Log($"<color=yellow>[PortalSpawner]</color> Jackpot! Altın Çöp düştü! (Mevcut İhtimal: %{currentGoldenChance * 100})");
+            }
+            else
+            {
+                // Şans tutmadı, rastgele standart atık (Kağıt/Cam/Plastik) seç
+                selectedPrefab = wastePrefabs[Random.Range(0, wastePrefabs.Length)];
+            }
 
             // Objeyi havuzdan çek (Instantiate yerine bellek dostu havuzlama)
             GameObject spawnedWaste = ObjectPoolManager.Instance.SpawnFromPool(
