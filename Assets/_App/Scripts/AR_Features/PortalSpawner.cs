@@ -23,6 +23,14 @@ namespace RecycleRush.AR_Features
         [Tooltip("Üretilecek standart atık prefabları (Kağıt, Cam, Plastik vb.)")]
         public GameObject[] wastePrefabs;
 
+        [Header("Golden Waste (Altın Çöp) Ayarları")]
+        [Tooltip("Nadir altın çöp prefabı")]
+        public GameObject goldenWastePrefab;
+
+        [Tooltip("Mevcut seviyeye bağlı Altın Çöp çıkma ihtimali (%5 - %25)")]
+        [Range(0.05f, 0.25f)]
+        public float goldenWasteChance = 0.05f;
+
         [Header("Zamanlama (Timing)")]
         [Tooltip("Saniye cinsinden iki atık arası bekleme süresi")]
         public float spawnInterval = 3.0f;
@@ -36,9 +44,6 @@ namespace RecycleRush.AR_Features
             {
                 Debug.LogError("<color=red>[PortalSpawner]</color> Sahnede ObjectPoolManager bulunamadı! Lütfen Core sistemleri ekleyin.");
             }
-            
-            // TEST: Otomatik olarak başlat (Gerçek oyunda GameManager başlatacak)
-            StartSpawning();
         }
 
         private void Update()
