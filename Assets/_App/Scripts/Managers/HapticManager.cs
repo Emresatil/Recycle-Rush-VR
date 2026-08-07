@@ -1,6 +1,8 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.XR;
-using System.Collections.Generic;
+using UnityEngine.XR.Interaction.Toolkit.Interactors;
 
 namespace RecycleRush.Core
 {
@@ -49,10 +51,45 @@ namespace RecycleRush.Core
         /// <summary>
         /// Sadece belirli bir kontrolcüyü (objeyi tutan eli) titreştirir.
         /// </summary>
-        public void TriggerHaptic(UnityEngine.XR.Interaction.Toolkit.Interactors.XRBaseInputInteractor interactor, float intensity, float duration)
+        public void TriggerHaptic(XRBaseInputInteractor interactor, float intensity, float duration)
         {
             if (interactor == null) return;
             interactor.SendHapticImpulse(intensity, duration);
+        }
+
+        /// <summary>
+        /// Oyuncu standart bir çöpü eline aldığında çalınacak kısa ve net titreşim (Tatmin hissi).
+        /// </summary>
+        public void TriggerGrabHaptic(XRBaseInputInteractor interactor)
+        {
+            // Editör testleri için görsel log
+            Debug.Log("<color=orange>[Haptic/Grab]</color> Obje tutuldu! Kısa 'Click' titreşimi gönderiliyor...");
+            // Çok hafif ve kısa bir click (0.3 şiddetinde 0.1 saniye)
+            TriggerHaptic(interactor, 0.3f, 0.1f);
+        }
+
+        /// <summary>
+        /// Oyuncu "Altın Çöp" (Golden Waste) yakaladığında devreye giren efsanevi titreşim efekti.
+        /// Kalp atışı / motor çalışması gibi ritmik bir his verir.
+        /// </summary>
+        public void TriggerGoldenWasteHaptic(XRBaseInputInteractor interactor)
+        {
+            if (interactor != null)
+            {
+                StartCoroutine(GoldenHapticRoutine(interactor));
+            }
+        }
+
+        private IEnumerator GoldenHapticRoutine(XRBaseInputInteractor interactor)
+        {
+            // 3 kere ritmik olarak kalp atışı gibi vuracak
+            for (int i = 0; i < 3; i++)
+            {
+                interactor.SendHapticImpulse(0.8f, 0.15f); // Güçlü vur
+                yield return new WaitForSeconds(0.25f);    // Bekle
+                interactor.SendHapticImpulse(0.4f, 0.1f);  // Hafif artçı vur
+                yield return new WaitForSeconds(0.3f);     // Bekle
+            }
         }
 
         /// <summary>
