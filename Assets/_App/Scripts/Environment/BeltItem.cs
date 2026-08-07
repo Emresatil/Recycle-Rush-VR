@@ -99,6 +99,7 @@ public class BeltItem : MonoBehaviour
         if (_rb != null)
         {
             _rb.isKinematic = false;
+            _rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic; // Unity bug fix: Kinematic'ten çıkınca Discrete'e döner, geri düzelt
             _rb.useGravity = true;
             _rb.constraints = RigidbodyConstraints.None;
         }
@@ -126,6 +127,7 @@ public class BeltItem : MonoBehaviour
         {
             // Bant yoksa normal dynamic bırak
             _rb.isKinematic = false;
+            _rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic; // Unity bug fix
             _rb.useGravity = true;
             return;
         }
@@ -201,6 +203,7 @@ public class BeltItem : MonoBehaviour
             if (_rb.isKinematic)
             {
                 _rb.isKinematic = false;
+                _rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic; // Unity bug fix
                 _rb.useGravity = true;
                 _rb.constraints = RigidbodyConstraints.None;
             }
