@@ -39,6 +39,31 @@ namespace RecycleRush.Interaction
             ApplyARGrabCalibration();
         }
 
+        private void OnEnable()
+        {
+            if (_grabInteractable != null)
+                _grabInteractable.selectEntered.AddListener(OnGrabbed);
+        }
+
+        private void OnDisable()
+        {
+            if (_grabInteractable != null)
+                _grabInteractable.selectEntered.RemoveListener(OnGrabbed);
+        }
+
+        private void OnGrabbed(SelectEnterEventArgs args)
+        {
+            // Eğer objeyi tutan el (interactor) standart bir XR input (sağ/sol kol) ise:
+            if (args.interactorObject is UnityEngine.XR.Interaction.Toolkit.Interactors.XRBaseInputInteractor inputInteractor)
+            {
+                if (RecycleRush.Core.HapticManager.Instance != null)
+                {
+                    // Şimdilik hepsi standart titreşim. Altın çöp mantığı eklendiğinde buraya "if (isGolden)" eklenecek.
+                    RecycleRush.Core.HapticManager.Instance.TriggerGrabHaptic(inputInteractor);
+                }
+            }
+        }
+
         private void ApplyARPhysicsCalibration()
         {
             if (_rigidbody == null) return;
