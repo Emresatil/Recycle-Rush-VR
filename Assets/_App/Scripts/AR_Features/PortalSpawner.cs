@@ -112,11 +112,11 @@ namespace RecycleRush.AR_Features
             // Golden Waste (Altın Çöp) İhtimal Hesaplama (RNG) Algoritması
             GameObject selectedPrefab = null;
             
-            // Mevcut seviyeyi al (DifficultyManager yoksa varsayılan 0 kabul et)
-            int currentLevel = 0;
-            if (DifficultyManager.Instance != null)
+            // Mevcut seviyeyi al (Artık kendi yazdığımız LevelManager'ı kullanıyoruz)
+            int currentLevel = 1; // LevelManager 1'den başlıyor
+            if (LevelManager.Instance != null)
             {
-                currentLevel = DifficultyManager.Instance.CurrentLevel;
+                currentLevel = LevelManager.Instance.CurrentLevel;
             }
 
             // Seviyeye göre altın çöp şansını hesapla (Level başına %5 artış)
