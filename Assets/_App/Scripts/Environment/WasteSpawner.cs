@@ -10,6 +10,12 @@ public class WasteSpawner : MonoBehaviour
     [Tooltip("Atıkların düşeceği başlangıç noktası")]
     public Transform spawnPoint;
 
+    [Header("Golden Waste Settings")]
+    [Tooltip("Nadir (Joker) olarak düşecek Altın Çöp Prefab'ı")]
+    public GameObject goldenWastePrefab;
+    [Tooltip("Altın Çöp'ün çıkma ihtimali (Yüzde % olarak)")]
+    [Range(0f, 100f)] public float goldenSpawnChance = 5f;
+
     [Header("Visual Effects")]
     [Tooltip("Çöplerin çıktığı portalın görsel animatörü (İsteğe bağlı)")]
     public RecycleRush.Environment.PortalAnimator portalAnimator;
@@ -149,7 +155,24 @@ public class WasteSpawner : MonoBehaviour
             }
         }
 
-        GameObject selectedPrefab = GetRandomPrefab();
+        // 5. Özellik: Altın Çöp Şansı (Zar atma mantığı)
+        GameObject selectedPrefab = null;
+        if (goldenWastePrefab != null)
+        {
+            float randomRoll = Random.Range(0f, 100f);
+            if (randomRoll <= goldenSpawnChance)
+            {
+                selectedPrefab = goldenWastePrefab;
+                Debug.Log($"<color=yellow>[WasteSpawner]</color> BÜYÜK ŞANS! Altın Çöp Üretiliyor! (Atılan Zar: {randomRoll:F1} <= {goldenSpawnChance})");
+            }
+        }
+
+        // Eğer altın çöp çıkmadıysa normal rastgele çöplerden birini seç
+        if (selectedPrefab == null)
+        {
+            selectedPrefab = GetRandomPrefab();
+        }
+
         if (selectedPrefab == null) return false;
 
         Debug.Log($"<color=magenta>[WasteSpawner]</color> Çöp üretimi tetiklendi: {selectedPrefab.name}");
@@ -201,6 +224,13 @@ public class WasteSpawner : MonoBehaviour
 
     private bool HasWasteTag(GameObject obj)
     {
+        // Untagged bile olsa üzerinde ARWastePhysicsTuner ve Altın Çöp tiki varsa engel say (Çakışma önleyici)
+        var tuner = obj.GetComponentInChildren<RecycleRush.Interaction.ARWastePhysicsTuner>();
+        if (tuner != null && tuner.isGoldenWaste)
+        {
+            return true;
+        }
+
         return obj.CompareTag("Paper") || 
                obj.CompareTag("Glass") || 
                obj.CompareTag("Plastic") || 

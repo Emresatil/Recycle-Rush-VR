@@ -13,6 +13,10 @@ namespace RecycleRush.Interaction
     [RequireComponent(typeof(XRGrabInteractable))]
     public class ARWastePhysicsTuner : MonoBehaviour
     {
+        [Header("Golden Waste Settings")]
+        [Tooltip("Eğer bu obje Altın Çöp ise işaretleyin. Özel titreşim ve puanlama sistemlerini tetikler.")]
+        public bool isGoldenWaste = false;
+
         [Header("AR Physics Calibration")]
         [Tooltip("AR ortamında çöpün yere düştüğünde sonsuza kadar yuvarlanmasını önlemek için uygulanacak dönüş sürtünmesi (Unity 6 Damping).")]
         [SerializeField] private float targetAngularDamping = 2.0f;
@@ -58,8 +62,17 @@ namespace RecycleRush.Interaction
             {
                 if (RecycleRush.Core.HapticManager.Instance != null)
                 {
-                    // Şimdilik hepsi standart titreşim. Altın çöp mantığı eklendiğinde buraya "if (isGolden)" eklenecek.
-                    RecycleRush.Core.HapticManager.Instance.TriggerGrabHaptic(inputInteractor);
+                    if (isGoldenWaste)
+                    {
+                        // Altın Çöp tutuldu! Kalp atışı titreşimi gönder.
+                        RecycleRush.Core.HapticManager.Instance.TriggerGoldenWasteHaptic(inputInteractor);
+                        Debug.Log("<color=yellow>[Golden Waste]</color> Efsanevi çöp elinize alındı! Ritmik titreşim tetikleniyor.");
+                    }
+                    else
+                    {
+                        // Normal çöp tutuldu. Standart 'Click' titreşimi gönder.
+                        RecycleRush.Core.HapticManager.Instance.TriggerGrabHaptic(inputInteractor);
+                    }
                 }
             }
         }
