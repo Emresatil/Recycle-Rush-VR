@@ -517,7 +517,8 @@ MonoBehaviour:
   - {fileID: 3199166170169763079, guid: 09e21d7564c94b4418971db260dcf71d, type: 3}
   - {fileID: 1712690235699389714, guid: fbe12c384f50aed42ae7e457f2f1cfbf, type: 3}
   - {fileID: 8134708681774675193, guid: 8df0748676d76ab44aef43bafbc57d94, type: 3}
-  - {fileID: 5089588363924917385, guid: 76e45dd3b58ab6f4da7b3fd7b9714bd5, type: 3}
+  goldenWastePrefab: {fileID: 899901206736937025, guid: 26356dcf67d5801419ee7124ce2c8717, type: 3}
+  goldenWasteChance: 0.05
   spawnInterval: 5
 --- !u!4 &860334677
 Transform:
