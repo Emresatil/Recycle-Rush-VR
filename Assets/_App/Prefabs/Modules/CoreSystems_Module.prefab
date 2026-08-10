@@ -1,5 +1,49 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &594896362455917851
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1421011478603446279}
+  - component: {fileID: 3518235601264545823}
+  m_Layer: 0
+  m_Name: SaveManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1421011478603446279
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 594896362455917851}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4129714333503685258}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3518235601264545823
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 594896362455917851}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ef9de24e8eb6a3439efae03cdad102c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RecycleRush.Managers.SaveManager
 --- !u!1 &613033123529370620
 GameObject:
   m_ObjectHideFlags: 0
@@ -50,10 +94,12 @@ MonoBehaviour:
   comboText: {fileID: 0}
   settingsPanel: {fileID: 0}
   pausePanel: {fileID: 0}
+  gameOverPanel: {fileID: 0}
+  gameOverFinalScoreText: {fileID: 0}
   pauseButtonUIObj: {fileID: 0}
   bgmSlider: {fileID: 0}
   sfxSlider: {fileID: 0}
-  menuPauseAction: {fileID: 0}
+  menuPauseAction: {fileID: 4116954447336496447, guid: 0be0028c24f2a4c14a96b6aa39055933, type: 3}
 --- !u!1 &667207769190123117
 GameObject:
   m_ObjectHideFlags: 0
@@ -402,6 +448,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4eac4e0fbdab9dc4eb9f342ee84c0630, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPoolManager
+  killZLevel: -5
+  maxDistance: 8
 --- !u!1 &1629354575857376435
 GameObject:
   m_ObjectHideFlags: 0
@@ -429,9 +477,10 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -2.17329, y: -0.01, z: 5.12089}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 1.5807, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 6703206499871839078}
   - {fileID: 4478047152154706686}
   - {fileID: 2149191533442865205}
   - {fileID: 2729002289449368018}
@@ -440,6 +489,7 @@ Transform:
   - {fileID: 4329850333813080077}
   - {fileID: 7153854190346469419}
   - {fileID: 7575605574014415191}
+  - {fileID: 1421011478603446279}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1384410119265384506
@@ -456,6 +506,64 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
   _gameDuration: 60
   buttonsModule: {fileID: 0}
+  environmentModules:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  CurrentSession:
+    TotalCorrectThrows: 0
+    TotalIncorrectThrows: 0
+    MaxCombo: 0
+    GoldenWastesCollected: 0
+    EarnedXP: 0
+    EarnedCoins: 0
+    TotalPlayTime: 0
+  _maxWave: 5
+--- !u!1 &3237634172561445040
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6703206499871839078}
+  - component: {fileID: 4025050642710542624}
+  m_Layer: 0
+  m_Name: AnalyticsManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6703206499871839078
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3237634172561445040}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -331.22162, y: 7.4155703, z: -14.68729}
+  m_LocalScale: {x: 0.6326311, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4129714333503685258}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4025050642710542624
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3237634172561445040}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 732432909b8d3b9438fd98aae9990ed9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RecycleRush.Managers.AnalyticsManager
 --- !u!1 &5433758103073617026
 GameObject:
   m_ObjectHideFlags: 0
