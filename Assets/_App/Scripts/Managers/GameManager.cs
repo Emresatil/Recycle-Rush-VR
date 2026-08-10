@@ -6,12 +6,24 @@ public enum GameState
 {
     Initialization,
     MainMenu,
-    ReadyToStart,
+    Placement, // AR ortamında kutuların yerleştirildiği evre
     Tutorial,
-    Countdown, // Eklendi: UIManager'ın kullandığı geri sayım durumu
+    Countdown,
     Playing,
     Paused,
     GameOver
+}
+
+[System.Serializable]
+public struct GameSessionData
+{
+    public int TotalCorrectThrows;
+    public int TotalIncorrectThrows;
+    public int MaxCombo;
+    public int GoldenWastesCollected;
+    public int EarnedXP;
+    public int EarnedCoins;
+    public float TotalPlayTime;
 }
 
 public class GameManager : MonoBehaviour
@@ -37,8 +49,16 @@ public class GameManager : MonoBehaviour
     
     // Oyun durumunun okunabilmesi ama sadece bu sınıf tarafından değiştirilebilmesi için Property
     public GameState CurrentState { get; private set; }
+    public GameState PreviousState { get; private set; }
+    
+    [Header("Oturum Verileri (Session Data)")]
+    public GameSessionData CurrentSession;
     
     public float RemainingTime { get; private set; }
+    
+    [Header("Dalga (Wave) Altyapısı (Skeleton)")]
+    public int CurrentWave { get; private set; }
+    [SerializeField] private int _maxWave = 5;
 
     // Event'ler (Olaylar): Spagetti kodu engeller. Diğer sınıflar sadece bu eventleri dinler.
     // Örneğin; UI yöneticisi OnGameStateChanged'i dinler ve GameOver gelince bitiş panelini açar.
@@ -47,16 +67,17 @@ public class GameManager : MonoBehaviour
 
     private void Awake()
     {
-        // Singleton Kurulumu
+        // Thread-safe / Scene-transition safe Singleton Kurulumu (SOLID Uyumluluğu)
         if (Instance != null && Instance != this)
         {
+            Debug.LogWarning("[GameManager] Sahnede birden fazla GameManager bulundu, kopya siliniyor.");
             Destroy(gameObject);
             return;
         }
         
         Instance = this;
-        // GameManager sahneler arası geçişte yok olmasın isteniyorsa aşağıdaki kod açılabilir:
-        // DontDestroyOnLoad(gameObject);
+        // GameManager'ın sahneler arası referans kaybı yaşamaması için kalıcı yapılması (Önerilen)
+        DontDestroyOnLoad(gameObject);
     }
 
     private void Start()
@@ -92,13 +113,45 @@ public class GameManager : MonoBehaviour
 
     /// <summary>
     /// Oyunun durumunu güvenli bir şekilde değiştirir ve diğer sistemlere anons eder.
+    /// Mantıksız geçişler (Örn: MainMenu -> Playing) engellenir.
     /// </summary>
     public void ChangeState(GameState newState)
     {
         if (CurrentState == newState) return; // Zaten o durumdaysak işlem yapma
+        
+        // State Transition Validation (Geçiş Kontrol Kalkanı - SOLID/Defensive Programming)
+        bool isValidTransition = true;
+        switch (CurrentState)
+        {
+            case GameState.MainMenu:
+                if (newState == GameState.Playing || newState == GameState.Paused || newState == GameState.GameOver) isValidTransition = false;
+                break;
+            case GameState.Placement:
+                if (newState != GameState.Countdown && newState != GameState.MainMenu) isValidTransition = false;
+                break;
+            case GameState.Countdown:
+                if (newState != GameState.Playing && newState != GameState.MainMenu) isValidTransition = false;
+                break;
+            case GameState.Playing:
+                if (newState != GameState.Paused && newState != GameState.GameOver) isValidTransition = false;
+                break;
+            case GameState.Paused:
+                if (newState != GameState.Playing && newState != GameState.MainMenu) isValidTransition = false;
+                break;
+            case GameState.GameOver:
+                if (newState != GameState.Countdown && newState != GameState.MainMenu) isValidTransition = false;
+                break;
+        }
 
+        if (!isValidTransition)
+        {
+            Debug.LogError($"[GameManager] HATA (Geçersiz Geçiş): {CurrentState} durumundan {newState} durumuna geçilemez!");
+            return;
+        }
+
+        PreviousState = CurrentState;
         CurrentState = newState;
-        Debug.Log($"[GameManager] Oyun durumu değişti: {CurrentState}");
+        Debug.Log($"[GameManager] Oyun durumu değişti: {PreviousState} -> {CurrentState}");
         
         // Modülleri Duruma Göre Otomatik Yönet (Butonlar vb.)
         if (buttonsModule != null)
@@ -132,7 +185,7 @@ public class GameManager : MonoBehaviour
                     }
                 }
             }
-            else if (CurrentState == GameState.ReadyToStart || CurrentState == GameState.Countdown)
+            else if (CurrentState == GameState.Placement || CurrentState == GameState.Countdown)
             {
                 // Sadece Butonlar görünür durumdaysa devrilme animasyonu başlat (örn: MainMenu'den gelirsek)
                 if (buttonsModule.activeSelf)
@@ -153,25 +206,70 @@ public class GameManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Play veya Restart butonuna basıldığında sistemi kol çekilmeye (Vardiya başlangıcına) hazırlar.
+    /// Oyunu tamamen sıfırlar ve yeniden başlatır. 
+    /// Timer, SessionData, Skor, Kombo, Çöpler ve Dalgalar (Wave) sıfırlanır.
     /// </summary>
-    public void PrepareToStart()
+    public void RestartGame()
     {
-        if (CurrentState == GameState.MainMenu || CurrentState == GameState.GameOver)
+        if (CurrentState == GameState.MainMenu || CurrentState == GameState.GameOver || CurrentState == GameState.Paused)
         {
+            // 1. Timer Sıfırla
             RemainingTime = _gameDuration;
-            OnGameTimeUpdated?.Invoke(RemainingTime); // Ekrandaki zaman yazısını anında 60 yap
+            OnGameTimeUpdated?.Invoke(RemainingTime);
 
+            // 2. Session Data Sıfırla
+            CurrentSession = new GameSessionData();
+
+            // 3. Skor ve Komboyu Sıfırla
             if (RecycleRush.Core.ScoreManager.Instance != null)
             {
-                RecycleRush.Core.ScoreManager.Instance.ResetScore(); // Skoru ve komboyu sıfırla
+                RecycleRush.Core.ScoreManager.Instance.ResetScore();
             }
+            
+            // 4. Havuzdaki çöpleri temizle (Eğer ObjectPoolManager varsa)
+            // if (ObjectPoolManager.Instance != null) ObjectPoolManager.Instance.ReturnAllToPool();
 
-            // Kol (Lever) konveyör bandı ile birlikte silindiği için 
-            // ReadyToStart yerine direkt Geri Sayım (Countdown) durumuna geçerek oyunu başlat.
+            // 5. Motor hızını sıfırla (Paused durumundan geliyorsak zaman durmuş olabilir)
+            Time.timeScale = 1f;
+            
+            // 6. Dalga sistemini (Wave) sıfırla
+            CurrentWave = 1;
+
+            // 7. Geri Sayım (Countdown) durumuna geçerek oyunu başlat.
             ChangeState(GameState.Countdown);
         }
     }
+
+    #region Wave Skeleton (İleride Geliştirilecek)
+    
+    /// <summary>
+    /// Yeni bir dalgayı (Wave) başlatır. Zorluk seviyesi (Hız, Spawn süresi) burada artırılabilir.
+    /// (Solid: Açık/Kapalı prensibine uygun genişleme alanı)
+    /// </summary>
+    public void StartWave()
+    {
+        Debug.Log($"[GameManager] Wave {CurrentWave} Başlıyor!");
+        // TODO: Spawner sistemine "Daha hızlı üret" sinyali gönderilebilir.
+    }
+
+    /// <summary>
+    /// Mevcut dalgayı (Wave) sonlandırır.
+    /// </summary>
+    public void EndWave()
+    {
+        Debug.Log($"[GameManager] Wave {CurrentWave} Bitti!");
+        if (CurrentWave < _maxWave)
+        {
+            CurrentWave++;
+            StartWave();
+        }
+        else
+        {
+            EndGame(); // Son dalga bittiyse oyun biter
+        }
+    }
+    
+    #endregion
 
     /// <summary>
     /// Oyunu (veya gerekirse öğreticiyi) başlatır.
