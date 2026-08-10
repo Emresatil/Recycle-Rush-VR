@@ -20,6 +20,9 @@ public class WasteSpawner : MonoBehaviour
     [Tooltip("Çöplerin çıktığı portalın görsel animatörü (İsteğe bağlı)")]
     public RecycleRush.Environment.PortalAnimator portalAnimator;
     
+    // YENİ (Analytics): Altın çöp üretildiğinde dinleyicilere (AnalyticsManager) fırlatılan sinyal
+    public static event System.Action OnGoldenWasteSpawned;
+    
     [Header("Organik Zamanlama (Zorluk)")]
     [Tooltip("En az kaç saniyede bir atık düşsün?")]
     public float minSpawnInterval = 0.8f;
@@ -164,6 +167,7 @@ public class WasteSpawner : MonoBehaviour
             {
                 selectedPrefab = goldenWastePrefab;
                 Debug.Log($"<color=yellow>[WasteSpawner]</color> BÜYÜK ŞANS! Altın Çöp Üretiliyor! (Atılan Zar: {randomRoll:F1} <= {goldenSpawnChance})");
+                OnGoldenWasteSpawned?.Invoke(); // Analiz sistemine haber ver
             }
         }
 

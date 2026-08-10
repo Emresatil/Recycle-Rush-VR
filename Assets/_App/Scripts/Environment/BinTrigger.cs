@@ -19,6 +19,10 @@ public struct SortResultData
     public float HapticDuration;
     public float HapticAmplitude;
     public Vector3 ActionPosition; // Ses ve Partikül efektlerinin nerede çıkacağı
+
+    // Analitik Sistemi İçin Eklenen Veriler:
+    public WasteType TargetBinType; // Hangi kutuya atıldı
+    public bool WasGoldenWaste;     // Atılan obje altın çöp müydü?
 }
 
 [RequireComponent(typeof(Collider))]
@@ -133,7 +137,9 @@ public class BinTrigger : MonoBehaviour
             ActionPosition = transform.position,
             ScoreChange = finalScoreChange,
             HapticDuration = isCorrect ? _correctHapticDuration : _incorrectHapticDuration,
-            HapticAmplitude = isCorrect ? _correctHapticAmplitude : _incorrectHapticAmplitude
+            HapticAmplitude = isCorrect ? _correctHapticAmplitude : _incorrectHapticAmplitude,
+            TargetBinType = _acceptedWasteType,
+            WasGoldenWaste = isGoldenWaste
         };
 
         Debug.Log($"<color=magenta>[BinTrigger]</color> OnWasteProcessed sinyali fırlatılıyor! Puan değişimi: {resultData.ScoreChange}");
