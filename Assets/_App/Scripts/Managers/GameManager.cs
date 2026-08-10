@@ -150,8 +150,15 @@ public class GameManager : MonoBehaviour
         }
 
         PreviousState = CurrentState;
+        
+        // Eski state'den çıkış işlemlerini çalıştır (FSM OnExit)
+        OnStateExit(PreviousState);
+        
         CurrentState = newState;
         Debug.Log($"[GameManager] Oyun durumu değişti: {PreviousState} -> {CurrentState}");
+        
+        // Yeni state'e giriş işlemlerini çalıştır (FSM OnEnter)
+        OnStateEnter(CurrentState);
         
         // Modülleri Duruma Göre Otomatik Yönet (Butonlar vb.)
         if (buttonsModule != null)
@@ -204,6 +211,43 @@ public class GameManager : MonoBehaviour
         // Durum değişikliğini tüm sisteme yayınla (Broadcast)
         OnGameStateChanged?.Invoke(CurrentState);
     }
+    
+    #region FSM (Finite State Machine) Lifecycle Fonksiyonları
+    
+    /// <summary>
+    /// Bir duruma (State) girildiğinde sadece bir kez çalışacak olan işlemler.
+    /// (Ses, animasyon, ışık vb. sistemlerin yönetimi için idealdir).
+    /// </summary>
+    private void OnStateEnter(GameState state)
+    {
+        switch (state)
+        {
+            case GameState.Playing:
+                // Örn: Müzik başlayabilir, Spawner'a "hızlan" denilebilir.
+                break;
+            case GameState.Paused:
+                // Örn: Çevre sesleri (Ambient) kısılabilir.
+                break;
+            case GameState.GameOver:
+                // Örn: Tüm çöpler dondurulabilir, BGM durdurulabilir.
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Bir durumdan (State) çıkıldığında sadece bir kez çalışacak olan temizlik işlemleri.
+    /// </summary>
+    private void OnStateExit(GameState state)
+    {
+        switch (state)
+        {
+            case GameState.MainMenu:
+                // Ana menüden çıkarken menü sesleri kapatılabilir.
+                break;
+        }
+    }
+    
+    #endregion
 
     /// <summary>
     /// Oyunu tamamen sıfırlar ve yeniden başlatır. 
@@ -358,6 +402,34 @@ public class GameManager : MonoBehaviour
             }
         }
     }
+    
+    #region VR Application Pause Koruması
+    
+    /// <summary>
+    /// Oyuncu VR gözlüğünü (Quest vb.) kafasından çıkardığında veya uygulama arka plana düştüğünde çalışır.
+    /// Sürenin boşa akmasını engeller.
+    /// </summary>
+    private void OnApplicationPause(bool pauseStatus)
+    {
+        if (pauseStatus && CurrentState == GameState.Playing)
+        {
+            Debug.Log("<color=orange>[GameManager]</color> VR Gözlüğü çıkarıldı veya oyun alta alındı! Otomatik Pause Devrede.");
+            PauseGame();
+        }
+    }
+
+    /// <summary>
+    /// Uygulama odağı (Focus) kaybettiğinde (Quest arayüzü açıldığında) çalışır.
+    /// </summary>
+    private void OnApplicationFocus(bool hasFocus)
+    {
+        if (!hasFocus && CurrentState == GameState.Playing)
+        {
+            PauseGame();
+        }
+    }
+    
+    #endregion
 
     /// <summary>
     /// Süre bittiğinde oyunu bitirir.
