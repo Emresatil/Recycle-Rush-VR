@@ -6,6 +6,17 @@ using RecycleRush.Core; // ScoreManager vb. için gerekli olabilir
 namespace RecycleRush.Managers
 {
     /// <summary>
+    /// Huni (Funnel) Analizi için hangi state'e kaç kere girildiğini JSON'da güvenli tutacak yapı
+    /// (Dictionary yerine Serialize olabilen List yapısı).
+    /// </summary>
+    [Serializable]
+    public struct StateReachData
+    {
+        public GameState State;
+        public int Count;
+    }
+
+    /// <summary>
     /// JSON olarak cihazda saklanacak Analiz (Davranış) Veri Modeli
     /// </summary>
     [Serializable]
@@ -14,6 +25,21 @@ namespace RecycleRush.Managers
         public int TotalGamesPlayed = 0;
         public int TotalGamesCompleted = 0; // Süre sonuna kadar (GameOver) hayatta kalabilme
         public float TotalPlayTime = 0f;
+        
+        // İsabet Oranı (Accuracy)
+        public int TotalCorrectThrows = 0;
+        public int TotalIncorrectThrows = 0;
+
+        // Tepki Süresi (Reaction Time)
+        public float TotalReactionTime = 0f;
+        public float TotalGoldenWasteReactionTime = 0f;
+
+        // Huni (Funnel) Analizi ve State Takibi
+        public System.Collections.Generic.List<StateReachData> StateReaches = new System.Collections.Generic.List<StateReachData>();
+        public GameState QuitDuringState;
+
+        // Dalga (Wave) Analizi
+        public int MaxWaveReached = 0;
         
         // Hangi kutuya kaç yanlış atış yapıldı?
         public int PaperBinErrors = 0;
@@ -143,8 +169,31 @@ namespace RecycleRush.Managers
 
         #region Event Handlers (Veri Toplama Noktaları)
 
+        private void RecordStateReach(GameState state)
+        {
+            // Dictionary yerine kullanılan List yapısında arama yapıyoruz (JSON uyumlu)
+            bool found = false;
+            for (int i = 0; i < CurrentData.StateReaches.Count; i++)
+            {
+                if (CurrentData.StateReaches[i].State == state)
+                {
+                    var data = CurrentData.StateReaches[i];
+                    data.Count++;
+                    CurrentData.StateReaches[i] = data; // Struct olduğu için üstüne yazmalıyız
+                    found = true;
+                    break;
+                }
+            }
+            if (!found)
+            {
+                CurrentData.StateReaches.Add(new StateReachData { State = state, Count = 1 });
+            }
+        }
+
         private void HandleGameStateChanged(GameState state)
         {
+            RecordStateReach(state); // Huni (Funnel) Analizi için kaydet
+
             if (state == GameState.Playing)
             {
                 CurrentData.TotalGamesPlayed++;
@@ -159,6 +208,12 @@ namespace RecycleRush.Managers
                     if (state == GameState.GameOver) 
                     {
                         CurrentData.TotalGamesCompleted++; // Süreyi sağ salim bitirebilme başarısı
+                        
+                        // En Yüksek Dalga (Wave) Tespiti
+                        if (GameManager.Instance != null && GameManager.Instance.CurrentWave > CurrentData.MaxWaveReached)
+                        {
+                            CurrentData.MaxWaveReached = GameManager.Instance.CurrentWave;
+                        }
                     }
 
                     float duration = Time.time - _sessionStartTime;
@@ -171,13 +226,25 @@ namespace RecycleRush.Managers
 
         private void HandleWasteProcessed(SortResultData data)
         {
-            if (data.WasGoldenWaste && data.IsCorrect)
+            if (data.IsCorrect)
             {
-                CurrentData.TotalGoldenWastesCaught++; // Altın çöp kutuya başarıyla sokuldu
+                CurrentData.TotalCorrectThrows++;
+                
+                if (data.WasGoldenWaste)
+                {
+                    CurrentData.TotalGoldenWastesCaught++; // Altın çöp kutuya başarıyla sokuldu
+                    CurrentData.TotalGoldenWasteReactionTime += data.ReactionTime;
+                }
+                else
+                {
+                    CurrentData.TotalReactionTime += data.ReactionTime;
+                }
             }
-
-            if (!data.IsCorrect)
+            else
             {
+                CurrentData.TotalIncorrectThrows++;
+                CurrentData.TotalReactionTime += data.ReactionTime;
+
                 // Oyuncu HATA yaptı! Hangi kutuda zorlandığını kaydet:
                 switch (data.TargetBinType)
                 {
@@ -216,6 +283,11 @@ namespace RecycleRush.Managers
         private void OnApplicationQuit()
         {
             // Oyun aniden kapatılırsa bile (Exit butonu veya pencere kapama) son verileri disk'e yaz
+            if (GameManager.Instance != null)
+            {
+                CurrentData.QuitDuringState = GameManager.Instance.CurrentState;
+            }
+
             if (_isSessionActive)
             {
                 float duration = Time.time - _sessionStartTime;
