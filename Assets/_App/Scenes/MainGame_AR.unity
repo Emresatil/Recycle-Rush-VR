@@ -3664,6 +3664,50 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1143682326}
   m_CullTransparentMesh: 1
+--- !u!1 &1178954052
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1178954053}
+  - component: {fileID: 1178954054}
+  m_Layer: 0
+  m_Name: AnalyticsManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1178954053
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1178954052}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -331.22162, y: 7.4155703, z: -14.68729}
+  m_LocalScale: {x: 0.6326311, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 316426351}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1178954054
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1178954052}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 732432909b8d3b9438fd98aae9990ed9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RecycleRush.Managers.AnalyticsManager
 --- !u!1 &1263402856 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 1372488620767035555, guid: 0a36f9dd84f58e24da876b989c5ed5c9, type: 3}
@@ -5059,6 +5103,9 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 4129714333503685258, guid: 8ecccfb49a31c0c43bdfbb4050342591, type: 3}
+      insertIndex: 0
+      addedObject: {fileID: 1178954053}
     - targetCorrespondingSourceObject: {fileID: 4129714333503685258, guid: 8ecccfb49a31c0c43bdfbb4050342591, type: 3}
       insertIndex: -1
       addedObject: {fileID: 216857143}
