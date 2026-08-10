@@ -90,6 +90,13 @@ namespace RecycleRush.Managers
         {
             if (amount <= 0) return;
 
+            // Etkinlik aktifse 2 katı XP kazan!
+            if (EventManager.Instance != null && EventManager.Instance.CurrentEvent == GameEventType.DoubleXP)
+            {
+                amount *= 2;
+                Debug.Log("<color=magenta>[LevelManager]</color> DOUBLE XP ETKİNLİĞİ AKTİF! 2 Katı XP kazanıldı.");
+            }
+
             CurrentXP += amount;
             Debug.Log($"<color=cyan>[LevelManager]</color> {amount} XP kazanıldı! Mevcut XP: {CurrentXP}/{RequiredXP}");
 
