@@ -1,6 +1,7 @@
 using UnityEngine;
 using TMPro; // TextMeshPro (Yazılar) için gerekli
 using System.Collections; // Coroutine (Lerp animasyonları) için gerekli
+using System.Collections.Generic; // Queue<T> için gerekli
 using UnityEngine.UI;
 using UnityEngine.InputSystem;
 
@@ -49,7 +50,19 @@ namespace RecycleRush.UI
         [Tooltip("VR Menü/Geri tuşu (ESC) Input Action referansı")]
         public InputActionReference menuPauseAction;
 
+        [Header("Achievement UI (Başarım Sistemi)")]
+        [Tooltip("Başarım bildirim paneli (Canvas'ta yukardan inen Toast Message)")]
+        public GameObject achievementPanel;
+        [Tooltip("Başarımın başlığını gösterecek TextMeshProUGUI")]
+        public TextMeshProUGUI achievementTitleText;
+        [Tooltip("Başarımın açıklamasını gösterecek TextMeshProUGUI")]
+        public TextMeshProUGUI achievementDescText;
+
         private Coroutine _comboAnimationCoroutine;
+        
+        // Başarım kuyruğu (Aynı anda birden fazla açılırsa sırayla göster)
+        private Queue<Managers.AchievementData> _achievementQueue = new Queue<Managers.AchievementData>();
+        private bool _isShowingAchievement = false;
 
         private void Awake()
         {
@@ -75,6 +88,12 @@ namespace RecycleRush.UI
 
         private void Start()
         {
+            // Başarım Panelini başlangıçta gizle
+            if (achievementPanel != null)
+            {
+                achievementPanel.SetActive(false);
+            }
+
             // Başlangıç durumunu hemen ekrana yansıt
             if (GameManager.Instance != null)
             {
@@ -86,6 +105,13 @@ namespace RecycleRush.UI
             {
                 Managers.ComboManager.OnComboChanged += HandleComboChanged;
                 Managers.ComboManager.OnComboBroken += HandleComboBroken;
+            }
+
+            // Başarım yöneticisine bağlan
+            if (Managers.AchievementManager.Instance != null)
+            {
+                Managers.AchievementManager.OnAchievementUnlocked += HandleAchievementUnlocked;
+                Managers.AchievementManager.OnAchievementProgress += HandleAchievementProgress;
             }
             
             // Başlangıçta kombo yazısını gizle
@@ -167,6 +193,15 @@ namespace RecycleRush.UI
             {
                 menuPauseAction.action.performed -= OnMenuButtonPressed;
                 menuPauseAction.action.Disable();
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (Managers.AchievementManager.Instance != null)
+            {
+                Managers.AchievementManager.OnAchievementUnlocked -= HandleAchievementUnlocked;
+                Managers.AchievementManager.OnAchievementProgress -= HandleAchievementProgress;
             }
         }
 
@@ -429,6 +464,79 @@ namespace RecycleRush.UI
             comboText.gameObject.SetActive(false);
             
             _comboAnimationCoroutine = null;
+        }
+
+        // --- Achievement UI (Başarım Bildirim Sistemi) ---
+
+        private void HandleAchievementUnlocked(Managers.AchievementData data)
+        {
+            _achievementQueue.Enqueue(data);
+            
+            if (!_isShowingAchievement)
+            {
+                StartCoroutine(ProcessAchievementQueue());
+            }
+        }
+
+        private void HandleAchievementProgress(Managers.AchievementData data, float percentage)
+        {
+            // İlerleme yüzdesini hesapla (Örn: 0.5f -> 50)
+            int percText = Mathf.RoundToInt(percentage * 100);
+            
+            // Kuyruğa sahte (geçici) bir veri yollayarak mevcut pop-up arayüzünü kullan
+            var dummyData = new Managers.AchievementData
+            {
+                Title = "Progress Saved!",
+                Description = $"{data.Title} - {percText}% Completed"
+            };
+            
+            _achievementQueue.Enqueue(dummyData);
+            
+            if (!_isShowingAchievement)
+            {
+                StartCoroutine(ProcessAchievementQueue());
+            }
+        }
+
+        private IEnumerator ProcessAchievementQueue()
+        {
+            _isShowingAchievement = true;
+
+            while (_achievementQueue.Count > 0)
+            {
+                var ach = _achievementQueue.Dequeue();
+                yield return StartCoroutine(ShowAchievementAnimation(ach));
+            }
+
+            _isShowingAchievement = false;
+        }
+
+        private IEnumerator ShowAchievementAnimation(Managers.AchievementData ach)
+        {
+            if (achievementPanel == null || achievementTitleText == null || achievementDescText == null)
+            {
+                // UI objeleri atanmamışsa sadece log at ve beklemeden çık
+                Debug.Log($"<color=yellow>[Achievement Unlocked!]</color> {ach.Title}: {ach.Description}");
+                yield break;
+            }
+
+            // Yazıları doldur
+            achievementTitleText.text = ach.Title;
+            
+            // Eğer gizliyse ve ilk defa açılıyorsa (Normalde kilitliyken "???" yazar, ama kilit açıldığı an gerçeği yazarız)
+            achievementDescText.text = ach.Description;
+
+            // Paneli aç ve hafif bir Pop/Fade-in tarzı animasyonla göster
+            achievementPanel.SetActive(true);
+            
+            // Sahnede 4 saniye kalsın
+            yield return new WaitForSeconds(4f);
+            
+            // Paneli kapat
+            achievementPanel.SetActive(false);
+            
+            // Ardından 0.5 saniye nefes payı (iki başarım arka arkaya gelirse bitişik çıkmasın)
+            yield return new WaitForSeconds(0.5f);
         }
 
         // --- YENİ EKLENEN PANEL VE MENÜ KONTROL METOTLARI ---

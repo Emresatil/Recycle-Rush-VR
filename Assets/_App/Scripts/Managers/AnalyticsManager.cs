@@ -56,6 +56,9 @@ namespace RecycleRush.Managers
         public int MaxComboEverReached = 0;
         public int TotalGraceEarned = 0; // Kaç kere af kazanıldı
         public int TotalGraceUsed = 0; // Kazanılan afların kaçı kullanıldı
+
+        // Başarım Takibi
+        public int TotalUnlockedAchievements = 0;
     }
 
     /// <summary>
@@ -145,6 +148,18 @@ namespace RecycleRush.Managers
             GameManager.OnGameStateChanged += HandleGameStateChanged;
             BinTrigger.OnWasteProcessed += HandleWasteProcessed;
             WasteSpawner.OnGoldenWasteSpawned += HandleGoldenWasteSpawned;
+
+            if (Managers.ComboManager.Instance != null)
+            {
+                Managers.ComboManager.OnComboChanged += HandleComboChanged;
+                Managers.ComboManager.OnComboGraceEarned += HandleGraceEarned;
+                Managers.ComboManager.OnComboGraceUsed += HandleGraceUsed;
+            }
+
+            if (Managers.AchievementManager.Instance != null)
+            {
+                Managers.AchievementManager.OnAchievementUnlocked += HandleAchievementUnlocked;
+            }
         }
 
         private void OnDisable()
@@ -160,17 +175,16 @@ namespace RecycleRush.Managers
                 Managers.ComboManager.OnComboGraceEarned -= HandleGraceEarned;
                 Managers.ComboManager.OnComboGraceUsed -= HandleGraceUsed;
             }
+
+            if (Managers.AchievementManager.Instance != null)
+            {
+                Managers.AchievementManager.OnAchievementUnlocked -= HandleAchievementUnlocked;
+            }
         }
 
         private void Start()
         {
             // ComboManager genelde Awake'de kendini kurar, biz Start'ta güvenle abone olabiliriz
-            if (Managers.ComboManager.Instance != null)
-            {
-                Managers.ComboManager.OnComboChanged += HandleComboChanged;
-                Managers.ComboManager.OnComboGraceEarned += HandleGraceEarned;
-                Managers.ComboManager.OnComboGraceUsed += HandleGraceUsed;
-            }
         }
 
         #region Event Handlers (Veri Toplama Noktaları)
@@ -286,6 +300,13 @@ namespace RecycleRush.Managers
         private void HandleGraceUsed()
         {
             CurrentData.TotalGraceUsed++;
+            SaveAnalytics();
+        }
+
+        private void HandleAchievementUnlocked(AchievementData data)
+        {
+            CurrentData.TotalUnlockedAchievements++;
+            SaveAnalytics();
         }
 
         private void HandleGoldenWasteSpawned()

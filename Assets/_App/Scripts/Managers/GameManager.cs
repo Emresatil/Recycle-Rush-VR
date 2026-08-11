@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using RecycleRush.Managers; // <-- EKLENDİ (AchievementData için)
 
 // Oyunun anlık durumlarını belirten State yapısı
 public enum GameState
@@ -80,6 +81,23 @@ public class GameManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
+    private void OnEnable()
+    {
+        if (AchievementManager.Instance != null)
+        {
+            AchievementManager.OnAchievementUnlocked -= HandleAchievementUnlocked;
+            AchievementManager.OnAchievementUnlocked += HandleAchievementUnlocked;
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (AchievementManager.Instance != null)
+        {
+            AchievementManager.OnAchievementUnlocked -= HandleAchievementUnlocked;
+        }
+    }
+
     private void Start()
     {
         // Çevre modülleri inspector'dan atanmadıysa otomatik olarak bul
@@ -100,6 +118,17 @@ public class GameManager : MonoBehaviour
         // Oyun artık otomatik BAŞLAMAYACAK. 
         // Oyuncunun makinedeki kolu (Lever) çekmesini beklemek için MainMenu (veya bekleme) durumunda kalıyoruz.
         ChangeState(GameState.MainMenu);
+    }
+
+    // --- Achievement Manager Entegrasyonu ---
+    private void HandleAchievementUnlocked(AchievementData achData)
+    {
+        var session = CurrentSession;
+        session.EarnedXP += achData.RewardXP;
+        session.EarnedCoins += achData.RewardCoin;
+        CurrentSession = session;
+        
+        Debug.Log($"<color=green>[GameManager]</color> Başarım Ödülü Alındı: +{achData.RewardXP} XP | +{achData.RewardCoin} Coin");
     }
 
     private void Update()
