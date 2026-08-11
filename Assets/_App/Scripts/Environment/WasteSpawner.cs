@@ -9,6 +9,10 @@ public class WasteSpawner : MonoBehaviour
     
     [Tooltip("Atıkların düşeceği başlangıç noktası")]
     public Transform spawnPoint;
+
+    [Header("Visual Effects")]
+    [Tooltip("Çöplerin çıktığı portalın görsel animatörü (İsteğe bağlı)")]
+    public RecycleRush.Environment.PortalAnimator portalAnimator;
     
     [Header("Organik Zamanlama (Zorluk)")]
     [Tooltip("En az kaç saniyede bir atık düşsün?")]
@@ -155,6 +159,12 @@ public class WasteSpawner : MonoBehaviour
 
         // Obje üretimi veya havuzdan çekim
         ObjectPoolManager.Instance.SpawnFromPool(selectedPrefab.tag, selectedPrefab, finalSpawnPosition, uprightRandomRotation);
+        
+        // Eğer portalımız varsa, çöp çıktığı anda şişme animasyonunu oynat!
+        if (portalAnimator != null)
+        {
+            portalAnimator.PlaySpawnEffect();
+        }
         
         return true; // Başarıyla üretildi
     }
