@@ -51,9 +51,11 @@ namespace RecycleRush.Managers
         public int TotalGoldenWastesSpawned = 0;
         public int TotalGoldenWastesCaught = 0;
 
-        // Kombo İstatistikleri
-        public int TotalCombosReached = 0; // Kaç kere komboya girdi
-        public int MaxComboEverReached = 0; // Tüm zamanların en yüksek kombosu
+        // Kombo Başarısı Takibi
+        public int TotalCombosReached = 0;
+        public int MaxComboEverReached = 0;
+        public int TotalGraceEarned = 0; // Kaç kere af kazanıldı
+        public int TotalGraceUsed = 0; // Kazanılan afların kaçı kullanıldı
     }
 
     /// <summary>
@@ -152,18 +154,22 @@ namespace RecycleRush.Managers
             BinTrigger.OnWasteProcessed -= HandleWasteProcessed;
             WasteSpawner.OnGoldenWasteSpawned -= HandleGoldenWasteSpawned;
             
-            if (ScoreManager.Instance != null)
+            if (Managers.ComboManager.Instance != null)
             {
-                ScoreManager.Instance.OnComboChanged -= HandleComboChanged;
+                Managers.ComboManager.OnComboChanged -= HandleComboChanged;
+                Managers.ComboManager.OnComboGraceEarned -= HandleGraceEarned;
+                Managers.ComboManager.OnComboGraceUsed -= HandleGraceUsed;
             }
         }
 
         private void Start()
         {
-            // ScoreManager genelde Awake'de kendini kurar, biz Start'ta güvenle abone olabiliriz
-            if (ScoreManager.Instance != null)
+            // ComboManager genelde Awake'de kendini kurar, biz Start'ta güvenle abone olabiliriz
+            if (Managers.ComboManager.Instance != null)
             {
-                ScoreManager.Instance.OnComboChanged += HandleComboChanged;
+                Managers.ComboManager.OnComboChanged += HandleComboChanged;
+                Managers.ComboManager.OnComboGraceEarned += HandleGraceEarned;
+                Managers.ComboManager.OnComboGraceUsed += HandleGraceUsed;
             }
         }
 
@@ -257,7 +263,7 @@ namespace RecycleRush.Managers
             // Çok fazla File I/O olmaması için çöp atışlarında anında Save atmıyoruz (Oyun bitiminde atılacak).
         }
 
-        private void HandleComboChanged(int comboCount, int multiplier)
+        private void HandleComboChanged(int comboCount, int multiplier, bool isRankUp)
         {
             // En yüksek rekoru güncelle
             if (comboCount > CurrentData.MaxComboEverReached)
@@ -265,11 +271,21 @@ namespace RecycleRush.Managers
                 CurrentData.MaxComboEverReached = comboCount;
             }
 
-            // Eğer oyuncu x3 veya x2 katlayıcı eşiğine ulaşabildiyse bunu bir "Kombo Başarısı" say
-            if (comboCount == 3 || comboCount == 5)
+            // Eğer oyuncu kademe atladıysa (isRankUp) bunu bir "Kombo Başarısı" say
+            if (isRankUp)
             {
                 CurrentData.TotalCombosReached++;
             }
+        }
+
+        private void HandleGraceEarned()
+        {
+            CurrentData.TotalGraceEarned++;
+        }
+
+        private void HandleGraceUsed()
+        {
+            CurrentData.TotalGraceUsed++;
         }
 
         private void HandleGoldenWasteSpawned()

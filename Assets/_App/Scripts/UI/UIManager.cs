@@ -81,10 +81,11 @@ namespace RecycleRush.UI
                 HandleGameState(GameManager.Instance.CurrentState);
             }
             
-            // ScoreManager üzerinden kombo olaylarını dinlemeye başla (Awake sonrası olduğu için Instance hazırdır)
-            if (Core.ScoreManager.Instance != null)
+            // Managers.ComboManager üzerinden kombo olaylarını dinlemeye başla (Awake sonrası olduğu için Instance hazırdır)
+            if (Managers.ComboManager.Instance != null)
             {
-                Core.ScoreManager.Instance.OnComboChanged += HandleComboChanged;
+                Managers.ComboManager.OnComboChanged += HandleComboChanged;
+                Managers.ComboManager.OnComboBroken += HandleComboBroken;
             }
             
             // Başlangıçta kombo yazısını gizle
@@ -156,9 +157,10 @@ namespace RecycleRush.UI
             GameManager.OnGameStateChanged -= HandleGameState;
             GameManager.OnGameTimeUpdated -= UpdateTimeDisplay;
             
-            if (Core.ScoreManager.Instance != null)
+            if (Managers.ComboManager.Instance != null)
             {
-                Core.ScoreManager.Instance.OnComboChanged -= HandleComboChanged;
+                Managers.ComboManager.OnComboChanged -= HandleComboChanged;
+                Managers.ComboManager.OnComboBroken -= HandleComboBroken;
             }
 
             if (menuPauseAction != null && menuPauseAction.action != null)
@@ -280,7 +282,7 @@ namespace RecycleRush.UI
         /// <summary>
         /// Kombo değiştiğinde tetiklenir ve Pop (Patlama) animasyonunu başlatır.
         /// </summary>
-        private void HandleComboChanged(int comboCount, int multiplier)
+        private void HandleComboChanged(int comboCount, int multiplier, bool isRankUp)
         {
             if (comboText == null) return;
 
@@ -289,7 +291,9 @@ namespace RecycleRush.UI
                 // Kombo varsa yazıyı aktif et ve metni ayarla
                 comboText.gameObject.SetActive(true);
                 comboText.text = $"{multiplier}x COMBO!";
-                comboText.color = new Color(1f, 0.84f, 0f); // Altın Sarısı (Gold)
+                
+                // Kademe atlandıysa rengi daha parlak (Altın) yap, normal atışlarda Sarı yap
+                comboText.color = isRankUp ? new Color(1f, 0.84f, 0f) : new Color(1f, 0.95f, 0.5f); 
 
                 // Varsa önceki animasyonu durdur ki çakışmasın
                 if (_comboAnimationCoroutine != null)
@@ -297,14 +301,35 @@ namespace RecycleRush.UI
                     StopCoroutine(_comboAnimationCoroutine);
                 }
                 
-                // Yeni Pop animasyonunu başlat
+                // Rank atlandığında daha şiddetli bir Pop animasyonu başlatılabilir
+                // Şimdilik standart Pop'u başlatıyoruz
                 _comboAnimationCoroutine = StartCoroutine(ComboPopAnimation());
             }
             else
             {
-                // Katlayıcı yoksa (Kombo sıfırlandıysa) yazıyı gizle
-                comboText.gameObject.SetActive(false);
+                // Eğer kombo (multiplier) 1 ise, ekranda yazı göstermeye gerek yok (Kombo bozulma işlemi HandleComboBroken'dan yapılıyor).
+                // Ancak eski bir animasyon kalıntısı varsa onu gizleyebiliriz.
+                if (comboCount == 0 && !comboText.text.Contains("BROKEN")) 
+                {
+                    comboText.gameObject.SetActive(false);
+                }
             }
+        }
+
+        private void HandleComboBroken()
+        {
+            if (comboText == null) return;
+            
+            // Kombo kırıldığında görünür yap, kırmızı renk ver
+            comboText.gameObject.SetActive(true);
+            comboText.color = Color.red;
+            comboText.text = "COMBO BROKEN!";
+            
+            if (_comboAnimationCoroutine != null)
+            {
+                StopCoroutine(_comboAnimationCoroutine);
+            }
+            _comboAnimationCoroutine = StartCoroutine(ComboPopAnimation());
         }
 
         /// <summary>
