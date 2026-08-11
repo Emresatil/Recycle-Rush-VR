@@ -15,6 +15,7 @@ public enum WasteType
 public struct SortResultData
 {
     public bool IsCorrect;
+    public WasteType ProcessedWasteType; // Gün 11: Görevler için atılan çöpün türü
     public int ScoreChange;
     public int CoinChange; // Gün 7: Kazanılacak Para
     public int XpChange; // Gün 7: Kazanılacak XP
@@ -53,6 +54,9 @@ public class BinTrigger : MonoBehaviour
     // Sistemler arası spagetti bağlantıları engelleyen (Loose Coupling) statik Action Event'imiz.
     // ScoreManager, AudioManager ve HapticManager sadece bu event'e Abone (Subscribe) olacaktır.
     public static event Action<SortResultData> OnWasteProcessed;
+    public static event Action<int> OnComboChanged; // Gün 11: Kombo tetikleyicisi
+
+    private static int _currentCombo = 0; // Tüm kutular için ortak kombo sayacı
 
     private Collider _binCollider;
 
@@ -96,6 +100,24 @@ public class BinTrigger : MonoBehaviour
         // Doğruluk mantığı: Giren atığın türü, kutunun kabul ettiği türe eşit mi?
         bool isCorrect = (incomingType == _acceptedWasteType);
         
+        // --- KOMBO SİSTEMİ (Gün 11) ---
+        if (isCorrect)
+        {
+            _currentCombo++;
+            if (_currentCombo > 1) 
+            {
+                OnComboChanged?.Invoke(_currentCombo);
+            }
+        }
+        else
+        {
+            if (_currentCombo > 0)
+            {
+                _currentCombo = 0;
+                OnComboChanged?.Invoke(0);
+            }
+        }
+
         // --- GÖRSEL EFEKT (PARTİCÜL) ÇAĞIRMA ---
         GameObject particleToSpawn = isCorrect ? _successParticlePrefab : _failParticlePrefab;
         if (particleToSpawn != null)
@@ -120,10 +142,11 @@ public class BinTrigger : MonoBehaviour
         SortResultData resultData = new SortResultData
         {
             IsCorrect = isCorrect,
-            ActionPosition = transform.position,
-            ScoreChange = isCorrect ? _correctScore : _incorrectScore,
-            CoinChange = isCorrect ? _correctCoin : _incorrectCoin,
-            XpChange = isCorrect ? _correctXp : _incorrectXp,
+            ProcessedWasteType = incomingType, // Hangi atık türü olduğunu belirttik
+            ScoreChange = isCorrect ? _correctScore : -_incorrectScore,
+            CoinChange = isCorrect ? _correctCoin : -_incorrectCoin,
+            XpChange = isCorrect ? _correctXp : 0, // Hatalı atışta XP silinmez
+            ActionPosition = other.transform.position,
             HapticDuration = isCorrect ? _correctHapticDuration : _incorrectHapticDuration,
             HapticAmplitude = isCorrect ? _correctHapticAmplitude : _incorrectHapticAmplitude
         };
