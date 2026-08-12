@@ -25,6 +25,9 @@ public struct GameSessionData
     public int EarnedXP;
     public int EarnedCoins;
     public float TotalPlayTime;
+    
+    // YENİ: Oyun sonu hesaplamaları için İsabet Oranı
+    public float AccuracyPercentage;
 }
 
 public class GameManager : MonoBehaviour
@@ -461,12 +464,35 @@ public class GameManager : MonoBehaviour
     #endregion
 
     /// <summary>
-    /// Süre bittiğinde oyunu bitirir.
+    /// Süre dolduğunda veya can bittiğinde çağrılır.
     /// </summary>
     private void EndGame()
     {
+        // Oyun sonu istatistiklerini hesapla
+        CompileEndgameStats();
+        
         ChangeState(GameState.GameOver);
         // İstenirse burada oyun sonunda yapılacak özel işlemler çağrılabilir.
+    }
+
+    /// <summary>
+    /// Oyun bittiğinde istatistikleri (İsabet Oranı vb.) hesaplar.
+    /// </summary>
+    private void CompileEndgameStats()
+    {
+        int totalThrows = CurrentSession.TotalCorrectThrows + CurrentSession.TotalIncorrectThrows;
+        
+        if (totalThrows > 0)
+        {
+            CurrentSession.AccuracyPercentage = ((float)CurrentSession.TotalCorrectThrows / totalThrows) * 100f;
+        }
+        else
+        {
+            CurrentSession.AccuracyPercentage = 0f;
+        }
+        
+        // TODO: XP ve Coin hesaplama formülleri buraya gelecek.
+        Debug.Log($"<color=cyan>[GameManager - İstatistikler]</color> Doğru: {CurrentSession.TotalCorrectThrows}, Yanlış: {CurrentSession.TotalIncorrectThrows}, İsabet: %{CurrentSession.AccuracyPercentage:F1}");
     }
 
     /// <summary>
