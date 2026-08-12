@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using RecycleRush.Managers; // <-- EKLENDİ (AchievementData için)
 
@@ -18,16 +19,70 @@ public enum GameState
 [System.Serializable]
 public struct GameSessionData
 {
+    [Header("Basic Stats")]
     public int TotalCorrectThrows;
     public int TotalIncorrectThrows;
-    public int MaxCombo;
     public int GoldenWastesCollected;
-    public int EarnedXP;
-    public int EarnedCoins;
     public float TotalPlayTime;
     
-    // YENİ: Oyun sonu hesaplamaları için İsabet Oranı
+    [Header("Combo Stats")]
+    public int MaxCombo;
+    public int LongestStreak;     // En uzun doğru atış serisi
+    public int GraceUsedCount;    // Kaç kere kombo affı kullanıldı
+    
+    [Header("Golden Waste Stats")]
+    public int GoldenWastesMissed; // Kaçırılan altın çöpler
+    
+    [Header("Score Breakdown")]
+    public int BaseScore;
+    public int ComboBonusScore;
+    public int GoldenWasteBonusScore;
+    public int PenaltyScore;
+    
+    [Header("Economy Breakdown")]
+    public int BaseXP;
+    public int ComboXP;
+    public int GoldenXP;
+    public int EarnedXP; // Total XP
+
+    public int BaseCoin;
+    public int ComboCoin;
+    public int GoldenCoin;
+    public int EarnedCoins; // Total Coins
+    
+    [Header("Performance")]
     public float AccuracyPercentage;
+    public string PerformanceGrade; // S, A, B, C, D
+    
+    [Header("Grade Breakdown (Total 100)")]
+    public float AccuracyGradeScore; // Max 50
+    public float ComboGradeScore;    // Max 30
+    public float GoldenGradeScore;   // Max 20
+    public float TotalGradeScore;
+    
+    [Header("New Records & Deltas")]
+    public bool IsNewHighScore;
+    public int ScoreDelta; // Yeni skor ile eski en iyi skor arasındaki fark
+    
+    public bool IsNewBestAccuracy;
+    public float AccuracyDelta;
+    
+    public bool IsNewBestCombo;
+    public int ComboDelta;
+    
+    [Header("Session Efficiency")]
+    public float ScorePerMinute;
+    public float XPPerMinute;
+    public float ThrowsPerMinute;
+    
+    [Header("Next Goal")]
+    public string SuggestedNextGoal;
+    
+    [Header("Highlight")]
+    public string SessionHighlight; // Oturumun öne çıkan anı
+    
+    [Header("Medals")]
+    public List<string> EarnedMedals; // Oturum sonu kazanılan madalyalar
 }
 
 public class GameManager : MonoBehaviour
@@ -35,7 +90,13 @@ public class GameManager : MonoBehaviour
     // Singleton Pattern: GameManager'a her yerden güvenle ve tek bir instance üzerinden ulaşabilmek için.
     public static GameManager Instance { get; private set; }
 
-    [Header("Oyun Ayarları")]
+    [Header("Session Data")]
+    public GameSessionData CurrentSession;
+    
+    // Oyun sonu ekranı (UI), Analytics veya SaveManager'ın güvenle okuyabileceği Immutable (değiştirilemez) Snapshot
+    public GameSessionData FinalSessionReport { get; private set; }
+
+    [Header("Game Timers")]
     [Tooltip("Oyunun toplam süresi (saniye cinsinden)")]
     [SerializeField] private float _gameDuration = 60f;
     
@@ -54,9 +115,6 @@ public class GameManager : MonoBehaviour
     // Oyun durumunun okunabilmesi ama sadece bu sınıf tarafından değiştirilebilmesi için Property
     public GameState CurrentState { get; private set; }
     public GameState PreviousState { get; private set; }
-    
-    [Header("Oturum Verileri (Session Data)")]
-    public GameSessionData CurrentSession;
     
     public float RemainingTime { get; private set; }
     
@@ -295,6 +353,7 @@ public class GameManager : MonoBehaviour
 
             // 2. Session Data Sıfırla
             CurrentSession = new GameSessionData();
+            CurrentSession.EarnedMedals = new List<string>(); // Listeyi başlat
 
             // 3. Skor ve Komboyu Sıfırla
             if (RecycleRush.Core.ScoreManager.Instance != null)
@@ -482,6 +541,7 @@ public class GameManager : MonoBehaviour
     {
         int totalThrows = CurrentSession.TotalCorrectThrows + CurrentSession.TotalIncorrectThrows;
         
+        // 1. İsabet Oranı
         if (totalThrows > 0)
         {
             CurrentSession.AccuracyPercentage = ((float)CurrentSession.TotalCorrectThrows / totalThrows) * 100f;
@@ -491,8 +551,157 @@ public class GameManager : MonoBehaviour
             CurrentSession.AccuracyPercentage = 0f;
         }
         
-        // TODO: XP ve Coin hesaplama formülleri buraya gelecek.
-        Debug.Log($"<color=cyan>[GameManager - İstatistikler]</color> Doğru: {CurrentSession.TotalCorrectThrows}, Yanlış: {CurrentSession.TotalIncorrectThrows}, İsabet: %{CurrentSession.AccuracyPercentage:F1}");
+        // 2. Golden Waste Rate
+        float goldenWasteRate = 0f;
+        int totalGoldenSpawned = CurrentSession.GoldenWastesCollected + CurrentSession.GoldenWastesMissed;
+        if (totalGoldenSpawned > 0)
+            goldenWasteRate = ((float)CurrentSession.GoldenWastesCollected / totalGoldenSpawned) * 100f;
+            
+        // 3. Performans Harf Notu (Grade) ve Kırılımı (Breakdown)
+        float comboScore = Mathf.Clamp01((float)CurrentSession.MaxCombo / 20f) * 100f;
+        
+        CurrentSession.AccuracyGradeScore = CurrentSession.AccuracyPercentage * 0.5f; // Max 50
+        CurrentSession.ComboGradeScore = comboScore * 0.3f;                           // Max 30
+        CurrentSession.GoldenGradeScore = goldenWasteRate * 0.2f;                     // Max 20
+        CurrentSession.TotalGradeScore = CurrentSession.AccuracyGradeScore + CurrentSession.ComboGradeScore + CurrentSession.GoldenGradeScore;
+        
+        if (CurrentSession.TotalGradeScore >= 90f) CurrentSession.PerformanceGrade = "S";
+        else if (CurrentSession.TotalGradeScore >= 80f) CurrentSession.PerformanceGrade = "A";
+        else if (CurrentSession.TotalGradeScore >= 70f) CurrentSession.PerformanceGrade = "B";
+        else if (CurrentSession.TotalGradeScore >= 50f) CurrentSession.PerformanceGrade = "C";
+        else CurrentSession.PerformanceGrade = "D";
+        
+        // 4. Ekonomi (XP ve Coin)
+        int finalScore = RecycleRush.Core.ScoreManager.Instance != null ? RecycleRush.Core.ScoreManager.Instance.CurrentScore : 0;
+        
+        CurrentSession.BaseXP = finalScore / 10;
+        // XP Dengelemesi (Min: 25, Max: 500)
+        CurrentSession.EarnedXP = Mathf.Clamp(CurrentSession.BaseXP, 25, 500); 
+        
+        CurrentSession.BaseCoin = CurrentSession.TotalCorrectThrows / 2;
+        CurrentSession.GoldenCoin = CurrentSession.GoldenWastesCollected * 20;
+        
+        CurrentSession.EarnedCoins = CurrentSession.BaseCoin + CurrentSession.GoldenCoin;
+        if (CurrentSession.AccuracyPercentage >= 90f)
+        {
+            CurrentSession.EarnedCoins += 50; // Ustalık Bonusu
+        }
+        
+        // 5. Session Efficiency (Oturum Verimliliği)
+        float playMinutes = CurrentSession.TotalPlayTime > 0f ? CurrentSession.TotalPlayTime / 60f : 1f;
+        CurrentSession.ScorePerMinute = finalScore / playMinutes;
+        CurrentSession.XPPerMinute = CurrentSession.EarnedXP / playMinutes;
+        CurrentSession.ThrowsPerMinute = totalThrows / playMinutes;
+
+        // 6. Kayıt (Save), Deltalar ve Yeni Rekor Kontrolü
+        if (RecycleRush.Managers.SaveManager.Instance != null)
+        {
+            var saveData = RecycleRush.Managers.SaveManager.Instance.CurrentData;
+            bool dataChanged = false;
+            
+            // Deltaları hesapla (Güncellemeden önce)
+            CurrentSession.ScoreDelta = finalScore - saveData.HighestScore;
+            CurrentSession.AccuracyDelta = CurrentSession.AccuracyPercentage - saveData.BestAccuracy;
+            CurrentSession.ComboDelta = CurrentSession.MaxCombo - saveData.BestCombo;
+            
+            if (CurrentSession.ScoreDelta > 0)
+            {
+                saveData.HighestScore = finalScore;
+                CurrentSession.IsNewHighScore = true;
+                dataChanged = true;
+            }
+            if (CurrentSession.AccuracyDelta > 0)
+            {
+                saveData.BestAccuracy = CurrentSession.AccuracyPercentage;
+                CurrentSession.IsNewBestAccuracy = true;
+                dataChanged = true;
+            }
+            if (CurrentSession.ComboDelta > 0)
+            {
+                saveData.BestCombo = CurrentSession.MaxCombo;
+                CurrentSession.IsNewBestCombo = true;
+                dataChanged = true;
+            }
+            if (CurrentSession.GoldenWastesCollected > saveData.MostGoldenWaste)
+            {
+                saveData.MostGoldenWaste = CurrentSession.GoldenWastesCollected;
+                dataChanged = true;
+            }
+            
+            // Oyun sonu kazanımlarını kalıcı profile ekle
+            saveData.XP += CurrentSession.EarnedXP;
+            saveData.Coins += CurrentSession.EarnedCoins;
+            
+            // 7. Match History (Maç Geçmişi) Kaydı
+            var newRecord = new RecycleRush.Managers.MatchHistoryRecord
+            {
+                Timestamp = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
+                Score = finalScore,
+                Grade = CurrentSession.PerformanceGrade,
+                Accuracy = CurrentSession.AccuracyPercentage,
+                MaxCombo = CurrentSession.MaxCombo,
+                GoldenWastes = CurrentSession.GoldenWastesCollected
+            };
+            
+            if (saveData.MatchHistory == null) saveData.MatchHistory = new System.Collections.Generic.List<RecycleRush.Managers.MatchHistoryRecord>();
+            
+            saveData.MatchHistory.Insert(0, newRecord); // En başa (en yeni) ekle
+            if (saveData.MatchHistory.Count > 10)
+            {
+                saveData.MatchHistory.RemoveAt(saveData.MatchHistory.Count - 1); // 10'dan fazlasını sil
+            }
+            
+            RecycleRush.Managers.SaveManager.Instance.SaveGame();
+        }
+        
+        // 8. Next Goal Generator (Sonraki Hedef Üretici)
+        if (CurrentSession.AccuracyPercentage < 90f)
+            CurrentSession.SuggestedNextGoal = "Reach 90% Accuracy!";
+        else if (CurrentSession.MaxCombo < 8)
+            CurrentSession.SuggestedNextGoal = "Reach x4 Combo Multiplier! (8 Streak)";
+        else if (CurrentSession.GoldenWastesCollected < 5)
+            CurrentSession.SuggestedNextGoal = "Catch at least 5 Golden Wastes next time!";
+        else if (CurrentSession.ScoreDelta <= 0)
+            CurrentSession.SuggestedNextGoal = "Focus on beating your High Score!";
+        else
+            CurrentSession.SuggestedNextGoal = "You're playing great, keep breaking records!";
+            
+        // 9. Performance Medals (Performans Madalyaları)
+        if (CurrentSession.EarnedMedals == null) CurrentSession.EarnedMedals = new List<string>();
+        CurrentSession.EarnedMedals.Clear();
+        
+        if (CurrentSession.AccuracyPercentage >= 95f) CurrentSession.EarnedMedals.Add("Precision Medal");
+        if (CurrentSession.MaxCombo >= 12) CurrentSession.EarnedMedals.Add("Combo Medal");
+        if (CurrentSession.GoldenWastesCollected > 0 && CurrentSession.GoldenWastesMissed == 0) CurrentSession.EarnedMedals.Add("Golden Medal");
+        if (CurrentSession.GraceUsedCount == 0 && totalThrows > 10) CurrentSession.EarnedMedals.Add("Survivor Medal");
+        if (CurrentSession.ScorePerMinute >= 400f) CurrentSession.EarnedMedals.Add("Efficiency Medal");
+        
+        // 10. Session Highlight (Oturumun Öne Çıkan Anı)
+        if (CurrentSession.IsNewHighScore) 
+            CurrentSession.SessionHighlight = $"Legendary Run: New High Score of {finalScore}!";
+        else if (CurrentSession.MaxCombo >= 15) 
+            CurrentSession.SessionHighlight = $"Combo Master: {CurrentSession.MaxCombo} Streak";
+        else if (CurrentSession.AccuracyPercentage >= 90f) 
+            CurrentSession.SessionHighlight = $"Precision Run: %{CurrentSession.AccuracyPercentage:F1} Accuracy";
+        else if (CurrentSession.GoldenWastesCollected >= 5) 
+            CurrentSession.SessionHighlight = $"Golden Hunter: {CurrentSession.GoldenWastesCollected} GoldenWastes Caught";
+        else if (CurrentSession.GraceUsedCount > 0 && CurrentSession.MaxCombo >= 8)
+            CurrentSession.SessionHighlight = $"Recovery Master: Recovered with Grace to reach x4 Multiplier";
+        else 
+            CurrentSession.SessionHighlight = $"Solid Effort: {finalScore} Score";
+        
+        string medalsString = CurrentSession.EarnedMedals.Count > 0 ? string.Join(", ", CurrentSession.EarnedMedals) : "None";
+        
+        Debug.Log($"<color=cyan>[End of Session Report]</color>\nHighlight: {CurrentSession.SessionHighlight}\nGrade: {CurrentSession.PerformanceGrade} ({CurrentSession.TotalGradeScore:F1}/100) | Accuracy: %{CurrentSession.AccuracyPercentage:F1} | Score: {finalScore} (Delta: {CurrentSession.ScoreDelta})\nEarned XP: {CurrentSession.EarnedXP} | Suggested Goal: {CurrentSession.SuggestedNextGoal}\nMedals Earned: {medalsString}");
+        
+        // 11. End Session Snapshot (Immutable Copy)
+        // Oyun sonu paneli açıkken yanlışlıkla arka planda bir çöp çöp kutusuna düşerse, raporun bozulmaması için veriyi donduruyoruz.
+        var snapshot = CurrentSession;
+        if (CurrentSession.EarnedMedals != null)
+        {
+            snapshot.EarnedMedals = new List<string>(CurrentSession.EarnedMedals); // Listeyi derin kopyala (Deep Copy)
+        }
+        FinalSessionReport = snapshot;
     }
 
     /// <summary>

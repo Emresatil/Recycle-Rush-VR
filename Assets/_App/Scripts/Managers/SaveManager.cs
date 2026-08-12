@@ -4,6 +4,17 @@ using System;
 
 namespace RecycleRush.Managers
 {
+    [System.Serializable]
+    public class MatchHistoryRecord
+    {
+        public string Timestamp;
+        public int Score;
+        public string Grade;
+        public float Accuracy;
+        public int MaxCombo;
+        public int GoldenWastes;
+    }
+
     /// <summary>
     /// Oyuncu verilerinin kaydedilip yüklendiği veri modeli (JSON'a çevrilecek kısım).
     /// </summary>
@@ -13,6 +24,15 @@ namespace RecycleRush.Managers
         public int Level = 1;
         public int XP = 0;
         public int Coins = 0;
+        
+        // YENİ: Oyuncu Profili & Rekorlar
+        public int HighestScore = 0;
+        public float BestAccuracy = 0f;
+        public int BestCombo = 0;
+        public int MostGoldenWaste = 0;
+        
+        // YENİ: Son 10 Maç Geçmişi
+        public System.Collections.Generic.List<MatchHistoryRecord> MatchHistory = new System.Collections.Generic.List<MatchHistoryRecord>();
     }
 
     /// <summary>
