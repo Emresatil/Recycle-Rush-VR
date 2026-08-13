@@ -85,9 +85,7 @@ namespace RecycleRush.AR_Features
                 Debug.LogError("<color=red>[PortalSpawner]</color> Sahnede ObjectPoolManager bulunamadı! Lütfen Core sistemleri ekleyin.");
             }
             
-            // DÜZELTME: Simülatörde kolay test edebilmen için otomatik başlatmayı geri ekledim!
-            // (İleride GameManager'a bağladığımızda burayı sileceğiz)
-            StartSpawning();
+            // GameManager artık spawner'ı kontrol ettiği için otomatik başlamayı kaldırdık.
         }
 
         private void Update()
