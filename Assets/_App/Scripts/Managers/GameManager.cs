@@ -25,6 +25,19 @@ public struct GameSessionData
     public int GoldenWastesCollected;
     public float TotalPlayTime;
     
+    [Header("Precision Stats (New)")]
+    public int TotalPerfectThrows;
+    public int TotalGreatThrows;
+    public int TotalGoodThrows;
+    public float AveragePrecision; // Ortalama İsabet Kalitesi (0-100)
+    public float BestPrecision;    // O maçtaki en yüksek isabet skoru
+    public int PrecisionBonusScore;
+    public int MaxPrecisionStreak; // O maçtaki en yüksek Perfect serisi
+    
+    // YENİ: Precision Consistency (Tutarlılık) 
+    public float PrecisionM2;      // Varyans hesabı için Welford algoritması ara değeri (Gösterilmez, hesaplama içindir)
+    public float PrecisionConsistency; // %0 - %100 arası oyuncu istikrarı
+    
     [Header("Combo Stats")]
     public int MaxCombo;
     public int LongestStreak;     // En uzun doğru atış serisi
@@ -55,9 +68,10 @@ public struct GameSessionData
     public string PerformanceGrade; // S, A, B, C, D
     
     [Header("Grade Breakdown (Total 100)")]
-    public float AccuracyGradeScore; // Max 50
-    public float ComboGradeScore;    // Max 30
-    public float GoldenGradeScore;   // Max 20
+    public float AccuracyGradeScore; // Max 40
+    public float PrecisionGradeScore;// Max 25
+    public float ComboGradeScore;    // Max 20
+    public float GoldenGradeScore;   // Max 15
     public float TotalGradeScore;
     
     [Header("New Records & Deltas")]
@@ -560,16 +574,17 @@ public class GameManager : MonoBehaviour
         // 3. Performans Harf Notu (Grade) ve Kırılımı (Breakdown)
         float comboScore = Mathf.Clamp01((float)CurrentSession.MaxCombo / 20f) * 100f;
         
-        CurrentSession.AccuracyGradeScore = CurrentSession.AccuracyPercentage * 0.5f; // Max 50
-        CurrentSession.ComboGradeScore = comboScore * 0.3f;                           // Max 30
-        CurrentSession.GoldenGradeScore = goldenWasteRate * 0.2f;                     // Max 20
-        CurrentSession.TotalGradeScore = CurrentSession.AccuracyGradeScore + CurrentSession.ComboGradeScore + CurrentSession.GoldenGradeScore;
+        CurrentSession.AccuracyGradeScore = CurrentSession.AccuracyPercentage * 0.40f; // Max 40
+        CurrentSession.PrecisionGradeScore = CurrentSession.AveragePrecision * 0.25f;  // Max 25
+        CurrentSession.ComboGradeScore = comboScore * 0.20f;                           // Max 20
+        CurrentSession.GoldenGradeScore = goldenWasteRate * 0.15f;                     // Max 15
+        CurrentSession.TotalGradeScore = CurrentSession.AccuracyGradeScore + CurrentSession.PrecisionGradeScore + CurrentSession.ComboGradeScore + CurrentSession.GoldenGradeScore;
         
-        if (CurrentSession.TotalGradeScore >= 90f) CurrentSession.PerformanceGrade = "S";
-        else if (CurrentSession.TotalGradeScore >= 80f) CurrentSession.PerformanceGrade = "A";
-        else if (CurrentSession.TotalGradeScore >= 70f) CurrentSession.PerformanceGrade = "B";
-        else if (CurrentSession.TotalGradeScore >= 50f) CurrentSession.PerformanceGrade = "C";
-        else CurrentSession.PerformanceGrade = "D";
+        if (CurrentSession.TotalGradeScore >= 90f) CurrentSession.PerformanceGrade = "Eco Legend";
+        else if (CurrentSession.TotalGradeScore >= 80f) CurrentSession.PerformanceGrade = "Master Recycler";
+        else if (CurrentSession.TotalGradeScore >= 70f) CurrentSession.PerformanceGrade = "Green Worker";
+        else if (CurrentSession.TotalGradeScore >= 50f) CurrentSession.PerformanceGrade = "Clean Rookie";
+        else CurrentSession.PerformanceGrade = "Beginner Collector";
         
         // 4. Ekonomi (XP ve Coin)
         int finalScore = RecycleRush.Core.ScoreManager.Instance != null ? RecycleRush.Core.ScoreManager.Instance.CurrentScore : 0;

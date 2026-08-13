@@ -57,8 +57,24 @@ namespace RecycleRush.Managers
         public int TotalGraceEarned = 0; // Kaç kere af kazanıldı
         public int TotalGraceUsed = 0; // Kazanılan afların kaçı kullanıldı
 
-        // Başarım Takibi
+        // Başarım ve Ödül Takibi
         public int TotalUnlockedAchievements = 0;
+        public int TotalMedalsEarned = 0;
+        
+        // YENİ: Precision Takibi
+        public string PrecisionSettingsVersion = "Unknown";
+        public int TotalPerfectThrows = 0;
+        public int TotalGreatThrows = 0;
+        public int TotalGoodThrows = 0;
+        public float AveragePrecision = 0f;
+        public float BestPrecision = 0f;
+        
+        // Harf Notu (Grade) Dağılımı
+        public int TotalSGrades = 0;
+        public int TotalAGrades = 0;
+        public int TotalBGrades = 0;
+        public int TotalCGrades = 0;
+        public int TotalDGrades = 0;
     }
 
     /// <summary>
@@ -230,9 +246,51 @@ namespace RecycleRush.Managers
                         CurrentData.TotalGamesCompleted++; // Süreyi sağ salim bitirebilme başarısı
                         
                         // En Yüksek Dalga (Wave) Tespiti
-                        if (GameManager.Instance != null && GameManager.Instance.CurrentWave > CurrentData.MaxWaveReached)
+                        if (GameManager.Instance != null)
                         {
-                            CurrentData.MaxWaveReached = GameManager.Instance.CurrentWave;
+                            if (GameManager.Instance.CurrentWave > CurrentData.MaxWaveReached)
+                            {
+                                CurrentData.MaxWaveReached = GameManager.Instance.CurrentWave;
+                            }
+                            
+                            // Yeni Snapshot'tan gelen AAA verilerini Analytics'e kaydet
+                            var finalReport = GameManager.Instance.FinalSessionReport;
+                            
+                            // YENİ: Precision Verilerini Kaydet
+                            if (RecycleRush.Core.PrecisionSystem.PrecisionManager.Instance != null && RecycleRush.Core.PrecisionSystem.PrecisionManager.Instance.Settings != null)
+                            {
+                                CurrentData.PrecisionSettingsVersion = RecycleRush.Core.PrecisionSystem.PrecisionManager.Instance.Settings.SettingsVersion;
+                            }
+                            
+                            CurrentData.TotalPerfectThrows += finalReport.TotalPerfectThrows;
+                            CurrentData.TotalGreatThrows += finalReport.TotalGreatThrows;
+                            CurrentData.TotalGoodThrows += finalReport.TotalGoodThrows;
+                            
+                            // Average Precision Güncellemesi (Tüm oyunların ağırlıklı ortalaması)
+                            int previousTotalCorrect = CurrentData.TotalCorrectThrows - finalReport.TotalCorrectThrows; // Toplam doğru atışlar az önce HandleWasteProcessed içinde arttığı için
+                            if (CurrentData.TotalCorrectThrows > 0)
+                            {
+                                float oldSum = CurrentData.AveragePrecision * Mathf.Max(0, previousTotalCorrect);
+                                float newSum = oldSum + (finalReport.AveragePrecision * finalReport.TotalCorrectThrows);
+                                CurrentData.AveragePrecision = newSum / CurrentData.TotalCorrectThrows;
+                            }
+                            
+                            if (finalReport.BestPrecision > CurrentData.BestPrecision)
+                            {
+                                CurrentData.BestPrecision = finalReport.BestPrecision;
+                            }
+
+                            if (finalReport.EarnedMedals != null)
+                                CurrentData.TotalMedalsEarned += finalReport.EarnedMedals.Count;
+                                
+                            switch (finalReport.PerformanceGrade)
+                            {
+                                case "S": CurrentData.TotalSGrades++; break;
+                                case "A": CurrentData.TotalAGrades++; break;
+                                case "B": CurrentData.TotalBGrades++; break;
+                                case "C": CurrentData.TotalCGrades++; break;
+                                case "D": CurrentData.TotalDGrades++; break;
+                            }
                         }
                     }
 
