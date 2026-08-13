@@ -24,6 +24,13 @@ namespace RecycleRush.Managers
         public bool IsCompleted => CurrentAmount >= TargetAmount;
     }
 
+    [System.Serializable]
+    public struct MissionSaveData
+    {
+        public bool HasActiveMission;
+        public MissionData SavedMission;
+    }
+
     public class MissionManager : MonoBehaviour
     {
         public static MissionManager Instance { get; private set; }
@@ -157,6 +164,32 @@ namespace RecycleRush.Managers
 
             // Kısa bir süre sonra (veya bir sonraki levelde) yeni görev verilebilir.
             // Şu anlık LevelUp eventine bağlı bıraktık, ama anında da yenilenebilir.
+        }
+
+        // --- SAVE / LOAD SİSTEMİ ENTEGRASYONU ---
+        public MissionSaveData GetSaveData()
+        {
+            return new MissionSaveData
+            {
+                HasActiveMission = (ActiveMission != null && !ActiveMission.IsCompleted),
+                SavedMission = ActiveMission
+            };
+        }
+
+        public void LoadSaveData(MissionSaveData data)
+        {
+            if (data.HasActiveMission && data.SavedMission != null)
+            {
+                ActiveMission = data.SavedMission;
+                OnMissionProgressUpdated?.Invoke(ActiveMission);
+                Debug.Log($"<color=green>[MissionManager]</color> Görev yüklendi: {ActiveMission.Description}");
+            }
+            else
+            {
+                // Kayıtlı görev yoksa (veya tamamlanmışsa) mevcut levele göre yeni üret
+                int currentLvl = LevelManager.Instance != null ? LevelManager.Instance.CurrentLevel : 1;
+                GenerateMissionForLevel(currentLvl);
+            }
         }
     }
 }
