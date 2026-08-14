@@ -1507,78 +1507,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 1703713423863856330, guid: 2972ce967a6e2a84a90facc39f0fe711, type: 3}
   m_PrefabInstance: {fileID: 201163112194154216}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &309994374
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 309994375}
-  - component: {fileID: 309994378}
-  - component: {fileID: 309994377}
-  - component: {fileID: 309994376}
-  m_Layer: 0
-  m_Name: PrecisionManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &309994375
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 309994374}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1773524244}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &309994376
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 309994374}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1d14eb8fa457f1f4b8c681d2d3746845, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RecycleRush.Core.PrecisionSystem.PrecisionDebugOverlay
-  ShowOverlay: 1
---- !u!114 &309994377
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 309994374}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5c042c3378cb1af41ac11d08b7d1b6e7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RecycleRush.Core.PrecisionSystem.PrecisionFloatingTextManager
---- !u!114 &309994378
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 309994374}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 360f98cd56c801b42ab724b2cc12d51f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RecycleRush.Core.PrecisionSystem.PrecisionManager
-  _settings: {fileID: 11400000, guid: c00faf2d53adede4ba81112aae8c4e98, type: 2}
 --- !u!1 &340493330
 GameObject:
   m_ObjectHideFlags: 0
@@ -6610,17 +6538,8 @@ PrefabInstance:
       objectReference: {fileID: 956718734}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects:
-    - targetCorrespondingSourceObject: {fileID: 4129714333503685258, guid: 8ecccfb49a31c0c43bdfbb4050342591, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 309994375}
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 1629354575857376435, guid: 8ecccfb49a31c0c43bdfbb4050342591, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1773524239}
-    - targetCorrespondingSourceObject: {fileID: 1629354575857376435, guid: 8ecccfb49a31c0c43bdfbb4050342591, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1773524243}
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 8ecccfb49a31c0c43bdfbb4050342591, type: 3}
 --- !u!114 &1773524237 stripped
 MonoBehaviour:
@@ -6633,42 +6552,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a605765bd0b63444a912b6dfd90bf8cb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RecycleRush.UI.UIManager
---- !u!1 &1773524238 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 1629354575857376435, guid: 8ecccfb49a31c0c43bdfbb4050342591, type: 3}
-  m_PrefabInstance: {fileID: 1773524236}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1773524239
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1773524238}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 51646c0fb73de994986100f72fe615e6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RecycleRush.Managers.ComboManager
-  comboWindowSeconds: 12
---- !u!114 &1773524243
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1773524238}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d9596b46a5bd9424fa2ad7df94084b9b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RecycleRush.Managers.AchievementManager
-  DatabaseVersion: 2
---- !u!4 &1773524244 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 4129714333503685258, guid: 8ecccfb49a31c0c43bdfbb4050342591, type: 3}
-  m_PrefabInstance: {fileID: 1773524236}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1778652163
 GameObject:
   m_ObjectHideFlags: 0
