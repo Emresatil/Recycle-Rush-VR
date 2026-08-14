@@ -165,17 +165,11 @@ namespace RecycleRush.Managers
             BinTrigger.OnWasteProcessed += HandleWasteProcessed;
             WasteSpawner.OnGoldenWasteSpawned += HandleGoldenWasteSpawned;
 
-            if (Managers.ComboManager.Instance != null)
-            {
-                Managers.ComboManager.OnComboChanged += HandleComboChanged;
-                Managers.ComboManager.OnComboGraceEarned += HandleGraceEarned;
-                Managers.ComboManager.OnComboGraceUsed += HandleGraceUsed;
-            }
+            Managers.ComboManager.OnComboChanged += HandleComboChanged;
+            Managers.ComboManager.OnComboGraceEarned += HandleGraceEarned;
+            Managers.ComboManager.OnComboGraceUsed += HandleGraceUsed;
 
-            if (Managers.AchievementManager.Instance != null)
-            {
-                Managers.AchievementManager.OnAchievementUnlocked += HandleAchievementUnlocked;
-            }
+            Managers.AchievementManager.OnAchievementUnlocked += HandleAchievementUnlocked;
         }
 
         private void OnDisable()
@@ -185,17 +179,11 @@ namespace RecycleRush.Managers
             BinTrigger.OnWasteProcessed -= HandleWasteProcessed;
             WasteSpawner.OnGoldenWasteSpawned -= HandleGoldenWasteSpawned;
             
-            if (Managers.ComboManager.Instance != null)
-            {
-                Managers.ComboManager.OnComboChanged -= HandleComboChanged;
-                Managers.ComboManager.OnComboGraceEarned -= HandleGraceEarned;
-                Managers.ComboManager.OnComboGraceUsed -= HandleGraceUsed;
-            }
+            Managers.ComboManager.OnComboChanged -= HandleComboChanged;
+            Managers.ComboManager.OnComboGraceEarned -= HandleGraceEarned;
+            Managers.ComboManager.OnComboGraceUsed -= HandleGraceUsed;
 
-            if (Managers.AchievementManager.Instance != null)
-            {
-                Managers.AchievementManager.OnAchievementUnlocked -= HandleAchievementUnlocked;
-            }
+            Managers.AchievementManager.OnAchievementUnlocked -= HandleAchievementUnlocked;
         }
 
         private void Start()

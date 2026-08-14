@@ -110,6 +110,19 @@ namespace RecycleRush.UI
             {
                 _nextGoalText.text = $"Next goal: {report.SuggestedNextGoal}";
             }
+
+            // --- AUDIO HOOKS ---
+            if (AudioManager.Instance != null)
+            {
+                // Zafer/Rütbe sesi
+                AudioManager.Instance.PlayLevelUpFanfare();
+                
+                // Para Sesi (Oyuncu menüdeyken merkezde çalsın)
+                if (report.EarnedCoins > 0)
+                {
+                    AudioManager.Instance.PlayCoinCollectSound(Vector3.zero);
+                }
+            }
         }
 
         // Bu fonksiyonu "Tekrar Oyna" (Restart) butonunun OnClick eventine bağlayabilirsin
