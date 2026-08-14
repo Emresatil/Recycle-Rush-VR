@@ -39,17 +39,25 @@ public class GameManager : MonoBehaviour
 
     private void Awake()
     {
+        Debug.Log($"<color=cyan>[GameManager]</color> Awake çalışıyor. Obje adı: {gameObject.name}");
         // Singleton Kurulumu
         if (Instance != null && Instance != this)
         {
+            Debug.LogWarning($"<color=orange>[GameManager]</color> Zaten bir Instance var! Bu kopya ({gameObject.name}) yok ediliyor.");
             Destroy(gameObject);
             return;
         }
         
         Instance = this;
+        Debug.Log($"<color=green>[GameManager]</color> Instance başarıyla atandı: {Instance.gameObject.name}");
         // GameManager sahneler arası geçişte yok olmasın isteniyorsa aşağıdaki kod açılabilir:
         // DontDestroyOnLoad(gameObject);
     }
+
+    // private void OnDestroy()
+    // {
+    //     Debug.LogError($"<color=red>[GameManager]</color> GameManager YOK EDİLDİ! Çağrı zinciri (StackTrace):\n{StackTraceUtility.ExtractStackTrace()}");
+    // }
 
     private void Start()
     {
@@ -91,8 +99,11 @@ public class GameManager : MonoBehaviour
     /// </summary>
     public void PrepareToStart()
     {
+        Debug.Log($"<color=white>[GameManager]</color> PrepareToStart ÇAĞRILDI! Mevcut Durum: {CurrentState}");
+        
         if (CurrentState == GameState.MainMenu || CurrentState == GameState.GameOver)
         {
+            Debug.Log("<color=white>[GameManager]</color> Durum uygun, Geri sayım (Countdown) başlatılıyor...");
             RemainingTime = _gameDuration;
             OnGameTimeUpdated?.Invoke(RemainingTime); // Ekrandaki zaman yazısını anında 60 yap
 
@@ -104,6 +115,10 @@ public class GameManager : MonoBehaviour
             // Kol (Lever) konveyör bandı ile birlikte silindiği için 
             // ReadyToStart yerine direkt Geri Sayım (Countdown) durumuna geçerek oyunu başlat.
             ChangeState(GameState.Countdown);
+        }
+        else
+        {
+            Debug.LogWarning($"<color=orange>[GameManager]</color> PrepareToStart reddedildi! Sebebi: CurrentState şu an {CurrentState}, ancak MainMenu veya GameOver olması bekleniyor.");
         }
     }
 
