@@ -332,15 +332,19 @@ namespace RecycleRush.UI
         /// </summary>
         private IEnumerator StartCountdownAnimation()
         {
+            Debug.Log("<color=yellow>[UIManager]</color> StartCountdownAnimation Coroutine'i başladı!");
+            
             // Eğer Unity'de arayüz yazısı (statusText) atanmamışsa, oyunu kitlememek için direkt başlat
             if (statusText == null) 
             {
-                Debug.LogWarning("<color=orange>[UIManager]</color> statusText atanmamış! Geri sayım atlanıp oyun başlatılıyor.");
+                Debug.LogWarning("<color=orange>[UIManager]</color> statusText atanmamış (veya silinmiş)! Geri sayım atlanıp oyun başlatılıyor.");
                 // C# Event çakışmasını önlemek için (Reentrancy Bug) 1 frame bekleyip öyle başlatıyoruz
                 yield return null; 
                 if (GameManager.Instance != null) GameManager.Instance.FinishCountdown();
                 yield break;
             }
+            
+            Debug.Log("<color=yellow>[UIManager]</color> statusText mevcut, geri sayım döngüsüne giriliyor...");
 
             string[] countTexts = { "<color=yellow>3</color>", "<color=orange>2</color>", "<color=red>1</color>", "<color=green>GO!</color>" };
             Vector3 originalScale = Vector3.one;
@@ -377,6 +381,8 @@ namespace RecycleRush.UI
 
             // Geri sayım bitti, yazıyı temizle ve oyunu asıl şimdi başlat!
             statusText.text = ""; 
+            
+            Debug.Log("<color=yellow>[UIManager]</color> Geri sayım animasyonu tamamlandı, FinishCountdown çağrılıyor...");
             if (GameManager.Instance != null)
             {
                 GameManager.Instance.FinishCountdown();
