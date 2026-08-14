@@ -39,6 +39,16 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private AudioClip _floorPenaltyClip;
     [Tooltip("Kombo yapıldığında çalacak özel (Combo!) sesi")]
     [SerializeField] private AudioClip _comboClip;
+    [Tooltip("Level (Kademe) atlandığında çalacak özel (Fanfare) sesi")]
+    [SerializeField] private AudioClip _levelUpFanfareClip;
+
+    [Header("Spatial SFX (3D)")]
+    [Tooltip("Altın çöp (Golden Waste) başarıyla atıldığında 3D olarak çıkacak ses")]
+    [SerializeField] private AudioClip _goldenWasteClip;
+    [Tooltip("Coin (Para) kazanıldığında 3D olarak çıkacak ses")]
+    [SerializeField] private AudioClip _coinCollectClip;
+    [Tooltip("Normal çöp kutuya düştüğünde kutudan çıkacak 3D yönsel ses (Opsiyonel)")]
+    [SerializeField] private AudioClip _trashDropClip;
 
     private void Awake()
     {
@@ -235,5 +245,60 @@ public class AudioManager : MonoBehaviour
         {
             _engineSource.volume = _uiVolume;
         }
+    }
+
+    /// <summary>
+    /// Level atlandığında veya yeni rütbe açıldığında çalacak Fanfar sesi.
+    /// </summary>
+    public void PlayLevelUpFanfare()
+    {
+        if (_uiSource != null && _levelUpFanfareClip != null)
+        {
+            _uiSource.PlayOneShot(_levelUpFanfareClip, 1.0f);
+        }
+    }
+
+    /// <summary>
+    /// Belirli bir dünya pozisyonunda (3D Spatial Audio) çevresel ses çalar.
+    /// (Örn: Çöpün kutuya düştüğü yer, Altın çöpün belirdiği yer)
+    /// </summary>
+    public void PlaySpatialSound(AudioClip clip, Vector3 position, float volume = 1f)
+    {
+        if (clip == null) return;
+
+        // 3D ses için o lokasyonda geçici (Disposable) bir obje oluşturuyoruz
+        GameObject tempAudioObj = new GameObject($"TempAudio3D_{clip.name}");
+        tempAudioObj.transform.position = position;
+
+        AudioSource source = tempAudioObj.AddComponent<AudioSource>();
+        source.clip = clip;
+        source.volume = volume;
+        
+        // 3D Ses ayarları (Spatial Audio / Yönsel Ses)
+        source.spatialBlend = 1f; // 1 = Tamamen 3D (Mesafeye ve yöne göre kulaklara dağılır)
+        source.minDistance = 1f;  // Bu mesafeden daha yakındayken ses maksimum güçte çalar
+        source.maxDistance = 15f; // Bu mesafeden sonra ses VR gözlüğünde kısılır
+        source.rolloffMode = AudioRolloffMode.Logarithmic; // VR'da gerçekçi yayılım için Logaritmik düşüş
+
+        source.Play();
+
+        // Ses bitince belleği (RAM) şişirmemesi için objeyi otomatik olarak yok et
+        Destroy(tempAudioObj, clip.length + 0.1f);
+    }
+
+    /// <summary>
+    /// Altın çöp yakalandığında 3D olarak ses çıkarır.
+    /// </summary>
+    public void PlayGoldenWasteSound(Vector3 position)
+    {
+        PlaySpatialSound(_goldenWasteClip, position, 1.0f);
+    }
+
+    /// <summary>
+    /// Coin kazanıldığında 3D olarak ses çıkarır.
+    /// </summary>
+    public void PlayCoinCollectSound(Vector3 position)
+    {
+        PlaySpatialSound(_coinCollectClip, position, 1.0f);
     }
 }
