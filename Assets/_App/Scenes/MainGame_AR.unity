@@ -7840,7 +7840,53 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 8469112811775019092, guid: 2972ce967a6e2a84a90facc39f0fe711, type: 3}
       insertIndex: -1
       addedObject: {fileID: 6520291406266517117}
+    - targetCorrespondingSourceObject: {fileID: 3550294528655257231, guid: 2972ce967a6e2a84a90facc39f0fe711, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 201163112194154219}
+    - targetCorrespondingSourceObject: {fileID: 2965157203557030702, guid: 2972ce967a6e2a84a90facc39f0fe711, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 201163112194154220}
   m_SourcePrefab: {fileID: 100100000, guid: 2972ce967a6e2a84a90facc39f0fe711, type: 3}
+--- !u!1 &201163112194154217 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3550294528655257231, guid: 2972ce967a6e2a84a90facc39f0fe711, type: 3}
+  m_PrefabInstance: {fileID: 201163112194154216}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &201163112194154218 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2965157203557030702, guid: 2972ce967a6e2a84a90facc39f0fe711, type: 3}
+  m_PrefabInstance: {fileID: 201163112194154216}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &201163112194154219
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 201163112194154217}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 09000e9ef79cf394a890b2c2258b5157, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RecycleRush.Interaction.GravityPullController
+  _pullCooldown: 0.5
+  _hapticDuration: 0.1
+  _hapticIntensity: 0.5
+--- !u!114 &201163112194154220
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 201163112194154218}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 09000e9ef79cf394a890b2c2258b5157, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RecycleRush.Interaction.GravityPullController
+  _pullCooldown: 0.5
+  _hapticDuration: 0.1
+  _hapticIntensity: 0.5
 --- !u!114 &944275157146004439
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8453,6 +8499,7 @@ MonoBehaviour:
   portalAnimator: {fileID: 1845940901}
   minSpawnInterval: 4
   maxSpawnInterval: 7
+  _tapeMaterial: {fileID: 2100000, guid: e3e1f4188e8f15b4a99fd39705d29d99, type: 2}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
