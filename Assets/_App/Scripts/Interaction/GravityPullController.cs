@@ -1,80 +1,102 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
+using UnityEngine.XR.Interaction.Toolkit.Interactors;
 
 namespace RecycleRush.Interaction
 {
-    /// <summary>
-    /// Handles the logic for pulling distant objects towards the player's hand (Jedi Pull / Gravity Grab).
-    /// Follows Single Responsibility Principle (SRP) by only managing the pull trajectory and state, 
-    /// leaving grab logic to XRGrabInteractable.
-    /// </summary>
-    [RequireComponent(typeof(XRRayInteractor))]
+    [RequireComponent(typeof(XRBaseInteractor))]
     public class GravityPullController : MonoBehaviour
     {
-        [Header("Pull Settings")]
-        [SerializeField, Tooltip("How fast the object travels to the hand.")]
-        private float _pullSpeed = 5f;
-        
-        [SerializeField, Tooltip("The curve of the object's trajectory.")]
-        private AnimationCurve _pullCurve;
+        [SerializeField, Tooltip("Cooldown between successful pulls to prevent spamming.")]
+        private float _pullCooldown = 0.5f;
 
-        private XRRayInteractor _rayInteractor;
-        private Rigidbody _targetRigidbody;
-        private bool _isPulling = false;
+        [Header("Haptics")]
+        [SerializeField] private float _hapticDuration = 0.1f;
+        [SerializeField] private float _hapticIntensity = 0.5f;
+
+        private XRBaseInteractor _interactor;
+        private XRInteractionManager _interactionManager;
+        
+        private float _lastPullTime = -1f;
 
         private void Awake()
         {
-            _rayInteractor = GetComponent<XRRayInteractor>();
+            _interactor = GetComponent<XRBaseInteractor>();
+            
+            // Interaction Manager'ı otomatik bul (Sahnedeki XR Origin setup'ından gelir)
+            _interactionManager = FindAnyObjectByType<XRInteractionManager>();
+            if (_interactionManager == null)
+            {
+                Debug.LogError("[GravityPullController] XRInteractionManager sahne içinde bulunamadı!");
+            }
         }
 
         private void OnEnable()
         {
-            // Subscribe to XR Ray selection events to detect when an object is targeted from afar
-            _rayInteractor.selectEntered.AddListener(OnSelectEntered);
-            _rayInteractor.selectExited.AddListener(OnSelectExited);
+            // XR Ray'in bir nesneyi seçtiği anı dinle
+            _interactor.selectEntered.AddListener(OnSelectEntered);
         }
 
         private void OnDisable()
         {
-            _rayInteractor.selectEntered.RemoveListener(OnSelectEntered);
-            _rayInteractor.selectExited.RemoveListener(OnSelectExited);
+            _interactor.selectEntered.RemoveListener(OnSelectEntered);
         }
 
         private void OnSelectEntered(SelectEnterEventArgs args)
         {
-            // TODO: Validate distance. If object is far, start the pulling sequence.
-            Debug.Log($"[GravityPullController] Target acquired: {args.interactableObject.transform.name}. Starting pull sequence.");
-            
-            _targetRigidbody = args.interactableObject.transform.GetComponent<Rigidbody>();
-            if (_targetRigidbody != null)
+            IXRSelectInteractable targetInteractable = args.interactableObject;
+            if (targetInteractable == null) return;
+
+            if (!(targetInteractable is XRGrabInteractable grabInteractable)) return;
+
+            float distance = Vector3.Distance(transform.position, targetInteractable.transform.position);
+
+            // Uzaklık sınırını (2.5m / 10m vb.) tamamen kaldırdık! 
+            // Lazerin değdiği her şeyi çekebilecek. Zamanla yarışan oyuncu için en iyisi budur.
+
+            if (distance > 0.5f)
             {
-                _isPulling = true;
+                if (Time.time - _lastPullTime < _pullCooldown) return;
+
+                _lastPullTime = Time.time;
+                
+                GravityPullMotion motion = targetInteractable.transform.GetComponent<GravityPullMotion>();
+                if (motion == null) 
+                    motion = targetInteractable.transform.gameObject.AddComponent<GravityPullMotion>();
+                
+                Transform attachPoint = _interactor.attachTransform != null ? _interactor.attachTransform : this.transform;
+                
+                // Seçimi iptal ETMİYORUZ. Obje şu an XR Toolkit tarafından 'Tutuluyor' (Selected).
+                // Sadece fiziksel pozisyon takibini geçici olarak kapatıp kendi uçuşumuzu başlatıyoruz.
+                motion.StartPull(attachPoint, grabInteractable, (m) => OnPullCompleted(targetInteractable, m));
             }
         }
 
-        private void OnSelectExited(SelectExitEventArgs args)
+        private void OnPullCompleted(IXRSelectInteractable targetInteractable, GravityPullMotion motion)
         {
-            // Reset state when object arrives at hand or is dropped
-            Debug.Log($"[GravityPullController] Target released or arrived.");
-            _isPulling = false;
-            _targetRigidbody = null;
+            if (targetInteractable == null || targetInteractable.transform == null) return;
+            SendHapticFeedback();
         }
 
-        private void Update()
+        private IEnumerator CancelSelectionNextFrame(IXRSelectInteractable target)
         {
-            if (_isPulling && _targetRigidbody != null)
+            yield return null;
+            if (target != null && target.isSelected && _interactionManager != null)
             {
-                ProcessPullPhysics();
+                _interactionManager.SelectCancel((IXRSelectInteractor)_interactor, target);
             }
         }
 
-        /// <summary>
-        /// Calculates and applies the physics force/lerp required to pull the object smoothly.
-        /// </summary>
-        private void ProcessPullPhysics()
+        private void SendHapticFeedback()
         {
-            // TODO: Mathematics for the Bezier curve pull will be implemented here.
+            // Eğer HapticManager varsa o kullanılabilir, ancak doğrudan kontrolcüye titreşim yolluyoruz:
+            var controller = GetComponent<XRBaseController>();
+            if (controller != null)
+            {
+                controller.SendHapticImpulse(_hapticIntensity, _hapticDuration);
+            }
         }
     }
 }
