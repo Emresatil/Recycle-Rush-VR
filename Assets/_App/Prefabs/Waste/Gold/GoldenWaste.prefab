@@ -68,6 +68,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 5505118794397739872, guid: 9158b70246c5ffa4bb1e5f1d8c2739ae, type: 3}
       insertIndex: -1
       addedObject: {fileID: 3710305770062753146}
+    - targetCorrespondingSourceObject: {fileID: 5505118794397739872, guid: 9158b70246c5ffa4bb1e5f1d8c2739ae, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: -6219928299419598858}
   m_SourcePrefab: {fileID: 3150474306388093854, guid: 9158b70246c5ffa4bb1e5f1d8c2739ae, type: 3}
 --- !u!1 &4222493635594501461 stripped
 GameObject:
@@ -270,3 +273,41 @@ CapsuleCollider:
   m_Height: 0.39312
   m_Direction: 1
   m_Center: {x: 0, y: 0.19656, z: 0}
+--- !u!114 &-6219928299419598858
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4222493635594501461}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7872ccf4f01ad124ca590da9102472db, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RecycleRush.Interaction.GravityPullMotion
+  _pullDuration: 0.3
+  _arcHeight: 0.5
+  _speedCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4

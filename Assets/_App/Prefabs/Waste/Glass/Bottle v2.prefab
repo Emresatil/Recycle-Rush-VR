@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 7954840526988596811}
   - component: {fileID: -7354115055464354998}
   - component: {fileID: 8140359156048759512}
+  - component: {fileID: 8524289483945461729}
   m_Layer: 0
   m_Name: Bottle v2
   m_TagString: Glass
@@ -203,10 +204,49 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 76a9198378626634a80e96efefe92137, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RecycleRush.Interaction.ARWastePhysicsTuner
-  targetAngularDamping: 2
-  targetMass: 0.5
+  materialType: 2
+  isGoldenWaste: 0
+  defaultAngularDamping: 2
   throwVelocityMultiplier: 1.6
   smoothingDuration: 0.25
+--- !u!114 &8524289483945461729
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1713471487485392943}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7872ccf4f01ad124ca590da9102472db, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RecycleRush.Interaction.GravityPullMotion
+  _pullDuration: 0.3
+  _arcHeight: 0.5
+  _speedCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!1 &2691755046572760136
 GameObject:
   m_ObjectHideFlags: 0

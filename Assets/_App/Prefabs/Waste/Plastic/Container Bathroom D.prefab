@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 8787773375413506709}
   - component: {fileID: 8967917319493477293}
   - component: {fileID: 4649200696247129208}
+  - component: {fileID: -8003297373101901297}
   m_Layer: 0
   m_Name: Container Bathroom D
   m_TagString: Plastic
@@ -204,10 +205,49 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 76a9198378626634a80e96efefe92137, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RecycleRush.Interaction.ARWastePhysicsTuner
+  isGoldenWaste: 0
   targetAngularDamping: 2
   targetMass: 0.5
   throwVelocityMultiplier: 1.6
   smoothingDuration: 0.25
+--- !u!114 &-8003297373101901297
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3199166170169763079}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7872ccf4f01ad124ca590da9102472db, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RecycleRush.Interaction.GravityPullMotion
+  _pullDuration: 0.3
+  _arcHeight: 0.5
+  _speedCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!1 &4942700319566413060
 GameObject:
   m_ObjectHideFlags: 0
