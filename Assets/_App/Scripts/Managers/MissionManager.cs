@@ -59,27 +59,11 @@ namespace RecycleRush.Managers
         private void OnEnable()
         {
             BinTrigger.OnWasteProcessed += HandleWasteProcessed;
-            
-            if (LevelManager.Instance != null)
-            {
-                LevelManager.Instance.OnLevelUp += HandleLevelUp;
-            }
         }
 
         private void OnDisable()
         {
             BinTrigger.OnWasteProcessed -= HandleWasteProcessed;
-            
-            if (LevelManager.Instance != null)
-            {
-                LevelManager.Instance.OnLevelUp -= HandleLevelUp;
-            }
-        }
-
-        private void HandleLevelUp(int oldLevel, int newLevel)
-        {
-            // Oyuncu seviye atladığında yeni görev ver
-            GenerateMissionForLevel(newLevel);
         }
 
         public void GenerateMissionForLevel(int level)

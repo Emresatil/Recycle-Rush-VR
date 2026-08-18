@@ -66,13 +66,9 @@ public class ObjectPoolManager : MonoBehaviour
         }
 
         // ÇOK KRİTİK: Objeyi aktifleştirmeden ÖNCE pozisyonunu ayarla.
-        // Çünkü SetActive(true) çağrıldığında BeltItem.OnEnable() çalışır ve AttachToBelt() metodu çalışır.
-        // Eğer pozisyonu sonradan ayarlarsak, AttachToBelt'in yaptığı hizalama ezilir!
         objToSpawn.transform.position = position;
         objToSpawn.transform.rotation = rotation;
         
-        objToSpawn.SetActive(true);
-
         // Önceki hareketinden kalan Fiziksel etkileri ve kilitleri tam fabrika ayarlarına sıfırla
         Rigidbody[] rbs = objToSpawn.GetComponentsInChildren<Rigidbody>(true);
         foreach (Rigidbody rb in rbs)
@@ -88,8 +84,12 @@ public class ObjectPoolManager : MonoBehaviour
             rb.isKinematic = false; // MR Güncellemesi: Bant olmadığı için doğrudan yerçekimiyle düşmeli
             rb.useGravity = true;
             rb.constraints = RigidbodyConstraints.None;
-            rb.maxDepenetrationVelocity = 0.8f; 
+            // ÇOK KRİTİK: Objelerin birbirine girdiğinde fırlamasını engellemek için itme hızını ciddi oranda kısıyoruz.
+            rb.maxDepenetrationVelocity = 0.5f; 
         }
+
+        // Hızlar ve konum sıfırlandıktan SONRA objeyi aktif et (Böylece Physics motoru fırlatmaz)
+        objToSpawn.SetActive(true);
 
         // MR Güncellemesi: BeltItem (VR Taşıyıcı Bant) kaldırıldı. Objeler AR ortamında serbest düşüş yapacak.
         
