@@ -28,6 +28,18 @@ namespace RecycleRush.Managers
         private bool _isWarningActive = false;
         private bool _wasPausedBySafety = false;
         private List<InputDevice> _headDevices = new List<InputDevice>();
+        
+#if UNITY_EDITOR
+        private bool _isSimulateTimerRunning = false;
+        private System.Collections.IEnumerator DisableSimulationAfterDelay(float delay)
+        {
+            _isSimulateTimerRunning = true;
+            yield return new WaitForSecondsRealtime(delay);
+            simulateLowLightWarning = false;
+            _isSimulateTimerRunning = false;
+            Debug.Log("<color=green>[EnvironmentSafetyManager]</color> Test süresi bitti. Uyarı otomatik kapatıldı.");
+        }
+#endif
 
         private void Awake()
         {
@@ -54,6 +66,12 @@ namespace RecycleRush.Managers
             if (simulateLowLightWarning)
             {
                 hasTrackingIssue = true;
+                
+                // YENİ EKLENDİ: Eğer sadece test için açıldıysa, 5 saniye sonra tiki otomatik kapat
+                if (!_isSimulateTimerRunning)
+                {
+                    StartCoroutine(DisableSimulationAfterDelay(5f));
+                }
             }
 #endif
 

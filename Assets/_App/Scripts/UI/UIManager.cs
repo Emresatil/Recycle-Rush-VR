@@ -3,6 +3,7 @@ using TMPro; // TextMeshPro (Yazılar) için gerekli
 using System.Collections; // Coroutine (Lerp animasyonları) için gerekli
 using UnityEngine.UI;
 using UnityEngine.InputSystem;
+using RecycleRush.Managers; // EKLENDİ: MissionManager, LevelSelectionManager gibi yöneticilere erişmek için
 
 namespace RecycleRush.UI
 {
@@ -139,15 +140,28 @@ namespace RecycleRush.UI
             {
                 gameOverPanel.SetActive(false);
                 
-                // Oyuncu Inspector'dan bağlamayı unutursa diye Game Over panelindeki Exit butonunu otomatik bulup bağlıyoruz:
+                // Oyuncu Inspector'dan bağlamayı unutursa diye Game Over panelindeki butonları otomatik bulup bağlıyoruz:
                 UnityEngine.UI.Button[] buttons = gameOverPanel.GetComponentsInChildren<UnityEngine.UI.Button>(true);
                 foreach (var btn in buttons)
                 {
-                    if (btn.name.ToLower().Contains("exit") || btn.name.ToLower().Contains("quit"))
+                    string btnName = btn.name.ToLower();
+                    if (btnName.Contains("exit") || btnName.Contains("quit"))
                     {
                         btn.onClick.RemoveAllListeners();
                         btn.onClick.AddListener(QuitApplication);
                         Debug.Log($"<color=green>[UIManager]</color> '{btn.name}' butonu QuitApplication metoduna otomatik bağlandı!");
+                    }
+                    else if (btnName.Contains("restart") || btnName.Contains("retry"))
+                    {
+                        btn.onClick.RemoveAllListeners();
+                        btn.onClick.AddListener(RestartGameUI);
+                        Debug.Log($"<color=green>[UIManager]</color> '{btn.name}' butonu RestartGameUI metoduna otomatik bağlandı!");
+                    }
+                    else if (btnName.Contains("next"))
+                    {
+                        btn.onClick.RemoveAllListeners();
+                        btn.onClick.AddListener(StartNextLevelUI);
+                        Debug.Log($"<color=green>[UIManager]</color> '{btn.name}' butonu StartNextLevelUI metoduna otomatik bağlandı!");
                     }
                 }
             }
@@ -273,6 +287,23 @@ namespace RecycleRush.UI
                     if (gameOverPanel != null) 
                     {
                         gameOverPanel.SetActive(true);
+                        
+                        // Next Level butonunun aktiflik durumunu göreve göre ayarla
+                        bool isMissionCompleted = false;
+                        if (MissionManager.Instance != null && MissionManager.Instance.ActiveMission != null)
+                        {
+                            isMissionCompleted = MissionManager.Instance.ActiveMission.IsCompleted;
+                        }
+
+                        UnityEngine.UI.Button[] buttons = gameOverPanel.GetComponentsInChildren<UnityEngine.UI.Button>(true);
+                        foreach (var btn in buttons)
+                        {
+                            if (btn.name.ToLower().Contains("next"))
+                            {
+                                btn.interactable = isMissionCompleted; // Tamamlanmadıysa basılamaz (soluk) olur
+                                // İstenirse tamamen gizlemek için: btn.gameObject.SetActive(isMissionCompleted);
+                            }
+                        }
                     }
                     if (gameOverFinalScoreText != null && RecycleRush.Core.ScoreManager.Instance != null)
                     {
@@ -513,6 +544,37 @@ namespace RecycleRush.UI
             if (GameManager.Instance != null)
             {
                 GameManager.Instance.PrepareToStart();
+            }
+
+            // EKLENDİ: Restart yapıldığında aktif görevi sıfırlamak için mevcut bölümü baştan kur
+            if (LevelSelectionManager.Instance != null)
+            {
+                int currentLvl = LevelSelectionManager.Instance.CurrentPlayingLevelId;
+                LevelSelectionManager.Instance.StartLevel(currentLvl);
+                Debug.Log($"<color=cyan>[UIManager]</color> Restart butonuna basıldı. Aşama {currentLvl} ve görevleri sıfırlandı.");
+            }
+        }
+
+        public void StartNextLevelUI()
+        {
+            if (LevelSelectionManager.Instance != null)
+            {
+                int nextLevelId = LevelSelectionManager.Instance.CurrentPlayingLevelId + 1;
+                LevelData nextLevel = LevelSelectionManager.Instance.GetLevelData(nextLevelId);
+                
+                if (nextLevel != null && nextLevel.IsUnlocked)
+                {
+                    if (GameManager.Instance != null)
+                    {
+                        GameManager.Instance.PrepareToStart();
+                    }
+                    LevelSelectionManager.Instance.StartLevel(nextLevelId);
+                    Debug.Log($"<color=green>[UIManager]</color> Next Level butonuna basıldı. Aşama {nextLevelId} hazırlanıyor.");
+                }
+                else
+                {
+                    Debug.LogWarning($"<color=orange>[UIManager]</color> Sonraki seviye ({nextLevelId}) kilitli veya bulunamadı!");
+                }
             }
         }
 
