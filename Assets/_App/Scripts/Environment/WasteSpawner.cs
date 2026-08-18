@@ -32,7 +32,15 @@ public class WasteSpawner : MonoBehaviour
 
 
     // Tekrarı önlemek için son üretilen çöpü hafızada tutuyoruz
-    private GameObject _lastSpawnedPrefab;
+    private GameObject _lastSpawnedPrefab = null;
+
+    [Header("Composite Waste Settings")]
+    [Tooltip("Görsel bağ/bant materyali. Composite çöpleri bağlarken kullanılır.")]
+    [SerializeField] private Material _tapeMaterial;
+
+    [Header("Dirty Waste Settings")]
+    [Tooltip("Kirli çöplerin üzerine eklenecek çamur/kir balçığı görseli (Prefab)")]
+    [SerializeField] private GameObject _dirtVisualPrefab;
 
     private Coroutine _spawnCoroutine;
 
@@ -41,6 +49,10 @@ public class WasteSpawner : MonoBehaviour
 
     private void Awake()
     {
+        if (spawnPoint == null)
+        {
+            spawnPoint = this.transform; // Eğer atanmamışsa kendi transformunu kullan
+        }
         // Zorluk seviyesi değiştikçe baz alınacak orijinal değerleri önbelleğe (Cache) alıyoruz.
         _baseMinSpawnInterval = minSpawnInterval;
         _baseMaxSpawnInterval = maxSpawnInterval;
@@ -158,20 +170,21 @@ public class WasteSpawner : MonoBehaviour
             }
         }
 
-        // 5. Özellik: Altın Çöp Şansı (Zar atma mantığı)
+        float randomRoll = Random.Range(0f, 100f);
+        
+        // 5. Özel: Altın Çöp Şansı (Zar atma mantığı)
         GameObject selectedPrefab = null;
         if (goldenWastePrefab != null)
         {
-            float randomRoll = Random.Range(0f, 100f);
             if (randomRoll <= goldenSpawnChance)
             {
                 selectedPrefab = goldenWastePrefab;
-                Debug.Log($"<color=yellow>[WasteSpawner]</color> BÜYÜK ŞANS! Altın Çöp Üretiliyor! (Atılan Zar: {randomRoll:F1} <= {goldenSpawnChance})");
+                Debug.Log($"<color=yellow>[WasteSpawner]</color> BÜYÜK ŞANS! Altın Çöp üretiliyor!");
                 OnGoldenWasteSpawned?.Invoke(); // Analiz sistemine haber ver
             }
         }
 
-        // Eğer altın çöp çıkmadıysa normal rastgele çöplerden birini seç
+        // Eğer altın çöp çıkmadıysa normal rastgele çöplerden seç
         if (selectedPrefab == null)
         {
             selectedPrefab = GetRandomPrefab();
@@ -185,8 +198,65 @@ public class WasteSpawner : MonoBehaviour
         Quaternion uprightRandomRotation = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
 
         // Obje üretimi veya havuzdan çekim
-        ObjectPoolManager.Instance.SpawnFromPool(selectedPrefab.tag, selectedPrefab, finalSpawnPosition, uprightRandomRotation);
+        GameObject spawnedA = ObjectPoolManager.Instance.SpawnFromPool(selectedPrefab.tag, selectedPrefab, finalSpawnPosition, uprightRandomRotation);
         
+        // Composite Waste (Yapışık Çöp) Mantığı
+        float compositeChance = GetCompositeChance();
+        bool spawnComposite = (randomRoll > goldenSpawnChance) && (Random.Range(0f, 100f) <= compositeChance);
+        
+        // Dirty Waste (Kirli Çöp) Mantığı - Composite ile çakışmaz!
+        bool spawnDirty = false;
+        if (!spawnComposite && randomRoll > goldenSpawnChance)
+        {
+            float dirtyChance = GetDirtyChance();
+            spawnDirty = (Random.Range(0f, 100f) <= dirtyChance);
+        }
+
+        if (spawnComposite && _tapeMaterial != null)
+        {
+            GameObject selectedB = GetRandomPrefab(); // İkinci rastgele çöp
+            if (selectedB != null)
+            {
+                Vector3 offsetPos = finalSpawnPosition + new Vector3(0.35f, 0, 0); // Objeler iç içe girip patlamasın diye aralığı açtık
+                GameObject spawnedB = ObjectPoolManager.Instance.SpawnFromPool(selectedB.tag, selectedB, offsetPos, uprightRandomRotation);
+
+                // Bileşenleri güvenli şekilde al veya ekle (Runtime Allocation'u önlemek için)
+                var glue = spawnedA.GetComponent<RecycleRush.Interaction.WasteGlue>();
+                if (glue == null) glue = spawnedA.AddComponent<RecycleRush.Interaction.WasteGlue>();
+
+                var ctrl = spawnedA.GetComponent<RecycleRush.Interaction.CompositeWasteController>();
+                if (ctrl == null) ctrl = spawnedA.AddComponent<RecycleRush.Interaction.CompositeWasteController>();
+
+                // Bağla
+                var interactableA = spawnedA.GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>();
+                var interactableB = spawnedB.GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>();
+                
+                if (interactableA != null && interactableB != null)
+                {
+                    glue.Bind(interactableA, interactableB, _tapeMaterial);
+                    Debug.Log($"<color=cyan>[Composite Waste]</color> İki çöp birbirine yapıştırıldı! ({selectedPrefab.name} + {selectedB.name})");
+                }
+            }
+        }
+        else if (spawnDirty)
+        {
+            var dirtyCtrl = spawnedA.GetComponent<RecycleRush.Interaction.DirtyWasteController>();
+            if (dirtyCtrl == null) dirtyCtrl = spawnedA.AddComponent<RecycleRush.Interaction.DirtyWasteController>();
+
+            // Kir görseli prefab'ı verilmişse ve objede henüz yoksa child olarak ekle
+            if (dirtyCtrl.dirtVisual == null && _dirtVisualPrefab != null)
+            {
+                var visual = Instantiate(_dirtVisualPrefab, spawnedA.transform);
+                visual.transform.localPosition = Vector3.zero;
+                // Kutu gibi büyük, şişe gibi uzun objelere otomatik sarmalaması için boyutu çöpün boyutuna uydurabiliriz
+                visual.transform.localScale = Vector3.one; 
+                dirtyCtrl.dirtVisual = visual;
+            }
+
+            dirtyCtrl.InitializeDirtyState();
+            Debug.Log($"<color=brown>[Dirty Waste]</color> Kirli çöp üretildi: {selectedPrefab.name}");
+        }
+
         // Eğer portalımız varsa, çöp çıktığı anda şişme animasyonunu oynat!
         if (portalAnimator != null)
         {
@@ -239,5 +309,30 @@ public class WasteSpawner : MonoBehaviour
                obj.CompareTag("Glass") || 
                obj.CompareTag("Plastic") || 
                obj.CompareTag("Metal");
+    }
+
+    private float GetCompositeChance()
+    {
+        // Seviyeye göre dinamik artan Composite şansı
+        if (DifficultyManager.Instance == null) return 5f;
+        int lvl = DifficultyManager.Instance.CurrentLevel;
+        
+        if (lvl == 0) return 5f; // Level 1-3
+        if (lvl == 1) return 8f; // Level 4-6
+        if (lvl == 2) return 11f; // Level 7-9
+        return 15f; // Level 10+ (Arcade/Max)
+    }
+
+    private float GetDirtyChance()
+    {
+        // Seviyeye göre artan Kirlilik şansı (Oyuncunun belirttiği tablo)
+        if (DifficultyManager.Instance == null) return 0f;
+        int lvl = DifficultyManager.Instance.CurrentLevel;
+
+        if (lvl == 0) return 0f;  // Level 1-3: %0
+        if (lvl == 1) return 5f;  // Level 4-6: %5
+        if (lvl == 2) return 8f;  // Level 7-9: %8
+        if (lvl == 3) return 12f; // Level 10-12: %12
+        return 15f;               // Level 13-15+: %15
     }
 }
