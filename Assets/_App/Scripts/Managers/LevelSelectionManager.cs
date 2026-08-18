@@ -50,6 +50,7 @@ namespace RecycleRush.Managers
             Instance = this;
             
             InitializeDefaultLevels();
+            LoadFromPlayerPrefs(); // <-- EKLENDİ: Oyunu açınca kayıtlı seviyeleri yükle
             Debug.Log("<color=green>[LevelSelectionManager]</color> Başlatıldı.");
         }
 
@@ -178,12 +179,13 @@ namespace RecycleRush.Managers
                 {
                     nextLevel.IsUnlocked = true;
                     Debug.Log($"<color=green>[LevelSelectionManager]</color> Yeni Aşama Açıldı: {nextLevel.LevelId}");
+                    SaveToPlayerPrefs(); // <-- EKLENDİ: Yeni seviye açılınca hemen kaydet
                 }
             }
         }
 
         // ==========================================
-        // 💾 SABRİ EMRE İÇİN SAVE/LOAD YARDIMCILARI
+        // 💾 SABRİ EMRE İÇİN SAVE/LOAD YARDIMCILARI + OTOMATİK KAYIT
         // ==========================================
         public LevelSelectionSaveData GetSaveData()
         {
@@ -196,6 +198,26 @@ namespace RecycleRush.Managers
             {
                 this._levelList = data.Levels;
                 OnLevelDataUpdated?.Invoke();
+            }
+        }
+
+        private void SaveToPlayerPrefs()
+        {
+            LevelSelectionSaveData data = GetSaveData();
+            string json = JsonUtility.ToJson(data);
+            PlayerPrefs.SetString("LevelSelectionProgress", json);
+            PlayerPrefs.Save();
+            Debug.Log("<color=green>[LevelSelectionManager]</color> Bölüm ilerlemesi diske kaydedildi.");
+        }
+
+        private void LoadFromPlayerPrefs()
+        {
+            if (PlayerPrefs.HasKey("LevelSelectionProgress"))
+            {
+                string json = PlayerPrefs.GetString("LevelSelectionProgress");
+                LevelSelectionSaveData data = JsonUtility.FromJson<LevelSelectionSaveData>(json);
+                LoadSaveData(data);
+                Debug.Log("<color=green>[LevelSelectionManager]</color> Eski bölüm ilerlemesi yüklendi.");
             }
         }
     }

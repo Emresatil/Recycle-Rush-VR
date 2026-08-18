@@ -30,9 +30,14 @@ namespace RecycleRush.UI
         {
             if (_levelButton != null)
             {
+                _levelButton.onClick.RemoveListener(OnLevelButtonClicked);
                 _levelButton.onClick.AddListener(OnLevelButtonClicked);
             }
+            LevelSelectionManager.OnLevelDataUpdated -= UpdateUI;
             LevelSelectionManager.OnLevelDataUpdated += UpdateUI;
+            
+            // EKLENDİ: Panel her açıldığında (SetActive(true) olduğunda) güncel durumu kontrol et
+            UpdateUI();
         }
 
         private void OnDisable()
