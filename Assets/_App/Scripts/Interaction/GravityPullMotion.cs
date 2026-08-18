@@ -78,7 +78,7 @@ namespace RecycleRush.Interaction
             float arc = Mathf.Sin(rawT * Mathf.PI) * _arcHeight;
             currentPos.y += arc;
 
-            transform.position = currentPos;
+            _rigidbody.MovePosition(currentPos);
         }
 
         private void CompletePull()
