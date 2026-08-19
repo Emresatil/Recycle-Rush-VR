@@ -15,7 +15,7 @@ namespace RecycleRush.Managers
         [SerializeField] private int _baseRequiredXp = 100;
         
         [Tooltip("Her seviyede gereken XP'nin ne kadar katlanarak artacağı (Üstel Formül Çarpanı)")]
-        [SerializeField] private float _xpMultiplier = 1.5f;
+        [SerializeField] private float _xpMultiplier = 1.25f;
 
         // Okunabilir Propertiler (Dışarıdan salt okunur)
         public int CurrentLevel { get; private set; }
