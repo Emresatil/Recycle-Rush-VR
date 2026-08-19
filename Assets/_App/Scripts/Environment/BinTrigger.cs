@@ -209,7 +209,9 @@ public class BinTrigger : MonoBehaviour
             }
 
             rb.linearVelocity = Vector3.zero;
-            rb.AddForce(new Vector3(0, 3f, -2f), ForceMode.Impulse);
+            
+            // Fırlatma gücünü inanılmaz derecede kıstık. Sadece kutunun içinden hafifçe sekip hemen dibine (yere) düşecek.
+            rb.AddForce(new Vector3(0, 1.5f, -0.5f), ForceMode.Impulse);
         }
 
         if (_failParticlePrefab != null)
