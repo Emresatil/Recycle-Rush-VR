@@ -242,7 +242,12 @@ namespace RecycleRush.UI
                     break;
                     
                 case GameState.Playing:
-                    if (statusText != null) statusText.text = "RECYCLING STARTED";
+                    if (statusText != null) 
+                    {
+                        statusText.text = "RECYCLING STARTED";
+                        // Oyuncunun önünü kapatmamak için yazıyı 2 saniye sonra silen bir coroutine başlatıyoruz
+                        StartCoroutine(ClearStatusTextAfterDelay(2f));
+                    }
                     if (restartButtonObj != null) restartButtonObj.SetActive(false);
                     if (pausePanel != null) pausePanel.SetActive(false);
                     if (gameOverPanel != null) gameOverPanel.SetActive(false);
@@ -258,6 +263,7 @@ namespace RecycleRush.UI
                     break;
                     
                 case GameState.Countdown:
+                    if (levelSelectionBoard != null) levelSelectionBoard.SetActive(false);
                     if (restartButtonObj != null) restartButtonObj.SetActive(false);
                     if (pausePanel != null) pausePanel.SetActive(false);
                     if (gameOverPanel != null) gameOverPanel.SetActive(false);
@@ -267,6 +273,7 @@ namespace RecycleRush.UI
                     
                 case GameState.Tutorial:
                     // TutorialManager yazıları kendisi yönetecek, burada sadece butonu gizliyoruz
+                    if (levelSelectionBoard != null) levelSelectionBoard.SetActive(false);
                     if (restartButtonObj != null) restartButtonObj.SetActive(false);
                     if (pausePanel != null) pausePanel.SetActive(false);
                     if (gameOverPanel != null) gameOverPanel.SetActive(false);
@@ -275,12 +282,14 @@ namespace RecycleRush.UI
                     
                 case GameState.Paused:
                     if (statusText != null) statusText.text = "SYSTEM PAUSED";
+                    if (levelSelectionBoard != null) levelSelectionBoard.SetActive(false);
                     if (pausePanel != null) pausePanel.SetActive(true);
                     if (gameOverPanel != null) gameOverPanel.SetActive(false);
                     if (pauseButtonUIObj != null) pauseButtonUIObj.SetActive(false);
                     break;
 
                 case GameState.GameOver:
+                    if (levelSelectionBoard != null) levelSelectionBoard.SetActive(false);
                     if (statusText != null) statusText.text = "<color=red>TIME'S UP!</color>\nCONVEYOR STOPPED";
                     
                     // Oyun bittiğinde GameOver panelini aç ve son skoru yazdır!
@@ -387,6 +396,15 @@ namespace RecycleRush.UI
             }
         }
 
+        private IEnumerator ClearStatusTextAfterDelay(float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            if (statusText != null)
+            {
+                statusText.text = "";
+            }
+        }
+
         /// <summary>
         /// 3-2-1-BAŞLA şeklinde profesyonel, animasyonlu (Pop & Lerp) geri sayım yapar.
         /// </summary>
@@ -407,7 +425,12 @@ namespace RecycleRush.UI
             Debug.Log("<color=yellow>[UIManager]</color> statusText mevcut, geri sayım döngüsüne giriliyor...");
 
             string[] countTexts = { "<color=yellow>3</color>", "<color=orange>2</color>", "<color=red>1</color>", "<color=green>GO!</color>" };
-            Vector3 originalScale = Vector3.one;
+            
+            // DÜZELTME: Yazının Inspector'daki orijinal Scale (ölçek) değerini al (VR projelerinde UI genelde 0.005 gibi ufak değerlerdir)
+            Vector3 originalScale = statusText.transform.localScale;
+            // Sıfırlanma ihtimaline karşı koruma
+            if (originalScale.magnitude < 0.0001f) originalScale = Vector3.one;
+            
             Vector3 targetScale = originalScale * 2f; // %100 büyüt (Daha vurucu bir etki için)
 
             foreach (string text in countTexts)

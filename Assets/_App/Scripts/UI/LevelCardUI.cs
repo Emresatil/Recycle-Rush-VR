@@ -26,6 +26,16 @@ namespace RecycleRush.UI
         [SerializeField] private Color _earnedStarColor = Color.yellow;
         [SerializeField] private Color _emptyStarColor = Color.gray;
 
+        private void Awake()
+        {
+            // Unity editörde kopyala-yapıştır yapıldığında Inspector'daki '_levelNumber' güncellenmezse,
+            // kullanıcının UI'a yazdığı Text numarasını okuyup otomatik olarak arka plana kaydeder.
+            if (_levelText != null && int.TryParse(_levelText.text, out int parsedLevel))
+            {
+                _levelNumber = parsedLevel;
+            }
+        }
+
         private void OnEnable()
         {
             if (_levelButton != null)
