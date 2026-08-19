@@ -26,7 +26,8 @@ namespace RecycleRush.Managers
     {
         public static LevelSelectionManager Instance { get; private set; }
 
-        public const int TOTAL_LEVELS = 15;
+        // 30 seviyeye çıkarıldı
+        public const int TOTAL_LEVELS = 30;
 
         // Tıklanılan ve şu an aktif oynanan aşama (Stage) numarası
         public int CurrentPlayingLevelId { get; private set; } = 1;
