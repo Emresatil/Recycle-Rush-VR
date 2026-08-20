@@ -46,6 +46,7 @@ namespace RecycleRush.Interaction
             // Kütle ve sürtünme ayarları
             _rigidbody.mass = targetMass;
             _rigidbody.angularDamping = targetAngularDamping;
+            _rigidbody.linearDamping = 1.5f; // Yerde buz pisti gibi kayıp FloorZone dışına çıkmalarını engeller
             
             // --- AAA KALİTE FİZİK STANDARTLARI ---
             // 1. Tünelleme Önleyici: Hızlı fırlatılan çöpün kutu duvarının içinden geçip gitmesini (Ghosting) engeller.

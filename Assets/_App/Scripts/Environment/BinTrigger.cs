@@ -74,6 +74,14 @@ public class BinTrigger : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+        if (other == null) return;
+        
+        // Giren objenin kendisini veya Rigidbody'sini bul (Oyun objesinin en dış kapsayıcısı)
+        GameObject wasteObj = other.attachedRigidbody != null ? other.attachedRigidbody.gameObject : other.gameObject;
+        
+        // Zaten havuza gönderilmiş ve kapatılmış bir obje tekrar tetiklenmemeli (Aynı karede 2 collider çarpışması önlemi)
+        if (!wasteObj.activeInHierarchy) return;
+
         // GÜVENLİK: Eğer oyun aktif veya öğretici modunda değilse puan hesaplama ve atığı yoksay!
         if (GameManager.Instance != null && 
             GameManager.Instance.CurrentState != GameState.Playing && 
@@ -83,12 +91,12 @@ public class BinTrigger : MonoBehaviour
             return;
         }
 
-        Debug.Log($"<color=orange>[BinTrigger]</color> Kutunun içine bir şey girdi! Giren şeyin adı: {other.name}");
+        Debug.Log($"<color=orange>[BinTrigger]</color> Kutunun içine bir şey girdi! Giren şeyin adı: {wasteObj.name}");
 
         // Giren objenin atık türünü alıyoruz.
         WasteType incomingType = GetWasteTypeFromCollider(other);
         
-        Debug.Log($"<color=yellow>[BinTrigger]</color> {other.name} objesinin Tag kontrolü yapıldı. Bulunan Atık Türü: {incomingType}");
+        Debug.Log($"<color=yellow>[BinTrigger]</color> {wasteObj.name} objesinin Tag kontrolü yapıldı. Bulunan Atık Türü: {incomingType}");
 
         // Eğer giren obje bir atık değilse işlemi iptal et.
         if (incomingType == WasteType.Untagged) 
@@ -98,8 +106,18 @@ public class BinTrigger : MonoBehaviour
         }
 
         // Doğruluk mantığı: Giren atığın türü, kutunun kabul ettiği türe eşit mi?
-        bool isCorrect = (incomingType == _acceptedWasteType);
+        // Power-Up (Kum Saati) her kutuda doğru kabul edilir.
+        bool isCorrect = (incomingType == _acceptedWasteType) || (incomingType == WasteType.Hourglass);
         
+        // --- POWER-UP: KUM SAATİ MANTIĞI ---
+        if (incomingType == WasteType.Hourglass && isCorrect)
+        {
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.AddTime(10f); // 10 Saniye ekle
+            }
+        }
+
         // --- KOMBO SİSTEMİ (Gün 11) ---
         if (isCorrect)
         {
@@ -146,7 +164,7 @@ public class BinTrigger : MonoBehaviour
             ScoreChange = isCorrect ? _correctScore : -_incorrectScore,
             CoinChange = isCorrect ? _correctCoin : -_incorrectCoin,
             XpChange = isCorrect ? _correctXp : 0, // Hatalı atışta XP silinmez
-            ActionPosition = other.transform.position,
+            ActionPosition = wasteObj.transform.position,
             HapticDuration = isCorrect ? _correctHapticDuration : _incorrectHapticDuration,
             HapticAmplitude = isCorrect ? _correctHapticAmplitude : _incorrectHapticAmplitude
         };
@@ -157,9 +175,8 @@ public class BinTrigger : MonoBehaviour
         OnWasteProcessed?.Invoke(resultData);
 
         // İşlem tamamlandıktan sonra atık objesini sahneden yok et.
-        // Çöplerin içi içe geçmiş prefablar olma ihtimaline karşı her zaman en dıştaki (Root) objeyi siliyoruz.
-        Debug.Log($"<color=green>[BinTrigger]</color> {other.transform.root.name} objesi havuza geri gönderildi.");
-        ObjectPoolManager.Instance.ReturnToPool(other.transform.root.gameObject);
+        Debug.Log($"<color=green>[BinTrigger]</color> {wasteObj.name} objesi havuza geri gönderildi.");
+        ObjectPoolManager.Instance.ReturnToPool(wasteObj);
     }
 
     /// <summary>
@@ -168,11 +185,13 @@ public class BinTrigger : MonoBehaviour
     /// </summary>
     private WasteType GetWasteTypeFromCollider(Collider col)
     {
-        // En dış (Root) objeyi bul (Bu sayede prefab'ın en tepesine ulaşırız)
-        Transform rootTransform = col.transform.root;
+        if (col == null) return WasteType.Untagged;
+        
+        // En dış (Root) objeyi bul (attachedRigidbody sayesinde güvenli bir şekilde ana prefab objesini buluruz)
+        GameObject wasteObj = col.attachedRigidbody != null ? col.attachedRigidbody.gameObject : col.gameObject;
 
-        // Root objenin kendisine ve BÜTÜN alt objelerine (çocuklarına) sırayla bak
-        foreach (Transform child in rootTransform.GetComponentsInChildren<Transform>(true))
+        // Objenin kendisine ve BÜTÜN alt objelerine (çocuklarına) sırayla bak
+        foreach (Transform child in wasteObj.GetComponentsInChildren<Transform>(true))
         {
             if (CheckTag(child.gameObject, out WasteType type)) 
             {
