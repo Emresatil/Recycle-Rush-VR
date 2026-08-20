@@ -47,6 +47,7 @@ GameObject:
   - component: {fileID: 2851328082940464552}
   - component: {fileID: 7630415750456811378}
   - component: {fileID: -8918697537133676614}
+  - component: {fileID: 2382121457218238467}
   m_Layer: 0
   m_Name: Book (Blue) (1)
   m_TagString: Paper
@@ -361,3 +362,17 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &2382121457218238467
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2661205264216994680}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d06097d54d56034e89a987bf8149551, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RecycleRush.Environment.FloorPollutionDetector
+  recoveryWindow: 3
+  penaltyAmount: 5
