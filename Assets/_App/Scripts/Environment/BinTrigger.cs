@@ -4,11 +4,12 @@ using UnityEngine;
 // Atık türleri için Enum yapısı (Inspector'dan kolayca seçilebilmesi için)
 public enum WasteType
 {
-    Paper,
-    Glass,
-    Plastic,
-    Metal,
-    Untagged // Atık olmayan objeler (oyuncunun eli vb.) için
+    Paper = 0,
+    Glass = 1,
+    Plastic = 2,
+    Metal = 3,
+    Untagged = 4, // Atık olmayan objeler (oyuncunun eli vb.) için
+    Hourglass = 5 // Power-up (Süre ekleyen Kum Saati)
 }
 
 // Event üzerinden diğer sistemlere (Manager'lara) aktarılacak paket veri yapısı
@@ -188,6 +189,7 @@ public class BinTrigger : MonoBehaviour
         if (obj.CompareTag("Glass")) { type = WasteType.Glass; return true; }
         if (obj.CompareTag("Plastic")) { type = WasteType.Plastic; return true; }
         if (obj.CompareTag("Metal")) { type = WasteType.Metal; return true; }
+        if (obj.CompareTag("Hourglass")) { type = WasteType.Hourglass; return true; }
         
         type = WasteType.Untagged;
         return false;
