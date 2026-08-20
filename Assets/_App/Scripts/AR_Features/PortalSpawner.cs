@@ -31,6 +31,10 @@ namespace RecycleRush.AR_Features
         [Tooltip("Mevcut seviyeye bağlı Altın Çöp çıkma ihtimali (%5 - %25)")]
         [Range(0.05f, 0.25f)]
         public float goldenWasteChance = 0.05f;
+        
+        [Header("Power-Up Ayarları")]
+        [Tooltip("Zaman uzatan Kum Saati prefabı")]
+        public GameObject hourglassPrefab;
 
         [Header("Zamanlama (Timing)")]
         [Tooltip("Saniye cinsinden iki atık arası bekleme süresi")]
@@ -155,19 +159,38 @@ namespace RecycleRush.AR_Features
                 centerPos.z + randomZ
             );
 
+            // --- ÇAKIŞMA ÖNLEYİCİ (Overlap Check) ---
+            // Objeler spawn olurken tavanla veya birbirleriyle iç içe geçerse yatayda (havada) mermi gibi fırlarlar.
+            // Bunu engellemek için spawn noktasının boş olup olmadığını kontrol ediyoruz.
+            Collider[] existingColliders = Physics.OverlapSphere(randomSpawnPos, 0.4f);
+            foreach (var col in existingColliders)
+            {
+                if (!col.isTrigger)
+                {
+                    // Çakışma var, bu spawn döngüsünü iptal et (Sonraki döngüde başka bir yerde dener)
+                    Debug.LogWarning($"<color=orange>[PortalSpawner]</color> Spawn noktası dolu! ({col.gameObject.name}). Patlama (Ghosting) önlendi.");
+                    return; 
+                }
+            }
+            // ----------------------------------------
+
             // Golden Waste (Altın Çöp) İhtimal Hesaplama (RNG) Algoritması
             GameObject selectedPrefab = null;
             
-            // Mevcut seviyeyi al (Artık kendi yazdığımız LevelManager'ı kullanıyoruz)
-            int currentLevel = 1; // LevelManager 1'den başlıyor
-            if (LevelManager.Instance != null)
+            // Mevcut oyun aşamasını (Stage) LevelSelectionManager'dan al
+            int currentStage = 1;
+            if (LevelSelectionManager.Instance != null)
             {
-                currentLevel = LevelManager.Instance.CurrentLevel;
+                currentStage = LevelSelectionManager.Instance.CurrentPlayingLevelId;
+            }
+            else if (LevelManager.Instance != null)
+            {
+                currentStage = LevelManager.Instance.CurrentLevel; // Yedek sistem
             }
 
-            // Seviyeye göre altın çöp şansını hesapla (Level başına %5 artış)
-            // Örn: Lvl 0: %5, Lvl 1: %10, Lvl 2: %15, Lvl 3: %20, Maksimum: %25
-            float currentGoldenChance = Mathf.Clamp(goldenWasteChance + (currentLevel * 0.05f), goldenWasteChance, 0.25f);
+            // --- ALTIN ÇÖP MANTIĞI (Sabit İhtimal) ---
+            // Seviyeye göre altın çöp şansının artması, ileri seviyelerde oyunun dengesini bozduğu için kaldırıldı.
+            float currentGoldenChance = goldenWasteChance;
 
             // LuckyDrop Etkinliği varsa şansı geçici olarak tavan yaptır (%80)
             if (EventManager.Instance != null && EventManager.Instance.CurrentEvent == GameEventType.LuckyDrop)
@@ -175,44 +198,61 @@ namespace RecycleRush.AR_Features
                 currentGoldenChance = 0.8f;
             }
 
-            // Rastgele zar at (0.0 ile 1.0 arası)
-            if (goldenWastePrefab != null && Random.value <= currentGoldenChance)
+            // --- POWER-UP: KUM SAATİ SPAWN MANTIĞI (Level 20-30 Arası) ---
+            bool isHourglassSpawned = false;
+            // %10 ihtimalle kum saati fırlat (Zamanın daraldığı anlar için çok kritik)
+            if (hourglassPrefab != null && currentStage >= 20 && currentStage <= 30)
             {
-                // Şans yaver gitti, Altın Çöp seçildi!
-                selectedPrefab = goldenWastePrefab;
-                // Konsola bilgi yazdır
-                Debug.Log($"<color=yellow>[PortalSpawner]</color> Jackpot! Altın Çöp düştü! (Mevcut İhtimal: %{currentGoldenChance * 100})");
-            }
-            else
-            {
-                // --- GÖREV ODAKLI SPAWN SİSTEMİ (Mission Biasing) ---
-                bool missionBiased = false;
-                if (RecycleRush.Managers.MissionManager.Instance != null && 
-                    RecycleRush.Managers.MissionManager.Instance.ActiveMission != null &&
-                    RecycleRush.Managers.MissionManager.Instance.ActiveMission.Type == RecycleRush.Managers.MissionType.CollectWaste &&
-                    !RecycleRush.Managers.MissionManager.Instance.ActiveMission.IsCompleted)
+                if (Random.value <= 0.1f) 
                 {
-                    if (Random.value <= 0.6f) // %60 şansla görev hedefini seç
+                    selectedPrefab = hourglassPrefab;
+                    isHourglassSpawned = true;
+                    Debug.Log($"<color=magenta>[PortalSpawner]</color> POWER-UP! Kum Saati Düştü! (Aşama: {currentStage})");
+                }
+            }
+
+            // Eğer kum saati DÜŞMEDİYSE normal çöplere ve altın çöpe bak
+            if (!isHourglassSpawned)
+            {
+                // Rastgele zar at (0.0 ile 1.0 arası)
+                if (goldenWastePrefab != null && Random.value <= currentGoldenChance)
+                {
+                    // Şans yaver gitti, Altın Çöp seçildi!
+                    selectedPrefab = goldenWastePrefab;
+                    // Konsola bilgi yazdır
+                    Debug.Log($"<color=yellow>[PortalSpawner]</color> Jackpot! Altın Çöp düştü! (Mevcut İhtimal: %{currentGoldenChance * 100})");
+                }
+                else
+                {
+                    // --- GÖREV ODAKLI SPAWN SİSTEMİ (Mission Biasing) ---
+                    bool missionBiased = false;
+                    if (RecycleRush.Managers.MissionManager.Instance != null && 
+                        RecycleRush.Managers.MissionManager.Instance.ActiveMission != null &&
+                        RecycleRush.Managers.MissionManager.Instance.ActiveMission.Type == RecycleRush.Managers.MissionType.CollectWaste &&
+                        !RecycleRush.Managers.MissionManager.Instance.ActiveMission.IsCompleted)
                     {
-                        string targetTag = RecycleRush.Managers.MissionManager.Instance.ActiveMission.TargetWaste.ToString();
-                        List<GameObject> targetPrefabs = new List<GameObject>();
-                        foreach (var p in wastePrefabs)
+                        if (Random.value <= 0.6f) // %60 şansla görev hedefini seç
                         {
-                            if (p != null && p.CompareTag(targetTag)) targetPrefabs.Add(p);
-                        }
-                        
-                        if (targetPrefabs.Count > 0)
-                        {
-                            selectedPrefab = targetPrefabs[Random.Range(0, targetPrefabs.Count)];
-                            missionBiased = true;
+                            string targetTag = RecycleRush.Managers.MissionManager.Instance.ActiveMission.TargetWaste.ToString();
+                            List<GameObject> targetPrefabs = new List<GameObject>();
+                            foreach (var p in wastePrefabs)
+                            {
+                                if (p != null && p.CompareTag(targetTag)) targetPrefabs.Add(p);
+                            }
+                            
+                            if (targetPrefabs.Count > 0)
+                            {
+                                selectedPrefab = targetPrefabs[Random.Range(0, targetPrefabs.Count)];
+                                missionBiased = true;
+                            }
                         }
                     }
-                }
-                
-                if (!missionBiased)
-                {
-                    // Şans tutmadı, rastgele standart atık (Kağıt/Cam/Plastik) seç
-                    selectedPrefab = wastePrefabs[Random.Range(0, wastePrefabs.Length)];
+                    
+                    if (!missionBiased)
+                    {
+                        // Şans tutmadı, rastgele standart atık (Kağıt/Cam/Plastik) seç
+                        selectedPrefab = wastePrefabs[Random.Range(0, wastePrefabs.Length)];
+                    }
                 }
             }
 

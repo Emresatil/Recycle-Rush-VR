@@ -10,6 +10,10 @@ public class WasteSpawner : MonoBehaviour
     [Tooltip("Atıkların düşeceği başlangıç noktası")]
     public Transform spawnPoint;
 
+    [Header("Power-Up Ayarları")]
+    [Tooltip("Zaman uzatan Kum Saati prefabı")]
+    public GameObject hourglassPrefab;
+
     [Header("Visual Effects")]
     [Tooltip("Çöplerin çıktığı portalın görsel animatörü (İsteğe bağlı)")]
     public RecycleRush.Environment.PortalAnimator portalAnimator;
@@ -181,6 +185,26 @@ public class WasteSpawner : MonoBehaviour
 
         if (validPrefabs.Count == 0) return null;
 
+        // --- POWER-UP: KUM SAATİ SPAWN MANTIĞI (Level 20-30 Arası) ---
+        int currentStage = 1;
+        if (RecycleRush.Managers.LevelSelectionManager.Instance != null)
+        {
+            currentStage = RecycleRush.Managers.LevelSelectionManager.Instance.CurrentPlayingLevelId;
+        }
+        else if (RecycleRush.Managers.LevelManager.Instance != null)
+        {
+            currentStage = RecycleRush.Managers.LevelManager.Instance.CurrentLevel;
+        }
+
+        if (hourglassPrefab != null && currentStage >= 20 && currentStage <= 30)
+        {
+            if (Random.value <= 0.1f) // %10 İhtimal
+            {
+                Debug.Log($"<color=magenta>[WasteSpawner]</color> POWER-UP! Kum Saati Düştü! (Aşama: {currentStage})");
+                return hourglassPrefab;
+            }
+        }
+
         // --- GÖREV ODAKLI SPAWN SİSTEMİ (Mission Biasing) ---
         // Eğer aktif bir "Toplama" görevi varsa, %50 ihtimalle o çöpü yolla!
         if (RecycleRush.Managers.MissionManager.Instance != null && 
@@ -230,6 +254,7 @@ public class WasteSpawner : MonoBehaviour
         return obj.CompareTag("Paper") || 
                obj.CompareTag("Glass") || 
                obj.CompareTag("Plastic") || 
-               obj.CompareTag("Metal");
+               obj.CompareTag("Metal") ||
+               obj.CompareTag("Hourglass");
     }
 }

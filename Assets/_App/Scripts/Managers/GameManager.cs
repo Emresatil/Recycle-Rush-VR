@@ -230,6 +230,19 @@ public class GameManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Oyun süresine dışarıdan süre eklemek için kullanılır (Örn: Power-Up)
+    /// </summary>
+    public void AddTime(float secondsToAdd)
+    {
+        if (CurrentState == GameState.Playing && RemainingTime > 0)
+        {
+            RemainingTime += secondsToAdd;
+            Debug.Log($"<color=yellow>[GameManager]</color> +{secondsToAdd} saniye eklendi! Yeni süre: {RemainingTime:F1}");
+            OnGameTimeUpdated?.Invoke(RemainingTime);
+        }
+    }
+
+    /// <summary>
     /// Süre bittiğinde oyunu bitirir.
     /// </summary>
     private void EndGame()
