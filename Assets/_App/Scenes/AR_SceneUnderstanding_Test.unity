@@ -940,7 +940,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RecycleRush.Managers.EnvironmentSafetyManager
   autoPauseGame: 1
-  simulateLowLightWarning: 1
+  simulateLowLightWarning: 0
 --- !u!114 &109085284
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2883,7 +2883,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -1.32, y: 2.48}
+  m_AnchoredPosition: {x: -1.32, y: 3.17}
   m_SizeDelta: {x: 1800, y: 500}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &455189706
@@ -6468,7 +6468,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0ce8dba51d32120469cd523d96dfd5d9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RecycleRush.AR_Features.PortalSpawner
-  spawnCenter: {fileID: 0}
+  spawnCenter: {fileID: 2017040578}
   spawnRadius: 2
   spawnHeight: 1.5
   wastePrefabs:
@@ -6491,8 +6491,10 @@ MonoBehaviour:
   - {fileID: 3199166170169763079, guid: 09e21d7564c94b4418971db260dcf71d, type: 3}
   - {fileID: 1712690235699389714, guid: fbe12c384f50aed42ae7e457f2f1cfbf, type: 3}
   - {fileID: 8134708681774675193, guid: 8df0748676d76ab44aef43bafbc57d94, type: 3}
+  - {fileID: 5089588363924917385, guid: 76e45dd3b58ab6f4da7b3fd7b9714bd5, type: 3}
   goldenWastePrefab: {fileID: 899901206736937025, guid: 26356dcf67d5801419ee7124ce2c8717, type: 3}
   goldenWasteChance: 0.05
+  hourglassPrefab: {fileID: 2062538595629661584, guid: ad791056c0618b24085d89969692c03d, type: 3}
   spawnInterval: 5
 --- !u!4 &860334677
 Transform:
