@@ -114,7 +114,14 @@ public class ObjectPoolManager : MonoBehaviour
             objToSpawn.AddComponent<RecycleRush.Interaction.WasteAudioFeedback>();
         }
 
-        // Aktif objeler listesine ekle (Kill-Z takibi için)
+        // 3) Mıknatıs mekaniği için MagnetResponder ekle
+        if (objToSpawn.GetComponent<RecycleRush.Interaction.MagnetResponder>() == null &&
+            objToSpawn.GetComponentInChildren<RecycleRush.Interaction.MagnetResponder>() == null)
+        {
+            objToSpawn.AddComponent<RecycleRush.Interaction.MagnetResponder>();
+        }
+
+        // 4) Kill-Z sistemi için aktif objeler listesine ekle
         if (!_activeObjects.Contains(objToSpawn))
         {
             _activeObjects.Add(objToSpawn);

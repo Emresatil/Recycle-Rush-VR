@@ -9,7 +9,8 @@ public enum WasteType
     Plastic = 2,
     Metal = 3,
     Untagged = 4, // Atık olmayan objeler (oyuncunun eli vb.) için
-    Hourglass = 5 // Power-up (Süre ekleyen Kum Saati)
+    Hourglass = 5, // Power-up (Süre ekleyen Kum Saati)
+    Magnet = 6 // Power-up (Çöpleri otomatik çeken Mıknatıs)
 }
 
 // Event üzerinden diğer sistemlere (Manager'lara) aktarılacak paket veri yapısı
@@ -58,10 +59,19 @@ public class BinTrigger : MonoBehaviour
 
     private static int _currentCombo = 0; // Tüm kutular için ortak kombo sayacı
 
+    // Mıknatıs (Magnet) mekaniği için kutuların konumlarını tutan statik referans listesi
+    private static System.Collections.Generic.Dictionary<WasteType, Transform> _binRegistry = new System.Collections.Generic.Dictionary<WasteType, Transform>();
+
     private Collider _binCollider;
 
     private void Awake()
     {
+        // Kutuyu sisteme kaydet (Mıknatıs mekaniği için)
+        if (_acceptedWasteType != WasteType.Untagged && _acceptedWasteType != WasteType.Hourglass)
+        {
+            _binRegistry[_acceptedWasteType] = transform;
+        }
+
         // GC Optimizasyonu: GetComponent çağrısını Awake içinde Cache'liyoruz.
         _binCollider = GetComponent<Collider>();
         
@@ -70,6 +80,19 @@ public class BinTrigger : MonoBehaviour
         {
             _binCollider.isTrigger = true;
         }
+    }
+
+    /// <summary>
+    /// Verilen atık türüne ait kutunun merkez noktasını döndürür (Mıknatıs uçuşu için).
+    /// Eğer kutu bulunamazsa null döner.
+    /// </summary>
+    public static Transform GetBinTransform(WasteType type)
+    {
+        if (_binRegistry.TryGetValue(type, out Transform binTransform))
+        {
+            return binTransform;
+        }
+        return null;
     }
 
     private void OnTriggerEnter(Collider other)
@@ -106,8 +129,8 @@ public class BinTrigger : MonoBehaviour
         }
 
         // Doğruluk mantığı: Giren atığın türü, kutunun kabul ettiği türe eşit mi?
-        // Power-Up (Kum Saati) her kutuda doğru kabul edilir.
-        bool isCorrect = (incomingType == _acceptedWasteType) || (incomingType == WasteType.Hourglass);
+        // Power-Up (Kum Saati ve Mıknatıs) her kutuda doğru kabul edilir.
+        bool isCorrect = (incomingType == _acceptedWasteType) || (incomingType == WasteType.Hourglass) || (incomingType == WasteType.Magnet);
         
         // --- POWER-UP: KUM SAATİ MANTIĞI ---
         if (incomingType == WasteType.Hourglass && isCorrect)
@@ -115,6 +138,15 @@ public class BinTrigger : MonoBehaviour
             if (GameManager.Instance != null)
             {
                 GameManager.Instance.AddTime(10f); // 10 Saniye ekle
+            }
+        }
+        
+        // --- POWER-UP: MIKNATIS MANTIĞI ---
+        if (incomingType == WasteType.Magnet && isCorrect)
+        {
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.ActivateMagnet(10f); // 10 Saniye boyunca Mıknatıs (Auto-Sort) özelliğini aç
             }
         }
 
@@ -183,7 +215,7 @@ public class BinTrigger : MonoBehaviour
     /// Objenin neresine (Root, Mesh, Collider) Tag konulduğunu bilemeyeceğimiz için,
     /// objenin tamamını (kendisini ve tüm alt çocuklarını) tarayıp Tag'i bulur. (Foolproof)
     /// </summary>
-    private WasteType GetWasteTypeFromCollider(Collider col)
+    public static WasteType GetWasteTypeFromCollider(Collider col)
     {
         if (col == null) return WasteType.Untagged;
         
@@ -202,13 +234,14 @@ public class BinTrigger : MonoBehaviour
         return WasteType.Untagged;
     }
 
-    private bool CheckTag(GameObject obj, out WasteType type)
+    public static bool CheckTag(GameObject obj, out WasteType type)
     {
         if (obj.CompareTag("Paper")) { type = WasteType.Paper; return true; }
         if (obj.CompareTag("Glass")) { type = WasteType.Glass; return true; }
         if (obj.CompareTag("Plastic")) { type = WasteType.Plastic; return true; }
         if (obj.CompareTag("Metal")) { type = WasteType.Metal; return true; }
         if (obj.CompareTag("Hourglass")) { type = WasteType.Hourglass; return true; }
+        if (obj.CompareTag("Magnet")) { type = WasteType.Magnet; return true; }
         
         type = WasteType.Untagged;
         return false;
