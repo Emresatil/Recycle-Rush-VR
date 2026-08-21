@@ -22,6 +22,12 @@ public class WasteSpawner : MonoBehaviour
     [Tooltip("Altın Çöp'ün çıkma ihtimali (Yüzde % olarak)")]
     [Range(0f, 100f)] public float goldenSpawnChance = 5f;
 
+    [Header("Mystery Package Settings")]
+    [Tooltip("Nadir olarak düşecek Sürpriz Kutu Prefab'ı")]
+    public GameObject wastePackagePrefab;
+    [Tooltip("Sürpriz Kutu'nun çıkma ihtimali (Yüzde % olarak)")]
+    [Range(0f, 100f)] public float packageSpawnChance = 5f;
+
     [Header("Visual Effects")]
     [Tooltip("Çöplerin çıktığı portalın görsel animatörü (İsteğe bağlı)")]
     public RecycleRush.Environment.PortalAnimator portalAnimator;
@@ -212,11 +218,19 @@ public class WasteSpawner : MonoBehaviour
 
         float randomRoll = Random.Range(0f, 100f);
         
-        // 5. Özel: Altın Çöp Şansı (Zar atma mantığı)
+        // 5. Özel: Altın Çöp Şansı veya Sürpriz Kutu Şansı
         GameObject selectedPrefab = null;
-        if (goldenWastePrefab != null)
+        
+        // Önce paketi kontrol et, paket gelmezse altın çöpe bak
+        if (wastePackagePrefab != null && randomRoll <= packageSpawnChance)
         {
-            if (randomRoll <= goldenSpawnChance)
+            selectedPrefab = wastePackagePrefab;
+            Debug.Log($"<color=#D87093>[WasteSpawner]</color> SÜRPRİZ KUTU (PACKAGE) Üretiliyor!");
+        }
+        else if (goldenWastePrefab != null)
+        {
+            // Paket şansının üzerine ekleniyor (örn: paket %5 ise altın çöp 5 ile 10 arasında değerlendirilir)
+            if (randomRoll <= (packageSpawnChance + goldenSpawnChance))
             {
                 selectedPrefab = goldenWastePrefab;
                 Debug.Log($"<color=yellow>[WasteSpawner]</color> BÜYÜK ŞANS! Altın Çöp üretiliyor!");
