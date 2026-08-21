@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using RecycleRush.Managers;
 
 namespace RecycleRush.AR_Features
 {
@@ -37,6 +38,45 @@ namespace RecycleRush.AR_Features
         
         private float _spawnTimer = 0f;
         private bool _isSpawning = false;
+        private float _originalSpawnInterval; // Etkinlik bitince geri dönmek için
+
+        private void Awake()
+        {
+            _originalSpawnInterval = spawnInterval;
+        }
+
+        private void OnEnable()
+        {
+            EventManager.OnGameEventStarted += HandleGameEventStarted;
+            EventManager.OnGameEventEnded += HandleGameEventEnded;
+        }
+
+        private void OnDisable()
+        {
+            EventManager.OnGameEventStarted -= HandleGameEventStarted;
+            EventManager.OnGameEventEnded -= HandleGameEventEnded;
+        }
+
+        private void HandleGameEventStarted(GameEventType eventType)
+        {
+            if (eventType == GameEventType.SpeedMode)
+            {
+                spawnInterval = _originalSpawnInterval * 0.5f; // 2x hız
+                Debug.Log("<color=cyan>[PortalSpawner]</color> SpeedMode aktif! Spawn hızı iki katına çıktı.");
+            }
+            else if (eventType == GameEventType.FrenzyMode)
+            {
+                spawnInterval = _originalSpawnInterval * 0.2f; // 5x hız (çılgınlık)
+                Debug.Log("<color=red>[PortalSpawner]</color> FRENZY MODE aktif! Çöpler yağıyor.");
+            }
+        }
+
+        private void HandleGameEventEnded()
+        {
+            // Etkinlik bitince normal hıza dön
+            spawnInterval = _originalSpawnInterval;
+            Debug.Log("<color=cyan>[PortalSpawner]</color> Etkinlik bitti, normal spawn hızına dönüldü.");
+        }
 
         private void Start()
         {
@@ -123,6 +163,12 @@ namespace RecycleRush.AR_Features
             // Örn: Lvl 0: %5, Lvl 1: %10, Lvl 2: %15, Lvl 3: %20, Maksimum: %25
             float currentGoldenChance = Mathf.Clamp(goldenWasteChance + (currentLevel * 0.05f), goldenWasteChance, 0.25f);
 
+            // LuckyDrop Etkinliği varsa şansı geçici olarak tavan yaptır (%80)
+            if (EventManager.Instance != null && EventManager.Instance.CurrentEvent == GameEventType.LuckyDrop)
+            {
+                currentGoldenChance = 0.8f;
+            }
+
             // Rastgele zar at (0.0 ile 1.0 arası)
             if (goldenWastePrefab != null && Random.value <= currentGoldenChance)
             {
@@ -165,6 +211,7 @@ namespace RecycleRush.AR_Features
         public void SetSpawnInterval(float newInterval)
         {
             spawnInterval = Mathf.Max(0.5f, newInterval);
+            _originalSpawnInterval = spawnInterval; // Temel hızı güncelle
         }
     }
 }
