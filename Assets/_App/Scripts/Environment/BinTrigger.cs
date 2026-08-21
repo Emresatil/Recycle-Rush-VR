@@ -21,6 +21,7 @@ public struct SortResultData
     public bool WasGoldenWaste;
     public float ReactionTime;
     public RecycleRush.Core.PrecisionSystem.PrecisionResult PrecisionData;
+    public GameObject ProcessedWaste;
 }
 
 [RequireComponent(typeof(Collider))]
@@ -166,7 +167,8 @@ public class BinTrigger : MonoBehaviour
             TargetBinType = _acceptedWasteType,
             WasGoldenWaste = isGoldenWaste,
             ReactionTime = reactionTime,
-            PrecisionData = precisionResult
+            PrecisionData = precisionResult,
+            ProcessedWaste = other.transform.root.gameObject
         };
 
         OnWasteProcessed?.Invoke(resultData);
