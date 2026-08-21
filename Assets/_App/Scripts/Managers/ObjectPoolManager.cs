@@ -85,18 +85,14 @@ public class ObjectPoolManager : MonoBehaviour
             rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
             
-            rb.isKinematic = true; // Banta sorunsuz oturması için başta Kinematic olmalı
+            rb.isKinematic = false; // MR Güncellemesi: Bant olmadığı için doğrudan yerçekimiyle düşmeli
             rb.useGravity = true;
             rb.constraints = RigidbodyConstraints.None;
             rb.maxDepenetrationVelocity = 0.8f; 
         }
 
-        // 1) BeltItem bileşeni yoksa otomatik ekle (Bu bileşen OnEnable'da banta kaydeder)
-        if (objToSpawn.GetComponent<BeltItem>() == null)
-        {
-            objToSpawn.AddComponent<BeltItem>();
-        }
-
+        // MR Güncellemesi: BeltItem (VR Taşıyıcı Bant) kaldırıldı. Objeler AR ortamında serbest düşüş yapacak.
+        
         // 2) Tutma ve fırlatma seslerinin çalışması için WasteAudioFeedback bileşenini dinamik ekle
         if (objToSpawn.GetComponent<RecycleRush.Interaction.WasteAudioFeedback>() == null &&
             objToSpawn.GetComponentInChildren<RecycleRush.Interaction.WasteAudioFeedback>() == null)
