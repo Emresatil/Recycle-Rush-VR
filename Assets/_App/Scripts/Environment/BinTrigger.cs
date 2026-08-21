@@ -14,6 +14,8 @@ public struct SortResultData
 {
     public bool IsCorrect;
     public int ScoreChange;
+    public int CoinChange; // Gün 7: Kazanılacak Para
+    public int XpChange; // Gün 7: Kazanılacak XP
     public float HapticDuration;
     public float HapticAmplitude;
     public Vector3 ActionPosition;
@@ -35,11 +37,15 @@ public class BinTrigger : MonoBehaviour
 
     [Header("Doğru Eşleşme Parametreleri")]
     [SerializeField] private int _correctScore = 10;
+    [SerializeField] private int _correctCoin = 5;
+    [SerializeField] private int _correctXp = 20;
     [SerializeField] private float _correctHapticDuration = 0.2f;
     [SerializeField] private float _correctHapticAmplitude = 0.5f;
 
     [Header("Yanlış Eşleşme Parametreleri")]
     [SerializeField] private int _incorrectScore = -5;
+    [SerializeField] private int _incorrectCoin = 0;
+    [SerializeField] private int _incorrectXp = 0;
     [SerializeField] private float _incorrectHapticDuration = 0.4f;
     [SerializeField] private float _incorrectHapticAmplitude = 0.8f;
 
@@ -160,7 +166,8 @@ public class BinTrigger : MonoBehaviour
         {
             IsCorrect = isCorrect,
             ActionPosition = transform.position,
-            ScoreChange = finalScoreChange,
+
+            CoinChange
             HapticDuration = isCorrect ? _correctHapticDuration : _incorrectHapticDuration,
             HapticAmplitude = isCorrect ? _correctHapticAmplitude : _incorrectHapticAmplitude,
             TargetBinType = _acceptedWasteType,
@@ -168,6 +175,7 @@ public class BinTrigger : MonoBehaviour
             ReactionTime = reactionTime,
             PrecisionData = precisionResult
         };
+
 
         OnWasteProcessed?.Invoke(resultData);
 
