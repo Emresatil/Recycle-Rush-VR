@@ -54,11 +54,6 @@ public class GameManager : MonoBehaviour
         // DontDestroyOnLoad(gameObject);
     }
 
-    // private void OnDestroy()
-    // {
-    //     Debug.LogError($"<color=red>[GameManager]</color> GameManager YOK EDİLDİ! Çağrı zinciri (StackTrace):\n{StackTraceUtility.ExtractStackTrace()}");
-    // }
-
     private void Start()
     {
         // GameManager artık çevre modüllerini veya fiziksel butonları gizlemiyor.

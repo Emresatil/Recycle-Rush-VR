@@ -46,6 +46,10 @@ namespace RecycleRush.UI
         public GameObject xpPanel;
         public GameObject comboPanel;
         
+        [Header("AR Güvenlik Arayüzü")]
+        [Tooltip("Odanın ışığı kapandığında veya AR takip bozulduğunda çıkacak 'Odayı Aydınlatın' paneli")]
+        public GameObject safetyWarningPanel;
+
         [Tooltip("Müzik (BGM) seviyesi için Slider")]
         public Slider bgmSlider;
         [Tooltip("Ses Efektleri (SFX) seviyesi için Slider")]
@@ -71,6 +75,9 @@ namespace RecycleRush.UI
             // Event'leri dinlemeye başla (Eventler statik olduğu için Instance beklemeden abone olabiliriz)
             GameManager.OnGameStateChanged += HandleGameState;
             GameManager.OnGameTimeUpdated += UpdateTimeDisplay;
+            
+            // Güvenlik uyarısı dinleyicisi
+            Managers.EnvironmentSafetyManager.OnSafetyWarningTriggered += HandleSafetyWarning;
 
             if (menuPauseAction != null && menuPauseAction.action != null)
             {
@@ -145,6 +152,9 @@ namespace RecycleRush.UI
                 }
             }
             if (pauseButtonUIObj != null) pauseButtonUIObj.SetActive(false);
+            
+            // Güvenlik panelini başlangıçta gizle
+            if (safetyWarningPanel != null) safetyWarningPanel.SetActive(false);
         }
 
         private void Update()
@@ -161,6 +171,7 @@ namespace RecycleRush.UI
             // Bellek sızıntısını önlemek için dinlemeyi bırak
             GameManager.OnGameStateChanged -= HandleGameState;
             GameManager.OnGameTimeUpdated -= UpdateTimeDisplay;
+            Managers.EnvironmentSafetyManager.OnSafetyWarningTriggered -= HandleSafetyWarning;
             
             if (Core.ScoreManager.Instance != null)
             {
@@ -272,6 +283,24 @@ namespace RecycleRush.UI
                     if (pausePanel != null) pausePanel.SetActive(false);
                     if (pauseButtonUIObj != null) pauseButtonUIObj.SetActive(false);
                     break;
+            }
+        }
+
+        /// <summary>
+        /// Güvenlik yöneticisinden gelen düşük ışık / takip koptu uyarılarını yönetir.
+        /// </summary>
+        private void HandleSafetyWarning(bool isWarningActive)
+        {
+            if (safetyWarningPanel != null)
+            {
+                safetyWarningPanel.SetActive(isWarningActive);
+            }
+            else
+            {
+                if (isWarningActive)
+                {
+                    Debug.LogWarning("<color=red>[UIManager]</color> Güvenlik uyarısı tetiklendi fakat Inspector'da 'Safety Warning Panel' atanmamış!");
+                }
             }
         }
 
