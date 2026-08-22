@@ -86,15 +86,31 @@ public class BinTrigger : MonoBehaviour
         
         Debug.Log($"<color=yellow>[BinTrigger]</color> {other.name} objesinin Tag kontrolü yapıldı. Bulunan Atık Türü: {incomingType}");
 
-        // Eğer giren obje bir atık değilse işlemi iptal et.
-        if (incomingType == WasteType.Untagged) 
+        // Altın Çöp (Golden Waste) kontrolü yapıyoruz.
+        bool isGoldenWaste = false;
+        var physicsTuner = other.transform.root.GetComponentInChildren<RecycleRush.Interaction.ARWastePhysicsTuner>();
+        if (physicsTuner != null && physicsTuner.isGoldenWaste)
+        {
+            isGoldenWaste = true;
+        }
+
+        // Eğer giren obje bir atık değilse ve Altın Çöp de değilse işlemi iptal et.
+        if (incomingType == WasteType.Untagged && !isGoldenWaste) 
         {
             Debug.Log("<color=red>[BinTrigger]</color> Bu obje Untagged (Etiketsiz) olduğu için puanlama yapılmadı ve silinmedi!");
             return;
         }
 
-        // Doğruluk mantığı: Giren atığın türü, kutunun kabul ettiği türe eşit mi?
-        bool isCorrect = (incomingType == _acceptedWasteType);
+        // Doğruluk mantığı: Giren atığın türü, kutunun kabul ettiği türe eşit mi? YADA obje Altın Çöp mü (Evrensel Joker)?
+        bool isCorrect = (incomingType == _acceptedWasteType) || isGoldenWaste;
+        
+        // Eğer Altın çöp doğru kutuya girerse (zaten isCorrect her türlü true olur), ekstra bonus veriyoruz.
+        int finalScoreChange = isCorrect ? _correctScore : _incorrectScore;
+        if (isGoldenWaste) 
+        {
+            finalScoreChange *= 5; // Altın çöp puanı 5'e katlar!
+            Debug.Log("<color=yellow>[Golden Waste]</color> Kutuya Altın Çöp girdi! Puan 5'e katlandı.");
+        }
         
         // --- GÖRSEL EFEKT (PARTİCÜL) ÇAĞIRMA ---
         GameObject particleToSpawn = isCorrect ? _successParticlePrefab : _failParticlePrefab;
@@ -121,9 +137,8 @@ public class BinTrigger : MonoBehaviour
         {
             IsCorrect = isCorrect,
             ActionPosition = transform.position,
-            ScoreChange = isCorrect ? _correctScore : _incorrectScore,
-            CoinChange = isCorrect ? _correctCoin : _incorrectCoin,
-            XpChange = isCorrect ? _correctXp : _incorrectXp,
+
+            CoinChange
             HapticDuration = isCorrect ? _correctHapticDuration : _incorrectHapticDuration,
             HapticAmplitude = isCorrect ? _correctHapticAmplitude : _incorrectHapticAmplitude
         };
