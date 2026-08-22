@@ -46,6 +46,10 @@ namespace RecycleRush.UI
         public GameObject xpPanel;
         public GameObject comboPanel;
         
+        [Header("AR Güvenlik Arayüzü")]
+        [Tooltip("Odanın ışığı kapandığında veya AR takip bozulduğunda çıkacak 'Odayı Aydınlatın' paneli")]
+        public GameObject safetyWarningPanel;
+
         [Tooltip("Müzik (BGM) seviyesi için Slider")]
         public Slider bgmSlider;
         [Tooltip("Ses Efektleri (SFX) seviyesi için Slider")]
@@ -71,6 +75,9 @@ namespace RecycleRush.UI
             // Event'leri dinlemeye başla (Eventler statik olduğu için Instance beklemeden abone olabiliriz)
             GameManager.OnGameStateChanged += HandleGameState;
             GameManager.OnGameTimeUpdated += UpdateTimeDisplay;
+            
+            // Güvenlik uyarısı dinleyicisi
+            Managers.EnvironmentSafetyManager.OnSafetyWarningTriggered += HandleSafetyWarning;
 
             if (menuPauseAction != null && menuPauseAction.action != null)
             {
@@ -145,6 +152,9 @@ namespace RecycleRush.UI
                 }
             }
             if (pauseButtonUIObj != null) pauseButtonUIObj.SetActive(false);
+            
+            // Güvenlik panelini başlangıçta gizle
+            if (safetyWarningPanel != null) safetyWarningPanel.SetActive(false);
         }
 
         private void Update()
@@ -161,6 +171,7 @@ namespace RecycleRush.UI
             // Bellek sızıntısını önlemek için dinlemeyi bırak
             GameManager.OnGameStateChanged -= HandleGameState;
             GameManager.OnGameTimeUpdated -= UpdateTimeDisplay;
+            Managers.EnvironmentSafetyManager.OnSafetyWarningTriggered -= HandleSafetyWarning;
             
             if (Core.ScoreManager.Instance != null)
             {
@@ -276,6 +287,24 @@ namespace RecycleRush.UI
         }
 
         /// <summary>
+        /// Güvenlik yöneticisinden gelen düşük ışık / takip koptu uyarılarını yönetir.
+        /// </summary>
+        private void HandleSafetyWarning(bool isWarningActive)
+        {
+            if (safetyWarningPanel != null)
+            {
+                safetyWarningPanel.SetActive(isWarningActive);
+            }
+            else
+            {
+                if (isWarningActive)
+                {
+                    Debug.LogWarning("<color=red>[UIManager]</color> Güvenlik uyarısı tetiklendi fakat Inspector'da 'Safety Warning Panel' atanmamış!");
+                }
+            }
+        }
+
+        /// <summary>
         /// GameManager'dan saniye saniye gelen kalan süre bilgisini ekrana (timeText) yazar.
         /// </summary>
         private void UpdateTimeDisplay(float remainingTime)
@@ -332,15 +361,19 @@ namespace RecycleRush.UI
         /// </summary>
         private IEnumerator StartCountdownAnimation()
         {
+            Debug.Log("<color=yellow>[UIManager]</color> StartCountdownAnimation Coroutine'i başladı!");
+            
             // Eğer Unity'de arayüz yazısı (statusText) atanmamışsa, oyunu kitlememek için direkt başlat
             if (statusText == null) 
             {
-                Debug.LogWarning("<color=orange>[UIManager]</color> statusText atanmamış! Geri sayım atlanıp oyun başlatılıyor.");
+                Debug.LogWarning("<color=orange>[UIManager]</color> statusText atanmamış (veya silinmiş)! Geri sayım atlanıp oyun başlatılıyor.");
                 // C# Event çakışmasını önlemek için (Reentrancy Bug) 1 frame bekleyip öyle başlatıyoruz
                 yield return null; 
                 if (GameManager.Instance != null) GameManager.Instance.FinishCountdown();
                 yield break;
             }
+            
+            Debug.Log("<color=yellow>[UIManager]</color> statusText mevcut, geri sayım döngüsüne giriliyor...");
 
             string[] countTexts = { "<color=yellow>3</color>", "<color=orange>2</color>", "<color=red>1</color>", "<color=green>GO!</color>" };
             Vector3 originalScale = Vector3.one;
@@ -377,6 +410,8 @@ namespace RecycleRush.UI
 
             // Geri sayım bitti, yazıyı temizle ve oyunu asıl şimdi başlat!
             statusText.text = ""; 
+            
+            Debug.Log("<color=yellow>[UIManager]</color> Geri sayım animasyonu tamamlandı, FinishCountdown çağrılıyor...");
             if (GameManager.Instance != null)
             {
                 GameManager.Instance.FinishCountdown();
