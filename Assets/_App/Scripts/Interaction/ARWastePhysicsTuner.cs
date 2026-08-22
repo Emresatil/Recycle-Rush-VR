@@ -4,6 +4,14 @@ using UnityEngine.XR.Interaction.Toolkit;
 
 namespace RecycleRush.Interaction
 {
+    public enum WasteMaterialType
+    {
+        Plastic,    // Dengeli (Orta ağırlık, orta sürtünme)
+        Paper,      // Hafif (Süzülerek düşer)
+        Glass,      // Ağır (Hızlı düşer, tok hissettirir)
+        Metal       // En ağır (En hızlı düşer, stabil uçuş)
+    }
+
     /// <summary>
     /// AR ortamı için çöp objelerinin fizik (Rigidbody) ve fırlatma (Grab/Throw) 
     /// etkileşimlerini otomatik olarak optimize eden ve kalibre eden modüler sınıftır.
@@ -13,16 +21,17 @@ namespace RecycleRush.Interaction
     [RequireComponent(typeof(XRGrabInteractable))]
     public class ARWastePhysicsTuner : MonoBehaviour
     {
+        [Header("Material Physics")]
+        [Tooltip("Çöpün materyalini seçin. Fizik ayarları (Mass, Drag vb.) buna göre otomatik kalibre edilir.")]
+        public WasteMaterialType materialType = WasteMaterialType.Plastic;
+
         [Header("Golden Waste Settings")]
         [Tooltip("Eğer bu obje Altın Çöp ise işaretleyin. Özel titreşim ve puanlama sistemlerini tetikler.")]
         public bool isGoldenWaste = false;
 
         [Header("AR Physics Calibration")]
-        [Tooltip("AR ortamında çöpün yere düştüğünde sonsuza kadar yuvarlanmasını önlemek için uygulanacak dönüş sürtünmesi (Unity 6 Damping).")]
-        [SerializeField] private float targetAngularDamping = 2.0f;
-        
-        [Tooltip("Çöpün ağırlık hissi. Çok ağır olursa XR elinden yavaş çıkar.")]
-        [SerializeField] private float targetMass = 0.5f;
+        [Tooltip("Çöpün yere düştüğünde sonsuza kadar yuvarlanmasını önlemek için standart dönüş sürtünmesi (Unity 6 Damping).")]
+        [SerializeField] private float defaultAngularDamping = 2.0f;
 
         [Header("AR Throw Calibration")]
         [Tooltip("Gerçek dünyada elimizde fiziksel bir çöp ağırlığı olmadığı için fırlatma gücünü AR için yapay olarak artırır.")]
@@ -84,18 +93,61 @@ namespace RecycleRush.Interaction
         {
             if (_rigidbody == null) return;
 
-            // Kütle ve sürtünme ayarları
-            _rigidbody.mass = targetMass;
-            _rigidbody.angularDamping = targetAngularDamping;
+            // 1. Materyale Göre Kütle ve Sürtünme Ataması
+            switch (materialType)
+            {
+                case WasteMaterialType.Paper:
+                    _rigidbody.mass = 0.1f;          // Daha da hafiflettik
+                    _rigidbody.linearDamping = 5.0f; // Paraşüt gibi yavaş inmesi için hava sürtünmesini çok artırdık (eski: 2)
+                    _rigidbody.angularDamping = 4.0f; 
+                    break;
+                case WasteMaterialType.Plastic:
+                    _rigidbody.mass = 0.5f;
+                    _rigidbody.linearDamping = 0.5f;
+                    _rigidbody.angularDamping = 1.0f;
+                    break;
+                case WasteMaterialType.Glass:
+                    _rigidbody.mass = 1.2f;
+                    _rigidbody.linearDamping = 0.1f; // Drag 0 olmasın ki aşırı savrulmasın
+                    _rigidbody.angularDamping = defaultAngularDamping;
+                    break;
+                case WasteMaterialType.Metal:
+                    _rigidbody.mass = 1.5f;
+                    _rigidbody.linearDamping = 0.05f;
+                    _rigidbody.angularDamping = defaultAngularDamping;
+                    break;
+            }
             
             // --- AAA KALİTE FİZİK STANDARTLARI ---
             // 1. Tünelleme Önleyici: Hızlı fırlatılan çöpün kutu duvarının içinden geçip gitmesini (Ghosting) engeller.
             _rigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
             
-            // 2. Havada Yumuşatma: Çöp havada uçarken FPS takılmasını gizler, sinematik ve pürüzsüz bir uçuş sağlar.
+            // 3. Havada Yumuşatma: Çöp havada uçarken FPS takılmasını gizler, sinematik ve pürüzsüz bir uçuş sağlar.
             _rigidbody.interpolation = RigidbodyInterpolation.Interpolate;
             
-            Debug.Log($"<color=green>[AR Physics]</color> {gameObject.name} fiziği AR için optimize edildi. (Mass: {targetMass}, Damping: {targetAngularDamping}, ContinuousDynamic: Açık)");
+            Debug.Log($"<color=green>[AR Physics]</color> {gameObject.name} ({materialType}) fiziği AR için optimize edildi.");
+        }
+
+        private void FixedUpdate()
+        {
+            // Sadece Kağıt objeleri salınım (yaprak düşüşü) yapar
+            if (materialType != WasteMaterialType.Paper) return;
+            if (_rigidbody == null || _grabInteractable == null) return;
+
+            // Eğer obje Gravity Pull ile çekiliyorsa veya elde tutuluyorsa süzülme fiziğini DEVRE DIŞI bırak!
+            if (_grabInteractable.isSelected) return;
+
+            // Sadece aşağı doğru düşerken ve çok şiddetli fırlatılmamışken salınım yap (hedefi şaşırtmasın)
+            if (_rigidbody.linearVelocity.y < -0.1f && _rigidbody.linearVelocity.magnitude < 5.0f)
+            {
+                // Kuvveti çok ciddi oranda artırdık ki VR'da gözle net görülebilsin
+                // Frekansı (hızı) aynı tuttuk ama şiddetini (multiplier) 0.4'ten 4.0'a çıkardık
+                float swayForceX = Mathf.Sin(Time.time * 3f) * 4.0f;
+                float swayForceZ = Mathf.Cos(Time.time * 2f) * 3.0f;
+
+                // ForceMode.Acceleration kullanarak kütleden (mass) bağımsız direkt itiş gücü uyguluyoruz
+                _rigidbody.AddForce(new Vector3(swayForceX, 0, swayForceZ), ForceMode.Acceleration);
+            }
         }
 
         private void ApplyARGrabCalibration()

@@ -44,6 +44,12 @@ namespace RecycleRush.Managers
         // Hangi kutuya kaç yanlış atış yapıldı?
         public int PaperBinErrors = 0;
         public int GlassBinErrors = 0;
+        // Kirlilik ve Hayatta Kalma (Room Pollution)
+        public int TotalPollutionGameOvers = 0;
+        public float MaxPollutionEverReached = 0f;
+        public float TotalPollutionAdded = 0f;
+        public float TotalPollutionReduced = 0f;
+        public int TotalWastesRecoveredFromFloor = 0;
         public int PlasticBinErrors = 0;
         public int MetalBinErrors = 0;
 
@@ -165,17 +171,11 @@ namespace RecycleRush.Managers
             BinTrigger.OnWasteProcessed += HandleWasteProcessed;
             WasteSpawner.OnGoldenWasteSpawned += HandleGoldenWasteSpawned;
 
-            if (Managers.ComboManager.Instance != null)
-            {
-                Managers.ComboManager.OnComboChanged += HandleComboChanged;
-                Managers.ComboManager.OnComboGraceEarned += HandleGraceEarned;
-                Managers.ComboManager.OnComboGraceUsed += HandleGraceUsed;
-            }
+            Managers.ComboManager.OnComboChanged += HandleComboChanged;
+            Managers.ComboManager.OnComboGraceEarned += HandleGraceEarned;
+            Managers.ComboManager.OnComboGraceUsed += HandleGraceUsed;
 
-            if (Managers.AchievementManager.Instance != null)
-            {
-                Managers.AchievementManager.OnAchievementUnlocked += HandleAchievementUnlocked;
-            }
+            Managers.AchievementManager.OnAchievementUnlocked += HandleAchievementUnlocked;
         }
 
         private void OnDisable()
@@ -185,17 +185,11 @@ namespace RecycleRush.Managers
             BinTrigger.OnWasteProcessed -= HandleWasteProcessed;
             WasteSpawner.OnGoldenWasteSpawned -= HandleGoldenWasteSpawned;
             
-            if (Managers.ComboManager.Instance != null)
-            {
-                Managers.ComboManager.OnComboChanged -= HandleComboChanged;
-                Managers.ComboManager.OnComboGraceEarned -= HandleGraceEarned;
-                Managers.ComboManager.OnComboGraceUsed -= HandleGraceUsed;
-            }
+            Managers.ComboManager.OnComboChanged -= HandleComboChanged;
+            Managers.ComboManager.OnComboGraceEarned -= HandleGraceEarned;
+            Managers.ComboManager.OnComboGraceUsed -= HandleGraceUsed;
 
-            if (Managers.AchievementManager.Instance != null)
-            {
-                Managers.AchievementManager.OnAchievementUnlocked -= HandleAchievementUnlocked;
-            }
+            Managers.AchievementManager.OnAchievementUnlocked -= HandleAchievementUnlocked;
         }
 
         private void Start()
@@ -245,6 +239,26 @@ namespace RecycleRush.Managers
                     {
                         CurrentData.TotalGamesCompleted++; // Süreyi sağ salim bitirebilme başarısı
                         
+                        // Oda Kirlilik (Room Pollution) Analizlerini Kaydet
+                        if (RoomPollutionManager.Instance != null)
+                        {
+                            var pStats = RoomPollutionManager.Instance.Stats;
+                            
+                            // Rekorları güncelle
+                            if (pStats.PeakPollution > CurrentData.MaxPollutionEverReached)
+                                CurrentData.MaxPollutionEverReached = pStats.PeakPollution;
+                                
+                            CurrentData.TotalPollutionAdded += pStats.TotalPollutionAdded;
+                            CurrentData.TotalPollutionReduced += pStats.TotalPollutionReduced;
+                            CurrentData.TotalWastesRecoveredFromFloor += pStats.WasteRecoveredBeforePenalty;
+
+                            // Kirlilikten dolayı mı kaybedildi?
+                            if (RoomPollutionManager.Instance.CurrentPollution >= 100f)
+                            {
+                                CurrentData.TotalPollutionGameOvers++;
+                            }
+                        }
+
                         // En Yüksek Dalga (Wave) Tespiti
                         if (GameManager.Instance != null)
                         {
