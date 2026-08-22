@@ -158,6 +158,23 @@ public class ObjectPoolManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Sahnede aktif olan tüm çöpleri (havuz objelerini) temizler ve havuza geri gönderir.
+    /// Genelde oyun yeniden başlatıldığında (Restart) kullanılır.
+    /// </summary>
+    public void ReturnAllToPool()
+    {
+        for (int i = _activeObjects.Count - 1; i >= 0; i--)
+        {
+            GameObject obj = _activeObjects[i];
+            if (obj != null && obj.activeInHierarchy)
+            {
+                ReturnToPool(obj);
+            }
+        }
+        _activeObjects.Clear();
+    }
+
     private void Update()
     {
         // Geriye doğru döngü kullanıyoruz çünkü döngü içinde ReturnToPool çağırırsak listeden eleman silinecek.

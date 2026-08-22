@@ -26,7 +26,8 @@ namespace RecycleRush.Managers
     {
         public static LevelSelectionManager Instance { get; private set; }
 
-        public const int TOTAL_LEVELS = 15;
+        // 30 seviyeye çıkarıldı
+        public const int TOTAL_LEVELS = 30;
 
         // Tıklanılan ve şu an aktif oynanan aşama (Stage) numarası
         public int CurrentPlayingLevelId { get; private set; } = 1;
@@ -52,6 +53,13 @@ namespace RecycleRush.Managers
             InitializeDefaultLevels();
             LoadFromPlayerPrefs(); // <-- EKLENDİ: Oyunu açınca kayıtlı seviyeleri yükle
             Debug.Log("<color=green>[LevelSelectionManager]</color> Başlatıldı.");
+        }
+
+        private void Start()
+        {
+            // Tüm Manager'ların (özellikle MissionManager) Awake aşamasını bitirdiğinden emin olduktan sonra
+            // oyuna girildiğinde en son kalınan (en yüksek) bölümü otomatik seç
+            SetHighestUnlockedLevelAsCurrent();
         }
 
         private void OnEnable()
@@ -196,7 +204,17 @@ namespace RecycleRush.Managers
         {
             if (data != null && data.Levels != null && data.Levels.Count > 0)
             {
-                this._levelList = data.Levels;
+                // Eski kayıtlar sadece ilk 15 seviyeyi içeriyor olabilir. 
+                // Bu yüzden direkt listeyi ezmek yerine mevcut seviyeleri güncelliyoruz.
+                foreach (var savedLevel in data.Levels)
+                {
+                    var existingLevel = this._levelList.Find(l => l.LevelId == savedLevel.LevelId);
+                    if (existingLevel != null)
+                    {
+                        existingLevel.IsUnlocked = savedLevel.IsUnlocked;
+                        existingLevel.StarsEarned = savedLevel.StarsEarned;
+                    }
+                }
                 OnLevelDataUpdated?.Invoke();
             }
         }
@@ -219,6 +237,28 @@ namespace RecycleRush.Managers
                 LoadSaveData(data);
                 Debug.Log("<color=green>[LevelSelectionManager]</color> Eski bölüm ilerlemesi yüklendi.");
             }
+        }
+
+        private void SetHighestUnlockedLevelAsCurrent()
+        {
+            int highestUnlocked = 1;
+            foreach (var level in _levelList)
+            {
+                if (level.IsUnlocked && level.LevelId > highestUnlocked)
+                {
+                    highestUnlocked = level.LevelId;
+                }
+            }
+            
+            CurrentPlayingLevelId = highestUnlocked;
+            
+            // Eğer MissionManager Awake/Start aşamasını bitirdiyse görevi oluştur
+            if (MissionManager.Instance != null)
+            {
+                MissionManager.Instance.GenerateMissionForLevel(highestUnlocked);
+            }
+            
+            Debug.Log($"<color=cyan>[LevelSelectionManager]</color> Otomatik olarak ulaşılan en yüksek aşama seçildi: Level {highestUnlocked}");
         }
     }
 }

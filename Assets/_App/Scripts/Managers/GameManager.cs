@@ -99,12 +99,28 @@ public class GameManager : MonoBehaviour
         if (CurrentState == GameState.MainMenu || CurrentState == GameState.GameOver)
         {
             Debug.Log("<color=white>[GameManager]</color> Durum uygun, Geri sayım (Countdown) başlatılıyor...");
-            RemainingTime = _gameDuration;
-            OnGameTimeUpdated?.Invoke(RemainingTime); // Ekrandaki zaman yazısını anında 60 yap
+            
+            // EKLENDİ: Dinamik Süre (Level başı 10 saniye ekle)
+            float calculatedDuration = _gameDuration;
+            if (RecycleRush.Managers.LevelSelectionManager.Instance != null)
+            {
+                int currentLvl = RecycleRush.Managers.LevelSelectionManager.Instance.CurrentPlayingLevelId;
+                // İlk seviye 60 saniye, her seviyede +10 saniye
+                calculatedDuration = _gameDuration + ((currentLvl - 1) * 10f);
+            }
+
+            RemainingTime = calculatedDuration;
+            OnGameTimeUpdated?.Invoke(RemainingTime); // Ekrandaki zaman yazısını anında güncelle
 
             if (RecycleRush.Core.ScoreManager.Instance != null)
             {
                 RecycleRush.Core.ScoreManager.Instance.ResetScore(); // Skoru ve komboyu sıfırla
+            }
+
+            // EKLENDİ: Oyun yeniden başladığında yerdeki tüm çöpleri temizle
+            if (ObjectPoolManager.Instance != null)
+            {
+                ObjectPoolManager.Instance.ReturnAllToPool();
             }
 
             // Kol (Lever) konveyör bandı ile birlikte silindiği için 
@@ -129,7 +145,6 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            RemainingTime = _gameDuration;
             ChangeState(GameState.Playing);
         }
     }
@@ -139,7 +154,6 @@ public class GameManager : MonoBehaviour
     /// </summary>
     public void FinishCountdown()
     {
-        RemainingTime = _gameDuration;
         ChangeState(GameState.Playing);
         
         // Geri sayım bittiğinde odaya çöpleri yağdırmaya başla!

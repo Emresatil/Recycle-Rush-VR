@@ -34,7 +34,7 @@ namespace RecycleRush.AR_Features
 
         [Header("Zamanlama (Timing)")]
         [Tooltip("Saniye cinsinden iki atık arası bekleme süresi")]
-        public float spawnInterval = 3.0f;
+        public float spawnInterval = 1.2f;
         
         private float _spawnTimer = 0f;
         private bool _isSpawning = false;
@@ -49,12 +49,20 @@ namespace RecycleRush.AR_Features
         {
             EventManager.OnGameEventStarted += HandleGameEventStarted;
             EventManager.OnGameEventEnded += HandleGameEventEnded;
+            DifficultyManager.OnDifficultyLevelChanged += UpdateSpawnSpeed;
         }
 
         private void OnDisable()
         {
             EventManager.OnGameEventStarted -= HandleGameEventStarted;
             EventManager.OnGameEventEnded -= HandleGameEventEnded;
+            DifficultyManager.OnDifficultyLevelChanged -= UpdateSpawnSpeed;
+        }
+
+        private void UpdateSpawnSpeed(float multiplier)
+        {
+            // Zorluk arttıkça bekleme süresi kısalır ama çakışmayı önlemek için minimum 0.5s sınır konur
+            spawnInterval = Mathf.Max(0.5f, _originalSpawnInterval / multiplier);
         }
 
         private void HandleGameEventStarted(GameEventType eventType)
@@ -177,8 +185,35 @@ namespace RecycleRush.AR_Features
             }
             else
             {
-                // Şans tutmadı, rastgele standart atık (Kağıt/Cam/Plastik) seç
-                selectedPrefab = wastePrefabs[Random.Range(0, wastePrefabs.Length)];
+                // --- GÖREV ODAKLI SPAWN SİSTEMİ (Mission Biasing) ---
+                bool missionBiased = false;
+                if (RecycleRush.Managers.MissionManager.Instance != null && 
+                    RecycleRush.Managers.MissionManager.Instance.ActiveMission != null &&
+                    RecycleRush.Managers.MissionManager.Instance.ActiveMission.Type == RecycleRush.Managers.MissionType.CollectWaste &&
+                    !RecycleRush.Managers.MissionManager.Instance.ActiveMission.IsCompleted)
+                {
+                    if (Random.value <= 0.6f) // %60 şansla görev hedefini seç
+                    {
+                        string targetTag = RecycleRush.Managers.MissionManager.Instance.ActiveMission.TargetWaste.ToString();
+                        List<GameObject> targetPrefabs = new List<GameObject>();
+                        foreach (var p in wastePrefabs)
+                        {
+                            if (p != null && p.CompareTag(targetTag)) targetPrefabs.Add(p);
+                        }
+                        
+                        if (targetPrefabs.Count > 0)
+                        {
+                            selectedPrefab = targetPrefabs[Random.Range(0, targetPrefabs.Count)];
+                            missionBiased = true;
+                        }
+                    }
+                }
+                
+                if (!missionBiased)
+                {
+                    // Şans tutmadı, rastgele standart atık (Kağıt/Cam/Plastik) seç
+                    selectedPrefab = wastePrefabs[Random.Range(0, wastePrefabs.Length)];
+                }
             }
 
             // Objeyi havuzdan çek (Instantiate yerine bellek dostu havuzlama)
