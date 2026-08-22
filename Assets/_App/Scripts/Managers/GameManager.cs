@@ -160,9 +160,9 @@ public class GameManager : MonoBehaviour
     {
         if (AchievementManager.Instance != null)
         {
-            AchievementManager.OnAchievementUnlocked -= HandleAchievementUnlocked;
             AchievementManager.OnAchievementUnlocked += HandleAchievementUnlocked;
         }
+        RecycleRush.Core.RoomPollutionManager.OnGameOverTriggered += HandlePollutionGameOver;
     }
 
     private void OnDisable()
@@ -171,6 +171,13 @@ public class GameManager : MonoBehaviour
         {
             AchievementManager.OnAchievementUnlocked -= HandleAchievementUnlocked;
         }
+        RecycleRush.Core.RoomPollutionManager.OnGameOverTriggered -= HandlePollutionGameOver;
+    }
+
+    private void HandlePollutionGameOver(RecycleRush.Core.PollutionStats stats)
+    {
+        Debug.Log("<color=red>[GameManager]</color> Kirlilik maksimuma ulaştı! Oyun sona eriyor.");
+        EndGame();
     }
 
     private void Start()
