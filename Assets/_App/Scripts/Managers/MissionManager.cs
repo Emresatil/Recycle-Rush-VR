@@ -52,34 +52,18 @@ namespace RecycleRush.Managers
 
         private void Start()
         {
-            // İlk görevi oluştur
-            GenerateMissionForLevel(1);
+            // LevelSelectionManager veya SaveLoadManager yüklemeyi yapana kadar bekle.
+            // Eskiden burada GenerateMissionForLevel(1) diyerek her şeyi eziyorduk. Bunu sildim.
         }
 
         private void OnEnable()
         {
             BinTrigger.OnWasteProcessed += HandleWasteProcessed;
-            
-            if (LevelManager.Instance != null)
-            {
-                LevelManager.Instance.OnLevelUp += HandleLevelUp;
-            }
         }
 
         private void OnDisable()
         {
             BinTrigger.OnWasteProcessed -= HandleWasteProcessed;
-            
-            if (LevelManager.Instance != null)
-            {
-                LevelManager.Instance.OnLevelUp -= HandleLevelUp;
-            }
-        }
-
-        private void HandleLevelUp(int oldLevel, int newLevel)
-        {
-            // Oyuncu seviye atladığında yeni görev ver
-            GenerateMissionForLevel(newLevel);
         }
 
         public void GenerateMissionForLevel(int level)
@@ -97,12 +81,14 @@ namespace RecycleRush.Managers
                 // Untagged'i hariç tutmak için 0 ile Length-1 arası (Untagged genelde sondaydı, ama rastgele seçelim)
                 ActiveMission.TargetWaste = (WasteType)Random.Range(0, 4); // Paper, Glass, Plastic, Metal
                 
-                ActiveMission.TargetAmount = 3 + (level * 2); // Örn: Lvl 1 -> 5 Tane
+                // Formül: 3 + (Level * 2) -> Lvl 30'da 63 Çöp hedeflenir. Hızlandırılmış şans ile kolayca yapılır.
+                ActiveMission.TargetAmount = 3 + Mathf.FloorToInt(level * 2f);
                 ActiveMission.Description = $"{ActiveMission.TargetAmount} Tane {ActiveMission.TargetWaste} At!";
             }
             else if (ActiveMission.Type == MissionType.EarnXP)
             {
-                ActiveMission.TargetAmount = 50 + (level * 50); // Örn: Lvl 1 -> 100 XP
+                // Formül: 50 + (Level * 60) -> Lvl 4'te 290 XP, Lvl 30'da 1850 XP hedeflenir.
+                ActiveMission.TargetAmount = 50 + (level * 60);
                 ActiveMission.Description = $"{ActiveMission.TargetAmount} XP Kazan!";
             }
 

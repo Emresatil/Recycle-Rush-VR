@@ -16,9 +16,9 @@ public class WasteSpawner : MonoBehaviour
     
     [Header("Organik Zamanlama (Zorluk)")]
     [Tooltip("En az kaç saniyede bir atık düşsün?")]
-    public float minSpawnInterval = 0.8f;
+    public float minSpawnInterval = 0.6f;
     [Tooltip("En fazla kaç saniyede bir atık düşsün?")]
-    public float maxSpawnInterval = 1.5f;
+    public float maxSpawnInterval = 1.2f;
 
 
 
@@ -131,12 +131,12 @@ public class WasteSpawner : MonoBehaviour
         // Null koruması
         if (spawnPoint == null || wastePrefabs == null || wastePrefabs.Length == 0) return false;
 
-        // 3. Özellik: Sabit Konum (Y ekseninde çakışma önleyici 0.15m yükseklik)
-        Vector3 fixedOffset = new Vector3(0f, 0.15f, 0f);
+        // 3. Özellik: Sabit Konum (Y ekseninde çakışma önleyici 0.5m yükseklik)
+        Vector3 fixedOffset = new Vector3(0f, 0.5f, 0f);
         Vector3 finalSpawnPosition = spawnPoint.position + fixedOffset;
 
         // 1.5 Özellik: Doğma noktasının henüz boşalıp boşalmadığını kontrol et (Üst üste doğup patlamayı %100 engeller)
-        Collider[] existingColliders = Physics.OverlapSphere(finalSpawnPosition, 0.15f);
+        Collider[] existingColliders = Physics.OverlapSphere(finalSpawnPosition, 0.4f);
         foreach (var col in existingColliders)
         {
             if (col.transform.root != spawnPoint.root && !col.isTrigger && col.attachedRigidbody != null)
@@ -180,6 +180,32 @@ public class WasteSpawner : MonoBehaviour
         }
 
         if (validPrefabs.Count == 0) return null;
+
+        // --- GÖREV ODAKLI SPAWN SİSTEMİ (Mission Biasing) ---
+        // Eğer aktif bir "Toplama" görevi varsa, %50 ihtimalle o çöpü yolla!
+        if (RecycleRush.Managers.MissionManager.Instance != null && 
+            RecycleRush.Managers.MissionManager.Instance.ActiveMission != null &&
+            RecycleRush.Managers.MissionManager.Instance.ActiveMission.Type == RecycleRush.Managers.MissionType.CollectWaste &&
+            !RecycleRush.Managers.MissionManager.Instance.ActiveMission.IsCompleted)
+        {
+            if (Random.value <= 0.6f) // %60 Şansla görevde istenen çöp gelir
+            {
+                string targetTag = RecycleRush.Managers.MissionManager.Instance.ActiveMission.TargetWaste.ToString();
+                System.Collections.Generic.List<GameObject> targetPrefabs = new System.Collections.Generic.List<GameObject>();
+                foreach (var p in validPrefabs)
+                {
+                    if (p.CompareTag(targetTag)) targetPrefabs.Add(p);
+                }
+                
+                if (targetPrefabs.Count > 0)
+                {
+                    GameObject missionTarget = targetPrefabs[Random.Range(0, targetPrefabs.Count)];
+                    _lastSpawnedPrefab = missionTarget;
+                    return missionTarget;
+                }
+            }
+        }
+        // ----------------------------------------------------
 
         GameObject selected = null;
         int maxAttempts = 3;
