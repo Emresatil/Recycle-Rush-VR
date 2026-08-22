@@ -4,6 +4,7 @@ using System.Collections; // Coroutine (Lerp animasyonları) için gerekli
 using System.Collections.Generic; // Queue<T> için gerekli
 using UnityEngine.UI;
 using UnityEngine.InputSystem;
+using RecycleRush.Managers;
 
 namespace RecycleRush.UI
 {
@@ -183,11 +184,8 @@ namespace RecycleRush.UI
             GameManager.OnGameStateChanged -= HandleGameState;
             GameManager.OnGameTimeUpdated -= UpdateTimeDisplay;
             
-            if (Managers.ComboManager.Instance != null)
-            {
-                Managers.ComboManager.OnComboChanged -= HandleComboChanged;
-                Managers.ComboManager.OnComboBroken -= HandleComboBroken;
-            }
+            Managers.ComboManager.OnComboChanged -= HandleComboChanged;
+            Managers.ComboManager.OnComboBroken -= HandleComboBroken;
 
             if (menuPauseAction != null && menuPauseAction.action != null)
             {
@@ -321,33 +319,28 @@ namespace RecycleRush.UI
         {
             if (comboText == null) return;
 
-            if (multiplier > 1)
+            if (comboCount == 0)
             {
-                // Kombo varsa yazıyı aktif et ve metni ayarla
+                if (!comboText.text.Contains("BROKEN")) 
+                {
+                    comboText.gameObject.SetActive(false);
+                }
+                return;
+            }
+
+            // Sadece kademe atlandığında (Örn: x2, x3) ekranda belirmesini sağla
+            if (isRankUp)
+            {
                 comboText.gameObject.SetActive(true);
                 comboText.text = $"{multiplier}x COMBO!";
+                comboText.color = new Color(1f, 0.84f, 0f); // Altın Sarısı
                 
-                // Kademe atlandıysa rengi daha parlak (Altın) yap, normal atışlarda Sarı yap
-                comboText.color = isRankUp ? new Color(1f, 0.84f, 0f) : new Color(1f, 0.95f, 0.5f); 
-
-                // Varsa önceki animasyonu durdur ki çakışmasın
                 if (_comboAnimationCoroutine != null)
                 {
                     StopCoroutine(_comboAnimationCoroutine);
                 }
                 
-                // Rank atlandığında daha şiddetli bir Pop animasyonu başlatılabilir
-                // Şimdilik standart Pop'u başlatıyoruz
                 _comboAnimationCoroutine = StartCoroutine(ComboPopAnimation());
-            }
-            else
-            {
-                // Eğer kombo (multiplier) 1 ise, ekranda yazı göstermeye gerek yok (Kombo bozulma işlemi HandleComboBroken'dan yapılıyor).
-                // Ancak eski bir animasyon kalıntısı varsa onu gizleyebiliriz.
-                if (comboCount == 0 && !comboText.text.Contains("BROKEN")) 
-                {
-                    comboText.gameObject.SetActive(false);
-                }
             }
         }
 
@@ -456,13 +449,16 @@ namespace RecycleRush.UI
             }
 
             comboText.transform.localScale = originalScale;
+            // Ekranda 1.5 saniye gururla kalsın, sonra kaybolsun (Sadece komboya ulaşıldığında görünmesi için)
+            yield return new WaitForSeconds(1.5f);
             
-            // Oyuncunun yazıyı okuyabilmesi için 1 saniye bekle
-            yield return new WaitForSeconds(1.0f);
+            // Eğer o arada kombo bozulmadıysa yazıyı gizle
+            if (comboText != null)
+            {
+                comboText.gameObject.SetActive(false);
+            }
             
-            // Ekranda sürekli kalmaması için yazıyı gizle
-            comboText.gameObject.SetActive(false);
-            
+            _comboAnimationCoroutine = null;
             _comboAnimationCoroutine = null;
         }
 

@@ -154,11 +154,58 @@ namespace RecycleRush.Core
                 int baseScore = data.ScoreChange;
                 int totalScoreEarned = baseScore * multiplier;
                 
+                // YENİ: Precision Bonus
+                int precisionBonus = data.PrecisionData.BonusScore;
+                totalScoreEarned += precisionBonus;
+                
                 // Skor Kırılımlarını (Breakdown) Session'a işle
                 if (GameManager.Instance != null)
                 {
                     var session = GameManager.Instance.CurrentSession;
                     session.TotalCorrectThrows++; // İsabet oranını hesaplamak için doğru atışı artır
+                    
+                    // (Yeni) Sadece Perfect, Great vb. sayımı ve Ortalama hesabı:
+                    if (data.PrecisionData.Tier == RecycleRush.Core.PrecisionSystem.PrecisionTier.Perfect) session.TotalPerfectThrows++;
+                    else if (data.PrecisionData.Tier == RecycleRush.Core.PrecisionSystem.PrecisionTier.Great) session.TotalGreatThrows++;
+                    else if (data.PrecisionData.Tier == RecycleRush.Core.PrecisionSystem.PrecisionTier.Good) session.TotalGoodThrows++;
+                    
+                    session.PrecisionBonusScore += precisionBonus;
+                    
+                    if (RecycleRush.Core.PrecisionSystem.PrecisionManager.Instance != null)
+                    {
+                        if (RecycleRush.Core.PrecisionSystem.PrecisionManager.Instance.CurrentPrecisionStreak > session.MaxPrecisionStreak)
+                        {
+                            session.MaxPrecisionStreak = RecycleRush.Core.PrecisionSystem.PrecisionManager.Instance.CurrentPrecisionStreak;
+                        }
+                    }
+
+                    // Welford Algoritması ile Ortalama ve Consistency (Tutarlılık) Hesabı:
+                    float oldMean = session.AveragePrecision;
+                    float newValue = data.PrecisionData.Score;
+                    
+                    session.AveragePrecision = oldMean + (newValue - oldMean) / session.TotalCorrectThrows;
+                    
+                    // Standart sapma için M2 hesabı
+                    session.PrecisionM2 += (newValue - oldMean) * (newValue - session.AveragePrecision);
+                    
+                    if (session.TotalCorrectThrows > 1)
+                    {
+                        float variance = session.PrecisionM2 / (session.TotalCorrectThrows - 1);
+                        float stdDev = Mathf.Sqrt(variance);
+                        
+                        // Standart sapma ne kadar düşükse, Consistency o kadar yüksektir.
+                        // Maksimum olası sapma ~50 (örneğin hep 0 ve 100 atarsa). 
+                        // Formül: 100 - (StdDev / 50) * 100
+                        float consistency = Mathf.Clamp01(1f - (stdDev / 50f)) * 100f;
+                        session.PrecisionConsistency = consistency;
+                    }
+                    else
+                    {
+                        session.PrecisionConsistency = 100f; // Sadece 1 atış varsa %100 tutarlıdır
+                    }
+
+                    if (data.PrecisionData.Score > session.BestPrecision)
+                        session.BestPrecision = data.PrecisionData.Score;
                     
                     if (data.WasGoldenWaste)
                     {
