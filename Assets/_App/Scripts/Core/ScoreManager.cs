@@ -20,16 +20,9 @@ namespace RecycleRush.Core
         // (Buna Encapsulation / Kapsülleme prensibi denir)
         public int CurrentScore { get; private set; }
 
-        [Header("Combo Settings")]
-        public int ComboCount { get; private set; }
-        public int CurrentMultiplier { get; private set; } = 1;
-
         // Event: Puan değiştiğinde UI'a haber verecek olan sinyal (C# Action). 
         // Bu sayede UI kodu ile Score kodu birbirine yapışmaz (Decoupling).
         public Action<int> OnScoreChanged;
-        
-        // Event: Kombo değiştiğinde UI'a haber verecek olan sinyal. Parametreler: (ComboCount, Multiplier)
-        public Action<int, int> OnComboChanged;
 
         // YENİ: En Yüksek İlk 3 Skor Verisi
         public int[] HighScores { get; private set; } = new int[3];
@@ -155,17 +148,14 @@ namespace RecycleRush.Core
         {
             if (data.IsCorrect)
             {
-                // Doğru atış yapıldıysa komboyu artır
-                IncreaseCombo();
+                // Çarpanı (Multiplier) doğrudan yeni kurduğumuz ComboManager üzerinden çekiyoruz.
+                int multiplier = Managers.ComboManager.Instance != null ? Managers.ComboManager.Instance.CurrentMultiplier : 1;
                 
                 // Doğru kutuya atıldıysa puanı katlayıcı ile çarparak ekle
-                AddScore(data.ScoreChange * CurrentMultiplier);
+                AddScore(data.ScoreChange * multiplier);
             }
             else
             {
-                // Yanlış kutuya atıldıysa komboyu sıfırla
-                ResetCombo();
-                
                 // data.ScoreChange eksi bir sayı (-5) olarak geldiği için onu Mathf.Abs ile pozitife çevirip siliyoruz.
                 SubtractScore(Mathf.Abs(data.ScoreChange));
             }
@@ -176,64 +166,8 @@ namespace RecycleRush.Core
         /// </summary>
         private void HandleWasteMissed(int penaltyScore)
         {
-            // Atık kaçırılırsa kombo anında sıfırlanır
-            ResetCombo();
-            
             // penaltyScore negatif geldiği için (-5) Mutlak değerini alıyoruz.
             SubtractScore(Mathf.Abs(penaltyScore));
-        }
-
-        /// <summary>
-        /// Doğru atış yapıldığında komboyu ve katlayıcıyı hesaplar.
-        /// </summary>
-        private void IncreaseCombo()
-        {
-            ComboCount++;
-
-            // Katlayıcı (Multiplier) Kuralları
-            if (ComboCount >= 5)
-            {
-                CurrentMultiplier = 3; // 5 ve üzeri doğru atışta x3
-            }
-            else if (ComboCount >= 3)
-            {
-                CurrentMultiplier = 2; // 3 doğru atışta x2
-            }
-            else
-            {
-                CurrentMultiplier = 1; // Başlangıç durumu
-            }
-
-            // UI'a kombonun arttığını haber ver
-            OnComboChanged?.Invoke(ComboCount, CurrentMultiplier);
-            
-            // Eğer oyuncu tam çarpan (multiplier) eşiklerine ulaştıysa KOMBO SESİNİ çal!
-            if (ComboCount == 3 || ComboCount == 5)
-            {
-                if (AudioManager.Instance != null)
-                {
-                    AudioManager.Instance.PlayComboSound();
-                }
-            }
-            
-            Debug.Log($"<color=orange>[ScoreManager]</color> Kombo: {ComboCount} | Çarpan: x{CurrentMultiplier}");
-        }
-
-        /// <summary>
-        /// Hata yapıldığında (veya atık kaçırıldığında) komboyu sıfırlar.
-        /// </summary>
-        private void ResetCombo()
-        {
-            if (ComboCount > 0)
-            {
-                ComboCount = 0;
-                CurrentMultiplier = 1;
-                
-                // UI'a kombonun sıfırlandığını haber ver
-                OnComboChanged?.Invoke(ComboCount, CurrentMultiplier);
-                
-                Debug.Log("<color=red>[ScoreManager]</color> Kombo Sıfırlandı!");
-            }
         }
 
         /// <summary>
@@ -259,7 +193,6 @@ namespace RecycleRush.Core
             SaveHighScore();
 
             CurrentScore = _startingScore;
-            ResetCombo();
             OnScoreChanged?.Invoke(CurrentScore);
         }
 

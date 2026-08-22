@@ -82,6 +82,11 @@ public class AudioManager : MonoBehaviour
         // Hakan'ın kurduğu altyapıdaki eventlere abone ol (Motor ve Kol sesleri)
         GameManager.OnGameStateChanged += HandleGameStateChanged;
         MachineLever.OnLeverPulledAction += PlayLeverSound;
+        
+        if (RecycleRush.Managers.ComboManager.Instance != null)
+        {
+            RecycleRush.Managers.ComboManager.OnComboChanged += HandleComboChanged;
+        }
     }
 
     private void OnDisable()
@@ -90,6 +95,11 @@ public class AudioManager : MonoBehaviour
         BinTrigger.OnWasteProcessed -= HandleWasteProcessed;
         GameManager.OnGameStateChanged -= HandleGameStateChanged;
         MachineLever.OnLeverPulledAction -= PlayLeverSound;
+        
+        if (RecycleRush.Managers.ComboManager.Instance != null)
+        {
+            RecycleRush.Managers.ComboManager.OnComboChanged -= HandleComboChanged;
+        }
     }
 
     /// <summary>
@@ -176,6 +186,17 @@ public class AudioManager : MonoBehaviour
         if (_floorPenaltyClip != null && _uiSource != null)
         {
             _uiSource.PlayOneShot(_floorPenaltyClip, 1.0f);
+        }
+    }
+
+    /// <summary>
+    /// Oyuncu ardışık doğru atışlar yapıp kombo kademesi (Rank) atladığında çalacak sesi çıkarır.
+    /// </summary>
+    private void HandleComboChanged(int comboCount, int multiplier, bool isRankUp)
+    {
+        if (isRankUp)
+        {
+            PlayComboSound();
         }
     }
 
