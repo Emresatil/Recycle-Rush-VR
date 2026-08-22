@@ -41,7 +41,6 @@ public class BinTrigger : MonoBehaviour
     [Header("Yanlış Eşleşme (Incorrect) Parametreleri")]
     [SerializeField] private int _incorrectScore = -5;
     [SerializeField] private int _incorrectCoin = 0;
-    [SerializeField] private int _incorrectXp = 0;
     [SerializeField] private float _incorrectHapticDuration = 0.4f;
     [SerializeField] private float _incorrectHapticAmplitude = 0.8f;
 

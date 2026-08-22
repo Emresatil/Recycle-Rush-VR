@@ -40,6 +40,12 @@ namespace RecycleRush.UI
         [Tooltip("Oyun içi UI Duraklatma (Pause) Butonu objesi")]
         public GameObject pauseButtonUIObj;
         
+        [Header("Oyun İçi ve Menü Panelleri")]
+        public GameObject levelSelectionBoard;
+        public GameObject missionPanel;
+        public GameObject xpPanel;
+        public GameObject comboPanel;
+        
         [Tooltip("Müzik (BGM) seviyesi için Slider")]
         public Slider bgmSlider;
         [Tooltip("Ses Efektleri (SFX) seviyesi için Slider")]
@@ -183,10 +189,14 @@ namespace RecycleRush.UI
                     }
                     if (timeText != null) timeText.text = "Time: 60";
                     
-                    // Restart ve Pause butonlarını gizle
                     if (restartButtonObj != null) restartButtonObj.SetActive(false);
                     if (pauseButtonUIObj != null) pauseButtonUIObj.SetActive(false);
                     if (gameOverPanel != null) gameOverPanel.SetActive(false);
+                    
+                    if (levelSelectionBoard != null) levelSelectionBoard.SetActive(true);
+                    if (missionPanel != null) missionPanel.SetActive(false);
+                    if (xpPanel != null) xpPanel.SetActive(false);
+                    if (comboPanel != null) comboPanel.SetActive(false);
                     break;
                     
                 case GameState.ReadyToStart:
@@ -199,6 +209,11 @@ namespace RecycleRush.UI
                     }
                     if (pauseButtonUIObj != null) pauseButtonUIObj.SetActive(true); // Butona basılınca da Pause butonu görünsün!
                     if (gameOverPanel != null) gameOverPanel.SetActive(false);
+                    
+                    if (levelSelectionBoard != null) levelSelectionBoard.SetActive(true);
+                    if (missionPanel != null) missionPanel.SetActive(false);
+                    if (xpPanel != null) xpPanel.SetActive(false);
+                    if (comboPanel != null) comboPanel.SetActive(false);
                     break;
                     
                 case GameState.Playing:
@@ -210,6 +225,11 @@ namespace RecycleRush.UI
                         pauseButtonUIObj.SetActive(true);
                     else
                         Debug.LogWarning("<color=red>[UIManager]</color> Pause Button UI Obj atanmamış (None)! Pause butonu görünmüyor olabilir.");
+                        
+                    if (levelSelectionBoard != null) levelSelectionBoard.SetActive(false);
+                    if (missionPanel != null) missionPanel.SetActive(true);
+                    if (xpPanel != null) xpPanel.SetActive(true);
+                    if (comboPanel != null) comboPanel.SetActive(true);
                     break;
                     
                 case GameState.Countdown:
