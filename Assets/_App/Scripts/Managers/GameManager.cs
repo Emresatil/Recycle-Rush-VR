@@ -229,6 +229,9 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    // Hourglass efekti için event
+    public static event Action<float> OnHourglassUsed;
+
     /// <summary>
     /// Oyun süresine dışarıdan süre eklemek için kullanılır (Örn: Power-Up)
     /// </summary>
@@ -239,7 +242,54 @@ public class GameManager : MonoBehaviour
             RemainingTime += secondsToAdd;
             Debug.Log($"<color=yellow>[GameManager]</color> +{secondsToAdd} saniye eklendi! Yeni süre: {RemainingTime:F1}");
             OnGameTimeUpdated?.Invoke(RemainingTime);
+            OnHourglassUsed?.Invoke(secondsToAdd);
         }
+    }
+
+    /// <summary>
+    /// Mıknatıs (Magnet) gücünün açık olup olmadığını tutar.
+    /// </summary>
+    public bool IsMagnetActive { get; private set; }
+    
+    // UI için Magnet kalan süresini tutar
+    public float MagnetRemainingTime { get; private set; }
+
+    // Magnet durumları için eventler
+    public static event Action<float> OnMagnetStarted;
+    public static event Action<float> OnMagnetTimeUpdated;
+    public static event Action OnMagnetEnded;
+
+    /// <summary>
+    /// Mıknatıs gücünü dışarıdan (Örn: BinTrigger) tetiklemek için çağrılır.
+    /// </summary>
+    public void ActivateMagnet(float duration)
+    {
+        if (CurrentState == GameState.Playing)
+        {
+            StartCoroutine(MagnetRoutine(duration));
+        }
+    }
+
+    private System.Collections.IEnumerator MagnetRoutine(float duration)
+    {
+        IsMagnetActive = true;
+        MagnetRemainingTime = duration;
+        Debug.Log($"<color=magenta>[GameManager]</color> Mıknatıs GÜCÜ AKTİF! {duration} saniye sürecek.");
+        
+        OnMagnetStarted?.Invoke(duration);
+        
+        while (MagnetRemainingTime > 0)
+        {
+            MagnetRemainingTime -= Time.deltaTime;
+            OnMagnetTimeUpdated?.Invoke(MagnetRemainingTime);
+            yield return null;
+        }
+        
+        MagnetRemainingTime = 0;
+        IsMagnetActive = false;
+        OnMagnetTimeUpdated?.Invoke(0);
+        OnMagnetEnded?.Invoke();
+        Debug.Log($"<color=magenta>[GameManager]</color> Mıknatıs GÜCÜ BİTTİ!");
     }
 
     /// <summary>

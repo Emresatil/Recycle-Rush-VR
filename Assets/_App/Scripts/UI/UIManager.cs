@@ -29,6 +29,12 @@ namespace RecycleRush.UI
         [Tooltip("Kombo yazısını gösterecek TextMeshPro bileşeni")]
         public TextMeshProUGUI comboText;
         
+        [Header("Etkinlik ve Power-Up Bildirimleri")]
+        [Tooltip("Aktif Etkinliği (Frenzy vb.) gösterecek yazı")]
+        public TextMeshProUGUI eventNotificationText;
+        [Tooltip("Aktif Power-Up'ı (Magnet, Hourglass) gösterecek yazı")]
+        public TextMeshProUGUI powerupNotificationText;
+        
         [Header("Paneller ve Arayüz Kontrolleri")]
         [Tooltip("Ayarlar (Settings) Paneli")]
         public GameObject settingsPanel;
@@ -73,12 +79,20 @@ namespace RecycleRush.UI
 
         private void OnEnable()
         {
-            // Event'leri dinlemeye başla (Eventler statik olduğu için Instance beklemeden abone olabiliriz)
+            // Event'leri dinlemeye başla
             GameManager.OnGameStateChanged += HandleGameState;
             GameManager.OnGameTimeUpdated += UpdateTimeDisplay;
+            GameManager.OnMagnetStarted += HandleMagnetStarted;
+            GameManager.OnMagnetTimeUpdated += HandleMagnetTimeUpdated;
+            GameManager.OnMagnetEnded += HandleMagnetEnded;
+            GameManager.OnHourglassUsed += HandleHourglassUsed;
             
             // Güvenlik uyarısı dinleyicisi
             Managers.EnvironmentSafetyManager.OnSafetyWarningTriggered += HandleSafetyWarning;
+
+            // Etkinlik yöneticisi (Frenzy vb.) dinleyicisi
+            Managers.EventManager.OnGameEventStarted += HandleGameEventStarted;
+            Managers.EventManager.OnGameEventEnded += HandleGameEventEnded;
 
             if (menuPauseAction != null && menuPauseAction.action != null)
             {
@@ -101,11 +115,10 @@ namespace RecycleRush.UI
                 Core.ScoreManager.Instance.OnComboChanged += HandleComboChanged;
             }
             
-            // Başlangıçta kombo yazısını gizle
-            if (comboText != null)
-            {
-                comboText.gameObject.SetActive(false);
-            }
+            // Başlangıçta yazıları gizle
+            if (comboText != null) comboText.gameObject.SetActive(false);
+            if (eventNotificationText != null) eventNotificationText.gameObject.SetActive(false);
+            if (powerupNotificationText != null) powerupNotificationText.gameObject.SetActive(false);
 
             // Sliderları AudioManager'a bağla
             if (bgmSlider != null && AudioManager.Instance != null)
@@ -185,7 +198,15 @@ namespace RecycleRush.UI
             // Bellek sızıntısını önlemek için dinlemeyi bırak
             GameManager.OnGameStateChanged -= HandleGameState;
             GameManager.OnGameTimeUpdated -= UpdateTimeDisplay;
+            GameManager.OnMagnetStarted -= HandleMagnetStarted;
+            GameManager.OnMagnetTimeUpdated -= HandleMagnetTimeUpdated;
+            GameManager.OnMagnetEnded -= HandleMagnetEnded;
+            GameManager.OnHourglassUsed -= HandleHourglassUsed;
+            
             Managers.EnvironmentSafetyManager.OnSafetyWarningTriggered -= HandleSafetyWarning;
+            
+            Managers.EventManager.OnGameEventStarted -= HandleGameEventStarted;
+            Managers.EventManager.OnGameEventEnded -= HandleGameEventEnded;
             
             if (Core.ScoreManager.Instance != null)
             {
@@ -604,6 +625,84 @@ namespace RecycleRush.UI
         public void ResumeGameUI()
         {
             if (GameManager.Instance != null) GameManager.Instance.ResumeGame();
+        }
+
+        // --- YENİ EKLENEN EVENT VE POWER-UP UI METOTLARI ---
+
+        private void HandleGameEventStarted(GameEventType eventType)
+        {
+            if (eventNotificationText != null)
+            {
+                eventNotificationText.gameObject.SetActive(true);
+                eventNotificationText.text = $"EVENT: {eventType.ToString().ToUpper()}!";
+                eventNotificationText.color = Color.magenta;
+            }
+        }
+
+        private void HandleGameEventEnded()
+        {
+            if (eventNotificationText != null)
+            {
+                eventNotificationText.gameObject.SetActive(false);
+            }
+        }
+
+        private void HandleMagnetStarted(float duration)
+        {
+            if (powerupNotificationText != null)
+            {
+                powerupNotificationText.gameObject.SetActive(true);
+                powerupNotificationText.color = Color.cyan;
+                powerupNotificationText.text = $"MAGNET ACTIVE: {Mathf.CeilToInt(duration)}s";
+            }
+        }
+
+        private void HandleMagnetTimeUpdated(float remainingTime)
+        {
+            if (powerupNotificationText != null && GameManager.Instance != null && GameManager.Instance.IsMagnetActive)
+            {
+                powerupNotificationText.text = $"MAGNET ACTIVE: {Mathf.CeilToInt(remainingTime)}s";
+            }
+        }
+
+        private void HandleMagnetEnded()
+        {
+            if (powerupNotificationText != null)
+            {
+                powerupNotificationText.gameObject.SetActive(false);
+            }
+        }
+
+        private void HandleHourglassUsed(float timeAdded)
+        {
+            if (powerupNotificationText != null)
+            {
+                // Mevcut bir Magnet varsa yazısını ezmemek için kısa bir bildirim gösterip eski haline dönülebilir.
+                // Veya şimdilik 2 saniye boyunca sürenin eklendiğini gösterebiliriz.
+                StartCoroutine(ShowHourglassNotification(timeAdded));
+            }
+        }
+
+        private IEnumerator ShowHourglassNotification(float timeAdded)
+        {
+            bool wasMagnetActive = GameManager.Instance != null && GameManager.Instance.IsMagnetActive;
+            
+            powerupNotificationText.gameObject.SetActive(true);
+            powerupNotificationText.color = Color.green;
+            powerupNotificationText.text = $"+{timeAdded} SECONDS!";
+            
+            yield return new WaitForSeconds(2f);
+            
+            if (wasMagnetActive && GameManager.Instance != null && GameManager.Instance.IsMagnetActive)
+            {
+                // Magnet geri dönsün
+                HandleMagnetTimeUpdated(GameManager.Instance.MagnetRemainingTime);
+                powerupNotificationText.color = Color.cyan;
+            }
+            else
+            {
+                powerupNotificationText.gameObject.SetActive(false);
+            }
         }
 
         public void QuitApplication()

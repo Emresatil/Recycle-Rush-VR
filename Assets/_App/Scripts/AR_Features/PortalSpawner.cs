@@ -35,6 +35,8 @@ namespace RecycleRush.AR_Features
         [Header("Power-Up Ayarları")]
         [Tooltip("Zaman uzatan Kum Saati prefabı")]
         public GameObject hourglassPrefab;
+        [Tooltip("Çöpleri otomatik toplayan Mıknatıs prefabı")]
+        public GameObject magnetPrefab;
 
         [Header("Zamanlama (Timing)")]
         [Tooltip("Saniye cinsinden iki atık arası bekleme süresi")]
@@ -190,13 +192,8 @@ namespace RecycleRush.AR_Features
 
             // --- ALTIN ÇÖP MANTIĞI (Sabit İhtimal) ---
             // Seviyeye göre altın çöp şansının artması, ileri seviyelerde oyunun dengesini bozduğu için kaldırıldı.
-            float currentGoldenChance = goldenWasteChance;
-
-            // LuckyDrop Etkinliği varsa şansı geçici olarak tavan yaptır (%80)
-            if (EventManager.Instance != null && EventManager.Instance.CurrentEvent == GameEventType.LuckyDrop)
-            {
-                currentGoldenChance = 0.8f;
-            }
+            // Ayrıca etkinliklerin (LuckyDrop) bu ihtimali değiştirmesi istendiği gibi iptal edildi.
+            float currentGoldenChance = 0.05f;
 
             // --- POWER-UP: KUM SAATİ SPAWN MANTIĞI (Level 20-30 Arası) ---
             bool isHourglassSpawned = false;
@@ -211,8 +208,20 @@ namespace RecycleRush.AR_Features
                 }
             }
 
-            // Eğer kum saati DÜŞMEDİYSE normal çöplere ve altın çöpe bak
-            if (!isHourglassSpawned)
+            // Eğer kum saati DÜŞMEDİYSE mıknatıs düşme ihtimaline bak (Level 20-30 arası)
+            bool isMagnetSpawned = false;
+            if (!isHourglassSpawned && magnetPrefab != null && currentStage >= 20 && currentStage <= 30)
+            {
+                if (Random.value <= 0.08f) // %8 İhtimal
+                {
+                    selectedPrefab = magnetPrefab;
+                    isMagnetSpawned = true;
+                    Debug.Log($"<color=magenta>[PortalSpawner]</color> POWER-UP! Mıknatıs Düştü! (Aşama: {currentStage})");
+                }
+            }
+
+            // Eğer hiçbir power-up DÜŞMEDİYSE normal çöplere ve altın çöpe bak
+            if (!isHourglassSpawned && !isMagnetSpawned)
             {
                 // Rastgele zar at (0.0 ile 1.0 arası)
                 if (goldenWastePrefab != null && Random.value <= currentGoldenChance)

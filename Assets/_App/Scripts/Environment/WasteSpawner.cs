@@ -13,6 +13,8 @@ public class WasteSpawner : MonoBehaviour
     [Header("Power-Up Ayarları")]
     [Tooltip("Zaman uzatan Kum Saati prefabı")]
     public GameObject hourglassPrefab;
+    [Tooltip("Çöpleri otomatik toplayan Mıknatıs prefabı")]
+    public GameObject magnetPrefab;
 
     [Header("Visual Effects")]
     [Tooltip("Çöplerin çıktığı portalın görsel animatörü (İsteğe bağlı)")]
@@ -202,6 +204,17 @@ public class WasteSpawner : MonoBehaviour
             {
                 Debug.Log($"<color=magenta>[WasteSpawner]</color> POWER-UP! Kum Saati Düştü! (Aşama: {currentStage})");
                 return hourglassPrefab;
+            }
+        }
+
+        // --- POWER-UP: MIKNATIS SPAWN MANTIĞI (Level 20-30 Arası) ---
+        // Oyunun en zorlandığı kısımlarda %8 ihtimalle çıkar.
+        if (magnetPrefab != null && currentStage >= 20 && currentStage <= 30)
+        {
+            if (Random.value <= 0.08f) // %8 İhtimal
+            {
+                Debug.Log($"<color=magenta>[WasteSpawner]</color> POWER-UP! Mıknatıs Düştü! (Aşama: {currentStage})");
+                return magnetPrefab;
             }
         }
 

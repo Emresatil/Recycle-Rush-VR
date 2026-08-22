@@ -10,6 +10,7 @@ TagManager:
   - Glass
   - Metal
   - Hourglass
+  - Magnet
   layers:
   - Default
   - TransparentFX
