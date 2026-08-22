@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: -7217126653407471122}
   - component: {fileID: -1225362643359190208}
   - component: {fileID: -6300939303509815763}
+  - component: {fileID: -5686232133969779349}
   m_Layer: 0
   m_Name: Paper
   m_TagString: Paper
@@ -247,6 +248,20 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &-5686232133969779349
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6939626159800628730}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d06097d54d56034e89a987bf8149551, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RecycleRush.Environment.FloorPollutionDetector
+  recoveryWindow: 3
+  penaltyAmount: 5
 --- !u!1001 &8997051518590809166
 PrefabInstance:
   m_ObjectHideFlags: 0

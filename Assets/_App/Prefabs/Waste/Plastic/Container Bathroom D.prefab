@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 8967917319493477293}
   - component: {fileID: 4649200696247129208}
   - component: {fileID: -8003297373101901297}
+  - component: {fileID: 1875691965309567290}
   m_Layer: 0
   m_Name: Container Bathroom D
   m_TagString: Plastic
@@ -205,9 +206,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 76a9198378626634a80e96efefe92137, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RecycleRush.Interaction.ARWastePhysicsTuner
+  materialType: 0
   isGoldenWaste: 0
-  targetAngularDamping: 2
-  targetMass: 0.5
+  defaultAngularDamping: 2
   throwVelocityMultiplier: 1.6
   smoothingDuration: 0.25
 --- !u!114 &-8003297373101901297
@@ -248,6 +249,20 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &1875691965309567290
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3199166170169763079}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d06097d54d56034e89a987bf8149551, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RecycleRush.Environment.FloorPollutionDetector
+  recoveryWindow: 3
+  penaltyAmount: 5
 --- !u!1 &4942700319566413060
 GameObject:
   m_ObjectHideFlags: 0

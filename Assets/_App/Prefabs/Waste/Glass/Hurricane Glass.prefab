@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 2580975228883307301}
   - component: {fileID: -3544290496575326462}
   - component: {fileID: -9134186007342891082}
+  - component: {fileID: -3268949051790321184}
   m_Layer: 0
   m_Name: Hurricane Glass
   m_TagString: Glass
@@ -247,6 +248,20 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &-3268949051790321184
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5472293216924229616}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d06097d54d56034e89a987bf8149551, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RecycleRush.Environment.FloorPollutionDetector
+  recoveryWindow: 3
+  penaltyAmount: 5
 --- !u!1 &7893157689346648135
 GameObject:
   m_ObjectHideFlags: 0
