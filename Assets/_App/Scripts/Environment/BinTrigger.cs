@@ -27,6 +27,7 @@ public struct SortResultData
     
     // YENİ: Precision (Hassasiyet) verisi
     public RecycleRush.Core.PrecisionSystem.PrecisionResult PrecisionData;
+    public GameObject ProcessedWaste;
 }
 
 [RequireComponent(typeof(Collider))]
@@ -176,17 +177,21 @@ public class BinTrigger : MonoBehaviour
         {
             IsCorrect = isCorrect,
             ActionPosition = transform.position,
-
-            CoinChange
+            ScoreChange = finalScoreChange,
+            CoinChange = isCorrect ? _correctCoin : _incorrectCoin,
+            XpChange = isCorrect ? _correctXp : _incorrectXp,
             HapticDuration = isCorrect ? _correctHapticDuration : _incorrectHapticDuration,
             HapticAmplitude = isCorrect ? _correctHapticAmplitude : _incorrectHapticAmplitude,
             TargetBinType = _acceptedWasteType,
             WasGoldenWaste = isGoldenWaste,
             ReactionTime = reactionTime,
-            PrecisionData = precisionResult
+            PrecisionData = precisionResult,
+            ProcessedWaste = other.transform.root.gameObject
         };
 
+        Debug.Log($"<color=magenta>[BinTrigger]</color> OnWasteProcessed sinyali fırlatılıyor! Puan: {resultData.ScoreChange} | Coin: {resultData.CoinChange} | XP: {resultData.XpChange}");
 
+        // Event'i fırlat.
         OnWasteProcessed?.Invoke(resultData);
 
         ObjectPoolManager.Instance.ReturnToPool(other.transform.root.gameObject);

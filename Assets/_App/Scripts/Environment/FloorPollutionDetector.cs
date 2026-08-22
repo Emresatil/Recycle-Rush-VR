@@ -112,6 +112,12 @@ namespace RecycleRush.Environment
                     Debug.Log($"<color=red>[FloorPollutionDetector]</color> Süre doldu! Kirlilik +{penaltyAmount} arttı.");
                     RoomPollutionManager.Instance.AddPollution(penaltyAmount);
                 }
+
+                // Eğer bu çöp bir paketten çıktıysa görev başarısız oldu!
+                if (RecycleRush.Core.Packages.PackageChallengeTracker.Instance != null)
+                {
+                    RecycleRush.Core.Packages.PackageChallengeTracker.Instance.NotifyWasteDroppedOnFloor(gameObject);
+                }
                 
                 // Ceza kesildikten sonra çöpü yok edebilir/havuza geri gönderebiliriz.
                 if (ObjectPoolManager.Instance != null)
