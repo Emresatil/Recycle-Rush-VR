@@ -38,6 +38,7 @@ namespace RecycleRush.Managers
 
         private float _lastThrowTime = 0f;
         private bool _isComboActive = false;
+        private int _trueStreak = 0; // Hiç kesintiye uğramayan gerçek atış serisi
 
         private void Awake()
         {
@@ -122,11 +123,18 @@ namespace RecycleRush.Managers
             CurrentXPMultiplier = 1f + (CurrentMultiplier - 1) * 0.5f; // Örn: x2 skorda XP x1.5 olur
             CurrentCoinMultiplier = 1f + (CurrentMultiplier - 1) * 0.25f; // Örn: x2 skorda Coin x1.25 olur
 
-            // SessionData (Oturum Verisi) içerisindeki Max Combo bilgisini otomatik güncelle
-            if (GameManager.Instance != null && CurrentCombo > GameManager.Instance.CurrentSession.MaxCombo)
+            // SessionData (Oturum Verisi) içerisindeki Max Combo ve Streak bilgisini otomatik güncelle
+            if (GameManager.Instance != null)
             {
                 var session = GameManager.Instance.CurrentSession;
-                session.MaxCombo = CurrentCombo;
+                
+                if (CurrentCombo > session.MaxCombo)
+                    session.MaxCombo = CurrentCombo;
+                    
+                _trueStreak++;
+                if (_trueStreak > session.LongestStreak)
+                    session.LongestStreak = _trueStreak;
+                    
                 GameManager.Instance.CurrentSession = session;
             }
 
@@ -151,6 +159,15 @@ namespace RecycleRush.Managers
                     // Grace kullan
                     HasGrace = false;
                     _hasUsedGraceThisChain = true; // Bu kombo zincirinde bir daha Grace alınamayacak!
+                    
+                    _trueStreak = 0; // Gerçek kesintisiz seri bozuldu
+                    
+                    if (GameManager.Instance != null)
+                    {
+                        var session = GameManager.Instance.CurrentSession;
+                        session.GraceUsedCount++;
+                        GameManager.Instance.CurrentSession = session;
+                    }
 
                     // Dengeli Düşüş (Step Down):
                     if (CurrentMultiplier >= 5) 
@@ -181,6 +198,7 @@ namespace RecycleRush.Managers
                 CurrentMultiplier = 1;
                 CurrentXPMultiplier = 1f;
                 CurrentCoinMultiplier = 1f;
+                _trueStreak = 0;
                 HasGrace = false;
                 _hasUsedGraceThisChain = false; // Zincir tamamen koptuğu için sıfırla
                 _isComboActive = false;

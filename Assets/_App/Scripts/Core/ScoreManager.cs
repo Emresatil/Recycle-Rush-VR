@@ -151,13 +151,46 @@ namespace RecycleRush.Core
                 // Çarpanı (Multiplier) doğrudan yeni kurduğumuz ComboManager üzerinden çekiyoruz.
                 int multiplier = Managers.ComboManager.Instance != null ? Managers.ComboManager.Instance.CurrentMultiplier : 1;
                 
+                int baseScore = data.ScoreChange;
+                int totalScoreEarned = baseScore * multiplier;
+                
+                // Skor Kırılımlarını (Breakdown) Session'a işle
+                if (GameManager.Instance != null)
+                {
+                    var session = GameManager.Instance.CurrentSession;
+                    session.TotalCorrectThrows++; // İsabet oranını hesaplamak için doğru atışı artır
+                    
+                    if (data.WasGoldenWaste)
+                    {
+                        session.GoldenWasteBonusScore += totalScoreEarned; // Altın çöpün tamamı o kategoriye gitsin
+                        session.GoldenWastesCollected++;
+                    }
+                    else
+                    {
+                        session.BaseScore += baseScore;
+                        session.ComboBonusScore += (totalScoreEarned - baseScore);
+                    }
+                    
+                    GameManager.Instance.CurrentSession = session;
+                }
+
                 // Doğru kutuya atıldıysa puanı katlayıcı ile çarparak ekle
-                AddScore(data.ScoreChange * multiplier);
+                AddScore(totalScoreEarned);
             }
             else
             {
+                int penalty = Mathf.Abs(data.ScoreChange);
+                
+                if (GameManager.Instance != null)
+                {
+                    var session = GameManager.Instance.CurrentSession;
+                    session.PenaltyScore += penalty;
+                    session.TotalIncorrectThrows++; // Yanlış atış
+                    GameManager.Instance.CurrentSession = session;
+                }
+                
                 // data.ScoreChange eksi bir sayı (-5) olarak geldiği için onu Mathf.Abs ile pozitife çevirip siliyoruz.
-                SubtractScore(Mathf.Abs(data.ScoreChange));
+                SubtractScore(penalty);
             }
         }
 
@@ -166,8 +199,18 @@ namespace RecycleRush.Core
         /// </summary>
         private void HandleWasteMissed(int penaltyScore)
         {
+            int penalty = Mathf.Abs(penaltyScore);
+            
+            if (GameManager.Instance != null)
+            {
+                var session = GameManager.Instance.CurrentSession;
+                session.PenaltyScore += penalty;
+                session.TotalIncorrectThrows++; // Iska geçilen çöp
+                GameManager.Instance.CurrentSession = session;
+            }
+            
             // penaltyScore negatif geldiği için (-5) Mutlak değerini alıyoruz.
-            SubtractScore(Mathf.Abs(penaltyScore));
+            SubtractScore(penalty);
         }
 
         /// <summary>
