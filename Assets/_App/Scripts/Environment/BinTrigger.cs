@@ -18,18 +18,25 @@ public struct SortResultData
     public int XpChange; // Gün 7: Kazanılacak XP
     public float HapticDuration;
     public float HapticAmplitude;
-    public Vector3 ActionPosition;
-    public WasteType TargetBinType;
-    public bool WasGoldenWaste;
-    public float ReactionTime;
+    public Vector3 ActionPosition; // Ses ve Partikül efektlerinin nerede çıkacağı
+
+    // Analitik Sistemi İçin Eklenen Veriler:
+    public WasteType TargetBinType; // Hangi kutuya atıldı
+    public bool WasGoldenWaste;     // Atılan obje altın çöp müydü?
+    public float ReactionTime;      // Oyuncunun çöpü yakalayıp atma süresi
+    
+    // YENİ: Precision (Hassasiyet) verisi
     public RecycleRush.Core.PrecisionSystem.PrecisionResult PrecisionData;
+    public GameObject ProcessedWaste;
 }
 
 [RequireComponent(typeof(Collider))]
 public class BinTrigger : MonoBehaviour
 {
     [Header("Precision (Hassasiyet) Ayarları")]
+    [Tooltip("Kutunun çarpışma sınırlarından yarıçapı otomatik hesaplar")]
     [SerializeField] private bool _useDynamicRadius = true;
+    [Tooltip("Dinamik kapalıysa kullanılacak manuel yarıçap (Metre)")]
     [SerializeField] private float _precisionRadius = 0.5f;
 
     [Header("Kutu Ayarları")]
@@ -147,6 +154,7 @@ public class BinTrigger : MonoBehaviour
             reactionTime = Time.time - physicsTuner.SpawnTime;
         }
 
+        // --- PRECISION HESAPLAMA ---
         RecycleRush.Core.PrecisionSystem.PrecisionResult precisionResult = default;
         if (isCorrect && RecycleRush.Core.PrecisionSystem.PrecisionManager.Instance != null)
         {
@@ -155,28 +163,35 @@ public class BinTrigger : MonoBehaviour
                 transform, _binCollider.bounds.center, radius, other.transform.position, incomingType, _acceptedWasteType
             );
             
+            // Eğer precision'dan ek bir skor veya haptic geldiyse, final puanlara ekleyebiliriz (veya ScoreManager ekler)
+            // Biz haptic gücünü tier'a göre artıralım:
             if (precisionResult.Tier == RecycleRush.Core.PrecisionSystem.PrecisionTier.Perfect)
             {
-                _correctHapticAmplitude = 1.0f;
+                _correctHapticAmplitude = 1.0f; // Güçlü çift darbe hissi için
                 _correctHapticDuration = 0.3f;
             }
         }
 
+        // Diğer Manager sınıflarına yayınlanacak veri paketi
         SortResultData resultData = new SortResultData
         {
             IsCorrect = isCorrect,
             ActionPosition = transform.position,
-
-            CoinChange
+            ScoreChange = finalScoreChange,
+            CoinChange = isCorrect ? _correctCoin : _incorrectCoin,
+            XpChange = isCorrect ? _correctXp : _incorrectXp,
             HapticDuration = isCorrect ? _correctHapticDuration : _incorrectHapticDuration,
             HapticAmplitude = isCorrect ? _correctHapticAmplitude : _incorrectHapticAmplitude,
             TargetBinType = _acceptedWasteType,
             WasGoldenWaste = isGoldenWaste,
             ReactionTime = reactionTime,
-            PrecisionData = precisionResult
+            PrecisionData = precisionResult,
+            ProcessedWaste = other.transform.root.gameObject
         };
 
+        Debug.Log($"<color=magenta>[BinTrigger]</color> OnWasteProcessed sinyali fırlatılıyor! Puan: {resultData.ScoreChange} | Coin: {resultData.CoinChange} | XP: {resultData.XpChange}");
 
+        // Event'i fırlat.
         OnWasteProcessed?.Invoke(resultData);
 
         ObjectPoolManager.Instance.ReturnToPool(other.transform.root.gameObject);
@@ -205,6 +220,52 @@ public class BinTrigger : MonoBehaviour
         return false;
     }
 
+#if UNITY_EDITOR
+    // --- PRECISION CALIBRATION TOOL (GIZMOS) ---
+    private void OnDrawGizmos()
+    {
+        if (_binCollider == null) _binCollider = GetComponent<Collider>();
+        if (_binCollider == null) return;
+
+        float radius = _useDynamicRadius ? Mathf.Min(_binCollider.bounds.extents.x, _binCollider.bounds.extents.z) : _precisionRadius;
+        Vector3 center = _binCollider.bounds.center;
+        
+        // Settings yoksa varsayılan oranlar
+        float perfectRatio = 0.2f; 
+        float greatRatio = 0.5f;
+        float goodRatio = 0.8f;
+        
+        Color perfectCol = new Color(1f, 0.84f, 0f, 0.5f); // Altın
+        Color greatCol = new Color(0.13f, 0.59f, 0.95f, 0.5f); // Mavi
+        Color goodCol = new Color(0.3f, 0.8f, 0.3f, 0.5f); // Yeşil
+        Color normalCol = new Color(1f, 1f, 1f, 0.2f); // Beyaz
+        
+        if (Application.isPlaying && RecycleRush.Core.PrecisionSystem.PrecisionManager.Instance != null && RecycleRush.Core.PrecisionSystem.PrecisionManager.Instance.Settings != null)
+        {
+            var settings = RecycleRush.Core.PrecisionSystem.PrecisionManager.Instance.Settings;
+            perfectCol = settings.PerfectColor;
+            greatCol = settings.GreatColor;
+            goodCol = settings.GoodColor;
+            
+            // Ayarlardan okunan kalibrasyon oranları
+            perfectRatio = settings.PerfectRadiusPercent;
+            greatRatio = settings.GreatRadiusPercent;
+            goodRatio = settings.GoodRadiusPercent;
+        }
+
+        UnityEditor.Handles.color = normalCol;
+        UnityEditor.Handles.DrawWireDisc(center, transform.up, radius);
+        
+        UnityEditor.Handles.color = goodCol;
+        UnityEditor.Handles.DrawWireDisc(center, transform.up, radius * goodRatio);
+        
+        UnityEditor.Handles.color = greatCol;
+        UnityEditor.Handles.DrawWireDisc(center, transform.up, radius * greatRatio);
+        
+        UnityEditor.Handles.color = perfectCol;
+        UnityEditor.Handles.DrawWireDisc(center, transform.up, radius * perfectRatio);
+    }
+#endif
     private void RejectWaste(Rigidbody rb)
     {
         if (rb != null)
@@ -217,7 +278,9 @@ public class BinTrigger : MonoBehaviour
             }
 
             rb.linearVelocity = Vector3.zero;
-            rb.AddForce(new Vector3(0, 3f, -2f), ForceMode.Impulse);
+            
+            // Fırlatma gücünü inanılmaz derecede kıstık. Sadece kutunun içinden hafifçe sekip hemen dibine (yere) düşecek.
+            rb.AddForce(new Vector3(0, 1.5f, -0.5f), ForceMode.Impulse);
         }
 
         if (_failParticlePrefab != null)

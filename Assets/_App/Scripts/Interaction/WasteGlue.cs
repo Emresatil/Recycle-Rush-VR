@@ -155,8 +155,8 @@ namespace RecycleRush.Interaction
         {
             IsActive = false;
             DestroyFloorJoint();
-            SetKinematic(partA?.GetComponent<Rigidbody>(), false);
-            SetKinematic(partB?.GetComponent<Rigidbody>(), false);
+            if (partA != null) SetKinematic(partA.GetComponent<Rigidbody>(), false);
+            if (partB != null) SetKinematic(partB.GetComponent<Rigidbody>(), false);
 
             partA = null;
             partB = null;
@@ -171,8 +171,8 @@ namespace RecycleRush.Interaction
         {
             IsActive = false;
             DestroyFloorJoint();
-            SetKinematic(partA?.GetComponent<Rigidbody>(), false);
-            SetKinematic(partB?.GetComponent<Rigidbody>(), false);
+            if (partA != null) SetKinematic(partA.GetComponent<Rigidbody>(), false);
+            if (partB != null) SetKinematic(partB.GetComponent<Rigidbody>(), false);
             
             partA = null;
             partB = null;
