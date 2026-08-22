@@ -540,6 +540,50 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 186958986}
   m_CullTransparentMesh: 1
+--- !u!1 &216857142
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 216857143}
+  - component: {fileID: 216857144}
+  m_Layer: 0
+  m_Name: SaveManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &216857143
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 216857142}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 316426351}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &216857144
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 216857142}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ef9de24e8eb6a3439efae03cdad102c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RecycleRush.Managers.SaveManager
 --- !u!1 &226190589
 GameObject:
   m_ObjectHideFlags: 0
@@ -788,6 +832,11 @@ CanvasRenderer:
 Transform:
   m_CorrespondingSourceObject: {fileID: 1703713423863856330, guid: 2972ce967a6e2a84a90facc39f0fe711, type: 3}
   m_PrefabInstance: {fileID: 201163112194154216}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &316426351 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4129714333503685258, guid: 8ecccfb49a31c0c43bdfbb4050342591, type: 3}
+  m_PrefabInstance: {fileID: 1773524236}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &344746220
 GameObject:
@@ -4952,7 +5001,10 @@ PrefabInstance:
       objectReference: {fileID: 956718734}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 4129714333503685258, guid: 8ecccfb49a31c0c43bdfbb4050342591, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 216857143}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 8ecccfb49a31c0c43bdfbb4050342591, type: 3}
 --- !u!114 &1773524237 stripped
