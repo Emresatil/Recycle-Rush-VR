@@ -43,8 +43,11 @@ namespace RecycleRush.Interaction
             ApplyARGrabCalibration();
         }
 
+        public float SpawnTime { get; private set; }
+
         private void OnEnable()
         {
+            SpawnTime = Time.time; // Obje havuza geri dönüp tekrar çıkarsa süreyi sıfırlar
             if (_grabInteractable != null)
                 _grabInteractable.selectEntered.AddListener(OnGrabbed);
         }

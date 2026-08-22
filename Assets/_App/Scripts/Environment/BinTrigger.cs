@@ -21,6 +21,11 @@ public struct SortResultData
     public float HapticDuration;
     public float HapticAmplitude;
     public Vector3 ActionPosition; // Ses ve Partikül efektlerinin nerede çıkacağı
+
+    // Analitik Sistemi İçin Eklenen Veriler:
+    public WasteType TargetBinType; // Hangi kutuya atıldı
+    public bool WasGoldenWaste;     // Atılan obje altın çöp müydü?
+    public float ReactionTime;      // Oyuncunun çöpü yakalayıp atma süresi
 }
 
 [RequireComponent(typeof(Collider))]
@@ -132,6 +137,13 @@ public class BinTrigger : MonoBehaviour
         
         Debug.Log($"<color=cyan>[BinTrigger]</color> Kutu Türü: {_acceptedWasteType} | Gelen Çöp Türü: {incomingType} | Eşleşme: {isCorrect}");
 
+        // Tepki Süresi (Reaction Time) Hesaplama
+        float reactionTime = 0f;
+        if (physicsTuner != null)
+        {
+            reactionTime = Time.time - physicsTuner.SpawnTime;
+        }
+
         // Diğer Manager sınıflarına yayınlanacak veri paketi
         SortResultData resultData = new SortResultData
         {
@@ -140,7 +152,10 @@ public class BinTrigger : MonoBehaviour
 
             CoinChange
             HapticDuration = isCorrect ? _correctHapticDuration : _incorrectHapticDuration,
-            HapticAmplitude = isCorrect ? _correctHapticAmplitude : _incorrectHapticAmplitude
+            HapticAmplitude = isCorrect ? _correctHapticAmplitude : _incorrectHapticAmplitude,
+            TargetBinType = _acceptedWasteType,
+            WasGoldenWaste = isGoldenWaste,
+            ReactionTime = reactionTime
         };
 
         Debug.Log($"<color=magenta>[BinTrigger]</color> OnWasteProcessed sinyali fırlatılıyor! Puan: {resultData.ScoreChange} | Coin: {resultData.CoinChange} | XP: {resultData.XpChange}");

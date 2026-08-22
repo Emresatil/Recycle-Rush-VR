@@ -189,7 +189,7 @@ namespace RecycleRush.UI
                     if (gameOverPanel != null) gameOverPanel.SetActive(false);
                     break;
                     
-                case GameState.ReadyToStart:
+                case GameState.Placement:
                     if (statusText != null) 
                     {
                         if (PlayerPrefs.GetInt("TutorialDone", 0) == 0)
@@ -457,7 +457,7 @@ namespace RecycleRush.UI
         {
             if (GameManager.Instance != null)
             {
-                GameManager.Instance.PrepareToStart();
+                GameManager.Instance.RestartGame();
             }
         }
 

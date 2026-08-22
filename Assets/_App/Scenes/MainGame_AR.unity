@@ -367,11 +367,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 98309395}
   m_CullTransparentMesh: 1
---- !u!1 &124221092 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 7361185779319695345, guid: 8ecccfb49a31c0c43bdfbb4050342591, type: 3}
-  m_PrefabInstance: {fileID: 1773524236}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &181102285
 GameObject:
   m_ObjectHideFlags: 0
@@ -4897,10 +4892,6 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 876783937}
     - target: {fileID: 1384410119265384506, guid: 8ecccfb49a31c0c43bdfbb4050342591, type: 3}
-      propertyPath: environmentModules.Array.size
-      value: 4
-      objectReference: {fileID: 0}
-    - target: {fileID: 1384410119265384506, guid: 8ecccfb49a31c0c43bdfbb4050342591, type: 3}
       propertyPath: 'environmentModules.Array.data[0]'
       value: 
       objectReference: {fileID: 232248838}
@@ -4909,17 +4900,9 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 1305199143}
     - target: {fileID: 1384410119265384506, guid: 8ecccfb49a31c0c43bdfbb4050342591, type: 3}
-      propertyPath: 'environmentModules.Array.data[2]'
-      value: 
-      objectReference: {fileID: 0}
-    - target: {fileID: 1384410119265384506, guid: 8ecccfb49a31c0c43bdfbb4050342591, type: 3}
       propertyPath: 'environmentModules.Array.data[3]'
       value: 
       objectReference: {fileID: 1778652163}
-    - target: {fileID: 1384410119265384506, guid: 8ecccfb49a31c0c43bdfbb4050342591, type: 3}
-      propertyPath: 'environmentModules.Array.data[4]'
-      value: 
-      objectReference: {fileID: 124221092}
     - target: {fileID: 1629354575857376435, guid: 8ecccfb49a31c0c43bdfbb4050342591, type: 3}
       propertyPath: m_Name
       value: CoreSystems_Module
@@ -4957,10 +4940,6 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 2007768098}
     - target: {fileID: 1645650733667161202, guid: 8ecccfb49a31c0c43bdfbb4050342591, type: 3}
-      propertyPath: menuPauseAction
-      value: 
-      objectReference: {fileID: 4116954447336496447, guid: 0be0028c24f2a4c14a96b6aa39055933, type: 3}
-    - target: {fileID: 1645650733667161202, guid: 8ecccfb49a31c0c43bdfbb4050342591, type: 3}
       propertyPath: pauseButtonUIObj
       value: 
       objectReference: {fileID: 844897609}
@@ -4972,22 +4951,6 @@ PrefabInstance:
       propertyPath: gameOverFinalScoreText
       value: 
       objectReference: {fileID: 1367585348}
-    - target: {fileID: 3835715989778914746, guid: 8ecccfb49a31c0c43bdfbb4050342591, type: 3}
-      propertyPath: _comboClip
-      value: 
-      objectReference: {fileID: 8300000, guid: 406b74154f18b974fa9014b9792ee218, type: 3}
-    - target: {fileID: 3835715989778914746, guid: 8ecccfb49a31c0c43bdfbb4050342591, type: 3}
-      propertyPath: _engineSource
-      value: 
-      objectReference: {fileID: 0}
-    - target: {fileID: 3835715989778914746, guid: 8ecccfb49a31c0c43bdfbb4050342591, type: 3}
-      propertyPath: _floorPenaltyClip
-      value: 
-      objectReference: {fileID: 8300000, guid: e733fb34f58bc794185e79c892e501d1, type: 3}
-    - target: {fileID: 4129714333503685258, guid: 8ecccfb49a31c0c43bdfbb4050342591, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 1.5807
-      objectReference: {fileID: 0}
     - target: {fileID: 4129714333503685258, guid: 8ecccfb49a31c0c43bdfbb4050342591, type: 3}
       propertyPath: m_LocalPosition.x
       value: 521
@@ -5028,34 +4991,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 5426869313483131964, guid: 8ecccfb49a31c0c43bdfbb4050342591, type: 3}
-      propertyPath: killZLevel
-      value: -5
-      objectReference: {fileID: 0}
-    - target: {fileID: 5426869313483131964, guid: 8ecccfb49a31c0c43bdfbb4050342591, type: 3}
-      propertyPath: maxDistance
-      value: 8
-      objectReference: {fileID: 0}
-    - target: {fileID: 5632405196166839191, guid: 8ecccfb49a31c0c43bdfbb4050342591, type: 3}
-      propertyPath: spawnPoint
-      value: 
-      objectReference: {fileID: 0}
     - target: {fileID: 5632405196166839191, guid: 8ecccfb49a31c0c43bdfbb4050342591, type: 3}
       propertyPath: tutorialText
       value: 
       objectReference: {fileID: 982353189}
     - target: {fileID: 5632405196166839191, guid: 8ecccfb49a31c0c43bdfbb4050342591, type: 3}
-      propertyPath: leverTransform
-      value: 
-      objectReference: {fileID: 0}
-    - target: {fileID: 5632405196166839191, guid: 8ecccfb49a31c0c43bdfbb4050342591, type: 3}
       propertyPath: targetBinTransform
       value: 
       objectReference: {fileID: 956718734}
-    - target: {fileID: 8280575345962410446, guid: 8ecccfb49a31c0c43bdfbb4050342591, type: 3}
-      propertyPath: _startingScore
-      value: 0
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
