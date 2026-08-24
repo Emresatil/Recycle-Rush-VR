@@ -19,6 +19,7 @@ public class ObjectPoolManager : MonoBehaviour
 
     // Sahnede aktif olan havuz objelerini takip etmek için liste
     private List<GameObject> _activeObjects = new List<GameObject>();
+    private Transform _poolContainer;
 
     private void Awake()
     {
@@ -30,6 +31,9 @@ public class ObjectPoolManager : MonoBehaviour
         else
         {
             Instance = this;
+            
+            // Havuz objelerini saklamak için Core_Managers'tan bağımsız güvenli bir depo oluştur
+            _poolContainer = new GameObject("ObjectPool_Container").transform;
         }
     }
 
@@ -65,31 +69,41 @@ public class ObjectPoolManager : MonoBehaviour
             objToSpawn.name = poolKey; // (Clone) takısını temiz tut
         }
 
-        // ÇOK KRİTİK: Objeyi aktifleştirmeden ÖNCE pozisyonunu ayarla.
-        // Çünkü SetActive(true) çağrıldığında BeltItem.OnEnable() çalışır ve AttachToBelt() metodu çalışır.
-        // Eğer pozisyonu sonradan ayarlarsak, AttachToBelt'in yaptığı hizalama ezilir!
+        // ÇOK KRİTİK: Objenin kök (Root) transformunu her ihtimale karşı ayarla
+        objToSpawn.transform.SetParent(null); // Objeyi havuz deposundan çıkar ki kendi Root'u olsun
         objToSpawn.transform.position = position;
         objToSpawn.transform.rotation = rotation;
-        
-        objToSpawn.SetActive(true);
 
         // Önceki hareketinden kalan Fiziksel etkileri ve kilitleri tam fabrika ayarlarına sıfırla
         Rigidbody[] rbs = objToSpawn.GetComponentsInChildren<Rigidbody>(true);
         foreach (Rigidbody rb in rbs)
         {
-            // Unity 6 Uyarısını Çözümleme: Kinematic bir objenin hızını sıfırlamaya çalışmak uyarı verir.
-            // Bu yüzden önce geçici olarak kinematic'i kapatıp hızları sıfırlıyoruz, sonra tekrar açıyoruz.
-            bool wasKinematic = rb.isKinematic;
-            if (wasKinematic) rb.isKinematic = false;
-
+            // 1. Unity 6 uyarısını önlemek için Kinematic kapalıyken hızları sıfırla
+            rb.isKinematic = false;
             rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
             
-            rb.isKinematic = false; // MR Güncellemesi: Bant olmadığı için doğrudan yerçekimiyle düşmeli
+            // 2. FİZİK MOTORU BUG ÇÖZÜMÜ (Phantom Forces):
+            // Transform'u taşırken eski interpolasyondan doğan hayalet (phantom) fırlatma gücünü
+            // engellemek için objeyi taşıma anında Kinematic (fiziksiz) duruma alıyoruz.
+            rb.isKinematic = true; 
+            
+            // 3. Child Rigidbody'lerin (varsa) kendi lokal pozisyonlarını bozmamak için direkt taşıma (position/rotation ataması) YAPMIYORUZ.
+            // Zaten root transform taşındığı için children otomatik taşındı.
+            
+            // 4. Taşıma bitti, yerçekimine geri bırak
+            rb.isKinematic = false; // Bant olmadığı için doğrudan yerçekimiyle düşmeli
             rb.useGravity = true;
             rb.constraints = RigidbodyConstraints.None;
-            rb.maxDepenetrationVelocity = 0.8f; 
+            
+            // ŞEYTANİ BUG 2: maxDepenetrationVelocity'yi 0.5f yapmak, yerçekiminin (9.81) itme gücünü yenmesine sebep oluyordu!
+            // Bu yüzden objeler yere çarpınca yukarı sekmek yerine zeminin içine yavaş yavaş batıp aşağı (Kill-Z'ye) düşüyordu!
+            // Bunu makul bir seviyeye (5.0f) çekiyoruz ki hem patlamalar engellensin hem de zeminden batmasınlar.
+            rb.maxDepenetrationVelocity = 5.0f; 
         }
+
+        // Hızlar ve konum sıfırlandıktan SONRA objeyi aktif et (Böylece Physics motoru fırlatmaz)
+        objToSpawn.SetActive(true);
 
         // MR Güncellemesi: BeltItem (VR Taşıyıcı Bant) kaldırıldı. Objeler AR ortamında serbest düşüş yapacak.
         
@@ -100,7 +114,14 @@ public class ObjectPoolManager : MonoBehaviour
             objToSpawn.AddComponent<RecycleRush.Interaction.WasteAudioFeedback>();
         }
 
-        // Aktif objeler listesine ekle (Kill-Z takibi için)
+        // 3) Mıknatıs mekaniği için MagnetResponder ekle
+        if (objToSpawn.GetComponent<RecycleRush.Interaction.MagnetResponder>() == null &&
+            objToSpawn.GetComponentInChildren<RecycleRush.Interaction.MagnetResponder>() == null)
+        {
+            objToSpawn.AddComponent<RecycleRush.Interaction.MagnetResponder>();
+        }
+
+        // 4) Kill-Z sistemi için aktif objeler listesine ekle
         if (!_activeObjects.Contains(objToSpawn))
         {
             _activeObjects.Add(objToSpawn);
@@ -116,10 +137,44 @@ public class ObjectPoolManager : MonoBehaviour
     {
         if (obj == null) return;
 
+        // Failsafe: Havuz yöneticisini veya depo objesini havuza atmaya çalışırsak işlemi reddet!
+        if (obj == gameObject || (_poolContainer != null && obj == _poolContainer.gameObject))
+        {
+            Debug.LogError($"<color=red>[CRITICAL BUG PREVENTED]</color> Sistemi havuza atmaya çalıştınız! {obj.name} reddedildi.");
+            return;
+        }
+
+        // Zaten kapalıysa işlem yapma (Aynı objenin iki kez havuza dönmesini engeller)
+        if (!obj.activeInHierarchy) return;
+
         // Kill-Z takibinden çıkar
         if (_activeObjects.Contains(obj))
         {
             _activeObjects.Remove(obj);
+        }
+
+        // 1) EĞER OYUNCU OBJEYİ ELİNDE TUTARKEN HAVUZA GİDERSE (Süre bitimi, yere düşme vs.)
+        // XR sistemi bug'a girer ve obje tekrar doğduğunda oyuncunun eline veya uzaya mermi gibi fırlar!
+        // Bunu önlemek için grab bileşenini kapatıp açarak zorla elinden düşürtüyoruz.
+        var grab = obj.GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>();
+        if (grab == null) 
+            grab = obj.GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>(); // Eski sürüm yedeği
+            
+        if (grab != null && grab.isSelected)
+        {
+            grab.enabled = false;
+            grab.enabled = true; // Kapat-aç yapmak grab bağlantısını kesin olarak koparır.
+        }
+
+        // 2) EBEVEYN (PARENT) RESETLEME
+        // Objeleri ObjectPool_Container içine saklıyoruz ki root (Core_Managers) kirlenmesin.
+        if (_poolContainer != null)
+        {
+            obj.transform.SetParent(_poolContainer);
+        }
+        else
+        {
+            obj.transform.SetParent(null);
         }
 
         obj.SetActive(false); // Görünmez yap
@@ -156,6 +211,23 @@ public class ObjectPoolManager : MonoBehaviour
                 Destroy(obj);
             }
         }
+    }
+
+    /// <summary>
+    /// Sahnede aktif olan tüm çöpleri (havuz objelerini) temizler ve havuza geri gönderir.
+    /// Genelde oyun yeniden başlatıldığında (Restart) kullanılır.
+    /// </summary>
+    public void ReturnAllToPool()
+    {
+        for (int i = _activeObjects.Count - 1; i >= 0; i--)
+        {
+            GameObject obj = _activeObjects[i];
+            if (obj != null && obj.activeInHierarchy)
+            {
+                ReturnToPool(obj);
+            }
+        }
+        _activeObjects.Clear();
     }
 
     private void Update()

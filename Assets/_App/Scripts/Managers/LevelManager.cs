@@ -15,7 +15,7 @@ namespace RecycleRush.Managers
         [SerializeField] private int _baseRequiredXp = 100;
         
         [Tooltip("Her seviyede gereken XP'nin ne kadar katlanarak artacağı (Üstel Formül Çarpanı)")]
-        [SerializeField] private float _xpMultiplier = 1.5f;
+        [SerializeField] private float _xpMultiplier = 1.25f;
 
         // Okunabilir Propertiler (Dışarıdan salt okunur)
         public int CurrentLevel { get; private set; }
@@ -89,6 +89,13 @@ namespace RecycleRush.Managers
         public void AddXp(int amount)
         {
             if (amount <= 0) return;
+
+            // Etkinlik aktifse 2 katı XP kazan!
+            if (EventManager.Instance != null && EventManager.Instance.CurrentEvent == GameEventType.DoubleXP)
+            {
+                amount *= 2;
+                Debug.Log("<color=magenta>[LevelManager]</color> DOUBLE XP ETKİNLİĞİ AKTİF! 2 Katı XP kazanıldı.");
+            }
 
             CurrentXP += amount;
             Debug.Log($"<color=cyan>[LevelManager]</color> {amount} XP kazanıldı! Mevcut XP: {CurrentXP}/{RequiredXP}");

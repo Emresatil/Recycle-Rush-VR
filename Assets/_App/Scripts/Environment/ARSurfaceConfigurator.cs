@@ -49,15 +49,15 @@ namespace RecycleRush.Environment
 
         private void OnEnable()
         {
-            _planeManager.planesChanged += OnPlanesChanged;
+            _planeManager.trackablesChanged.AddListener(OnPlanesChanged);
         }
 
         private void OnDisable()
         {
-            _planeManager.planesChanged -= OnPlanesChanged;
+            _planeManager.trackablesChanged.RemoveListener(OnPlanesChanged);
         }
 
-        private void OnPlanesChanged(ARPlanesChangedEventArgs args)
+        private void OnPlanesChanged(ARTrackablesChangedEventArgs<ARPlane> args)
         {
             // Yeni taranan zeminler odaya eklendikçe onlara müdahale et
             foreach (var plane in args.added)
@@ -96,13 +96,13 @@ namespace RecycleRush.Environment
             boxCollider.center = new Vector3(0, -0.025f, 0); // Yüzeyin tam hizasında kalması için merkezi aşağı kaydır
 
             // Zeminin tipine göre uygun sürtünmeyi uygula
-            if (plane.classification == PlaneClassification.Floor)
+            if (plane.classifications.HasFlag(PlaneClassifications.Floor))
             {
                 boxCollider.sharedMaterial = _floorMaterial;
                 Debug.Log("<color=green>[AR Zemin]</color> Zemin tespit edildi, Etli BoxCollider ve Halı sürtünmesi eklendi.");
             }
-            else if (plane.classification == PlaneClassification.Table || 
-                     plane.classification == PlaneClassification.Seat)
+            else if (plane.classifications.HasFlag(PlaneClassifications.Table) || 
+                     plane.classifications.HasFlag(PlaneClassifications.Seat))
             {
                 boxCollider.sharedMaterial = _tableMaterial;
                 Debug.Log("<color=yellow>[AR Zemin]</color> Masa/Koltuk tespit edildi, Etli BoxCollider ve Masa sürtünmesi eklendi.");

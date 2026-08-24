@@ -61,6 +61,13 @@ namespace RecycleRush.Managers
         {
             if (amount <= 0) return;
 
+            // Etkinlik aktifse 2 katı Coin kazan!
+            if (EventManager.Instance != null && EventManager.Instance.CurrentEvent == GameEventType.DoubleCoins)
+            {
+                amount *= 2;
+                Debug.Log("<color=magenta>[EconomyManager]</color> DOUBLE COINS ETKİNLİĞİ AKTİF! 2 Katı Altın kazanıldı.");
+            }
+
             CurrentCoins += amount;
             Debug.Log($"<color=yellow>[EconomyManager]</color> {amount} Coin kazanıldı! Mevcut Coin: {CurrentCoins}");
 

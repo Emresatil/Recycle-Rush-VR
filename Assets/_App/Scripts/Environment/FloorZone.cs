@@ -70,16 +70,21 @@ namespace RecycleRush.Environment
 
         private void OnTriggerEnter(Collider other)
         {
+            if (other == null) return;
+            
             if (IsWaste(other))
             {
-                // Objenin en tepesindeki Root'u ve varsa tutma (Grab) bileşenini bul
-                GameObject rootObj = other.transform.root.gameObject;
-                XRGrabInteractable grabInteractable = rootObj.GetComponentInChildren<XRGrabInteractable>();
+                // Objenin ana Rigidbody objesini bul (Bu sayede transform.root bug'ından kurtuluyoruz)
+                GameObject wasteObj = other.attachedRigidbody != null ? other.attachedRigidbody.gameObject : other.gameObject;
+                
+                if (!wasteObj.activeInHierarchy) return;
+
+                XRGrabInteractable grabInteractable = wasteObj.GetComponentInChildren<XRGrabInteractable>();
 
                 _itemsOnFloor[other] = new FloorItem
                 {
                     DropTime = Time.time,
-                    RootObject = rootObj,
+                    RootObject = wasteObj,
                     Interactable = grabInteractable
                 };
             }
@@ -87,10 +92,15 @@ namespace RecycleRush.Environment
 
         private void OnTriggerExit(Collider other)
         {
-            // Atık zemin alanından çıkarsa (Örn: Oyuncu eline alıp kaldırdıysa) listeden çıkar
-            if (_itemsOnFloor.ContainsKey(other))
+            // Atık zemin alanından çıkarsa (Örn: Oyuncu eline alıp kaldırdıysa) listeden çıkar.
+            // ŞEYTANİ BUG: Çöpler yerde kayarak FloorZone dışına çıkıyor ve listeden silindikleri için SONSUZA KADAR sahnede kalıyorlardı!
+            // Çözüm: Sadece oyuncu gerçekten eline aldıysa listeden çıkar, kendi kendine kayarak çıktıysa LİSTEDE KALSIN VE İMHA EDİLSİN!
+            if (_itemsOnFloor.TryGetValue(other, out FloorItem item))
             {
-                _itemsOnFloor.Remove(other);
+                if (item.Interactable != null && item.Interactable.isSelected)
+                {
+                    _itemsOnFloor.Remove(other); // Oyuncu eline aldı, kurtuldu.
+                }
             }
         }
 
@@ -156,11 +166,13 @@ namespace RecycleRush.Environment
         /// </summary>
         private bool IsWaste(Collider col)
         {
+            if (col == null) return false;
+            
             GameObject directObj = col.attachedRigidbody != null ? col.attachedRigidbody.gameObject : col.gameObject;
             if (HasWasteTag(directObj)) return true;
 
-            GameObject rootObj = col.transform.root.gameObject;
-            if (HasWasteTag(rootObj)) return true;
+            // Kum saati (PowerUp) için de kontrol ekliyoruz
+            if (directObj.CompareTag("Hourglass")) return true;
 
             return false;
         }
