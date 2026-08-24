@@ -1,57 +1,62 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 
 public class WasteSpawner : MonoBehaviour
 {
     [Header("Spawn Settings")]
-    [Tooltip("Üretilecek atık prefab'larının listesi")]
+    [Tooltip("Ãœretilecek atÄ±k prefab'larÄ±nÄ±n listesi")]
     public GameObject[] wastePrefabs;
     
     [Header("Surface Integration")]
-    [Tooltip("Eğer sahnede ISurfaceProvider varsa çöpler bu yüzey türünün üzerinde doğar.")]
+    [Tooltip("EÄŸer sahnede ISurfaceProvider varsa Ã§Ã¶pler bu yÃ¼zey tÃ¼rÃ¼nÃ¼n Ã¼zerinde doÄŸar.")]
     public RecycleRush.Environment.SurfaceType targetSurfaceType = RecycleRush.Environment.SurfaceType.Any;
     
     private RecycleRush.Environment.ISurfaceProvider _surfaceProvider;
 
-    [Tooltip("Atıkların düşeceği başlangıç noktası")]
+    [Tooltip("AtÄ±klarÄ±n dÃ¼ÅŸeceÄŸi baÅŸlangÄ±Ã§ noktasÄ±")]
     public Transform spawnPoint;
 
     [Header("Golden Waste Settings")]
-    [Tooltip("Nadir (Joker) olarak düşecek Altın Çöp Prefab'ı")]
+    [Tooltip("Nadir (Joker) olarak dÃ¼ÅŸecek AltÄ±n Ã‡Ã¶p Prefab'Ä±")]
     public GameObject goldenWastePrefab;
-    [Tooltip("Altın Çöp'ün çıkma ihtimali (Yüzde % olarak)")]
+    [Tooltip("AltÄ±n Ã‡Ã¶p'Ã¼n Ã§Ä±kma ihtimali (YÃ¼zde % olarak)")]
     [Range(0f, 100f)] public float goldenSpawnChance = 5f;
 
     [Header("Mystery Package Settings")]
-    [Tooltip("Nadir olarak düşecek Sürpriz Kutu Prefab'ı")]
+    [Tooltip("Nadir olarak dÃ¼ÅŸecek SÃ¼rpriz Kutu Prefab'Ä±")]
+        [Header("Power-Up Settings (Friend)")]
+    public GameObject hourglassPrefab;
+    public GameObject magnetPrefab;
+    [Range(0f, 100f)] public float hourglassSpawnChance = 10f;
+    [Range(0f, 100f)] public float magnetSpawnChance = 8f;
     public GameObject wastePackagePrefab;
-    [Tooltip("Sürpriz Kutu'nun çıkma ihtimali (Yüzde % olarak)")]
+    [Tooltip("SÃ¼rpriz Kutu'nun Ã§Ä±kma ihtimali (YÃ¼zde % olarak)")]
     [Range(0f, 100f)] public float packageSpawnChance = 5f;
 
     [Header("Visual Effects")]
-    [Tooltip("Çöplerin çıktığı portalın görsel animatörü (İsteğe bağlı)")]
+    [Tooltip("Ã‡Ã¶plerin Ã§Ä±ktÄ±ÄŸÄ± portalÄ±n gÃ¶rsel animatÃ¶rÃ¼ (Ä°steÄŸe baÄŸlÄ±)")]
     public RecycleRush.Environment.PortalAnimator portalAnimator;
     
-    // YENİ (Analytics): Altın çöp üretildiğinde dinleyicilere (AnalyticsManager) fırlatılan sinyal
+    // YENÄ° (Analytics): AltÄ±n Ã§Ã¶p Ã¼retildiÄŸinde dinleyicilere (AnalyticsManager) fÄ±rlatÄ±lan sinyal
     public static event System.Action OnGoldenWasteSpawned;
     
     [Header("Organik Zamanlama (Zorluk)")]
-    [Tooltip("En az kaç saniyede bir atık düşsün?")]
+    [Tooltip("En az kaÃ§ saniyede bir atÄ±k dÃ¼ÅŸsÃ¼n?")]
     public float minSpawnInterval = 0.8f;
-    [Tooltip("En fazla kaç saniyede bir atık düşsün?")]
+    [Tooltip("En fazla kaÃ§ saniyede bir atÄ±k dÃ¼ÅŸsÃ¼n?")]
     public float maxSpawnInterval = 1.5f;
 
 
 
-    // Tekrarı önlemek için son üretilen çöpü hafızada tutuyoruz
+    // TekrarÄ± Ã¶nlemek iÃ§in son Ã¼retilen Ã§Ã¶pÃ¼ hafÄ±zada tutuyoruz
     private GameObject _lastSpawnedPrefab = null;
 
     [Header("Composite Waste Settings")]
-    [Tooltip("Görsel bağ/bant materyali. Composite çöpleri bağlarken kullanılır.")]
+    [Tooltip("GÃ¶rsel baÄŸ/bant materyali. Composite Ã§Ã¶pleri baÄŸlarken kullanÄ±lÄ±r.")]
     [SerializeField] private Material _tapeMaterial;
 
     [Header("Dirty Waste Settings")]
-    [Tooltip("Kirli çöplerin üzerine eklenecek çamur/kir balçığı görseli (Prefab)")]
+    [Tooltip("Kirli Ã§Ã¶plerin Ã¼zerine eklenecek Ã§amur/kir balÃ§Ä±ÄŸÄ± gÃ¶rseli (Prefab)")]
     [SerializeField] private GameObject _dirtVisualPrefab;
 
     private Coroutine _spawnCoroutine;
@@ -63,10 +68,10 @@ public class WasteSpawner : MonoBehaviour
     {
         if (spawnPoint == null)
         {
-            spawnPoint = this.transform; // Eğer atanmamışsa kendi transformunu kullan
+            spawnPoint = this.transform; // EÄŸer atanmamÄ±ÅŸsa kendi transformunu kullan
         }
 
-        // Sahnede ISurfaceProvider arayüzünü uygulayan bir yönetici bul
+        // Sahnede ISurfaceProvider arayÃ¼zÃ¼nÃ¼ uygulayan bir yÃ¶netici bul
         var components = FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None);
         foreach (var comp in components)
         {
@@ -77,7 +82,7 @@ public class WasteSpawner : MonoBehaviour
             }
         }
 
-        // Zorluk seviyesi değiştikçe baz alınacak orijinal değerleri önbelleğe (Cache) alıyoruz.
+        // Zorluk seviyesi deÄŸiÅŸtikÃ§e baz alÄ±nacak orijinal deÄŸerleri Ã¶nbelleÄŸe (Cache) alÄ±yoruz.
         _baseMinSpawnInterval = minSpawnInterval;
         _baseMaxSpawnInterval = maxSpawnInterval;
     }
@@ -91,32 +96,32 @@ public class WasteSpawner : MonoBehaviour
 
     private void OnDisable()
     {
-        // Script veya obje kapandığında Event aboneliğini kaldır (Memory leak önlemi)
+        // Script veya obje kapandÄ±ÄŸÄ±nda Event aboneliÄŸini kaldÄ±r (Memory leak Ã¶nlemi)
         GameManager.OnGameStateChanged -= HandleGameStateChanged;
         DifficultyManager.OnDifficultyLevelChanged -= UpdateSpawnSpeed;
     }
 
     /// <summary>
-    /// DifficultyManager'dan gelen hız çarpanına göre atık üretme sıklığını günceller.
+    /// DifficultyManager'dan gelen hÄ±z Ã§arpanÄ±na gÃ¶re atÄ±k Ã¼retme sÄ±klÄ±ÄŸÄ±nÄ± gÃ¼nceller.
     /// </summary>
     private void UpdateSpawnSpeed(float multiplier)
     {
-        // Zorluk arttıkça bekleme süresi kısalır ama çakışmayı önlemek için minimum 0.6s sınır konur
+        // Zorluk arttÄ±kÃ§a bekleme sÃ¼resi kÄ±salÄ±r ama Ã§akÄ±ÅŸmayÄ± Ã¶nlemek iÃ§in minimum 0.6s sÄ±nÄ±r konur
         minSpawnInterval = Mathf.Max(0.6f, _baseMinSpawnInterval / multiplier);
         maxSpawnInterval = Mathf.Max(1.0f, _baseMaxSpawnInterval / multiplier);
         
-        Debug.Log($"<color=cyan>[WasteSpawner]</color> Yeni zorluğa uyarlandı! Üretim süresi: {minSpawnInterval:F1}s - {maxSpawnInterval:F1}s");
+        Debug.Log($"<color=cyan>[WasteSpawner]</color> Yeni zorluÄŸa uyarlandÄ±! Ãœretim sÃ¼resi: {minSpawnInterval:F1}s - {maxSpawnInterval:F1}s");
     }
 
     private void Start()
     {
         if (wastePrefabs.Length == 0 || spawnPoint == null)
         {
-            Debug.LogWarning("WasteSpawner: Prefab listesi veya Spawn Point boş!");
+            Debug.LogWarning("WasteSpawner: Prefab listesi veya Spawn Point boÅŸ!");
             return;
         }
 
-        // Eğer oyun bizden önce çoktan Playing statüsüne geçmişse (Start çalışma sırası farkından) manuel tetikle
+        // EÄŸer oyun bizden Ã¶nce Ã§oktan Playing statÃ¼sÃ¼ne geÃ§miÅŸse (Start Ã§alÄ±ÅŸma sÄ±rasÄ± farkÄ±ndan) manuel tetikle
         if (GameManager.Instance != null && GameManager.Instance.CurrentState == GameState.Playing)
         {
             HandleGameStateChanged(GameState.Playing);
@@ -125,19 +130,19 @@ public class WasteSpawner : MonoBehaviour
 
     private void HandleGameStateChanged(GameState newState)
     {
-        Debug.Log($"<color=magenta>[WasteSpawner]</color> Oyun Durumu Yakalandı: {newState}");
+        Debug.Log($"<color=magenta>[WasteSpawner]</color> Oyun Durumu YakalandÄ±: {newState}");
         if (newState == GameState.Playing)
         {
-            // Sadece oyun aktifken spawn işlemini başlat
+            // Sadece oyun aktifken spawn iÅŸlemini baÅŸlat
             if (_spawnCoroutine == null)
             {
-                Debug.Log("<color=magenta>[WasteSpawner]</color> Coroutine BAŞLATILIYOR!");
+                Debug.Log("<color=magenta>[WasteSpawner]</color> Coroutine BAÅLATILIYOR!");
                 _spawnCoroutine = StartCoroutine(SpawnRoutine());
             }
         }
         else
         {
-            // Pause veya GameOver durumunda üretimi durdur
+            // Pause veya GameOver durumunda Ã¼retimi durdur
             if (_spawnCoroutine != null)
             {
                 Debug.Log("<color=magenta>[WasteSpawner]</color> Coroutine DURDURULUYOR!");
@@ -149,7 +154,7 @@ public class WasteSpawner : MonoBehaviour
 
     IEnumerator SpawnRoutine()
     {
-        // Oyun başlarken oyuncuya 2 saniye hazırlanma payı ver
+        // Oyun baÅŸlarken oyuncuya 2 saniye hazÄ±rlanma payÄ± ver
         yield return new WaitForSeconds(2f);
 
         while (true)
@@ -158,14 +163,14 @@ public class WasteSpawner : MonoBehaviour
 
             if (spawned)
             {
-                // 1. Özellik: Eşit zaman aralıkları. (Rastgelelik kaldırıldı, tam orta değer kullanılıyor)
+                // 1. Ã–zellik: EÅŸit zaman aralÄ±klarÄ±. (Rastgelelik kaldÄ±rÄ±ldÄ±, tam orta deÄŸer kullanÄ±lÄ±yor)
                 float fixedWait = (minSpawnInterval + maxSpawnInterval) / 2f;
                 yield return new WaitForSeconds(fixedWait);
             }
             else
             {
-                // Eğer doğma noktası doluysa tam tur (örn: 3 saniye) beklemek yerine 0.2sn sonra tekrar dene!
-                // Bu sayede aralarda oluşan devasa boşluklar (atlama sorunu) tamamen çözüldü.
+                // EÄŸer doÄŸma noktasÄ± doluysa tam tur (Ã¶rn: 3 saniye) beklemek yerine 0.2sn sonra tekrar dene!
+                // Bu sayede aralarda oluÅŸan devasa boÅŸluklar (atlama sorunu) tamamen Ã§Ã¶zÃ¼ldÃ¼.
                 yield return new WaitForSeconds(0.2f);
             }
         }
@@ -173,14 +178,14 @@ public class WasteSpawner : MonoBehaviour
 
     bool SpawnWaste()
     {
-        // Null koruması
+        // Null korumasÄ±
         if (wastePrefabs == null || wastePrefabs.Length == 0) return false;
 
-        // 3. Özellik: Sabit Konum (Y ekseninde çakışma önleyici 0.15m yükseklik)
+        // 3. Ã–zellik: Sabit Konum (Y ekseninde Ã§akÄ±ÅŸma Ã¶nleyici 0.15m yÃ¼kseklik)
         Vector3 fixedOffset = new Vector3(0f, 0.15f, 0f);
         Vector3 finalSpawnPosition = Vector3.zero;
 
-        // Yüzey (Surface) mimarisine göre doğma noktasını belirle
+        // YÃ¼zey (Surface) mimarisine gÃ¶re doÄŸma noktasÄ±nÄ± belirle
         if (_surfaceProvider != null && _surfaceProvider.TryGetRandomSurfacePoint(targetSurfaceType, out var surfaceData))
         {
             finalSpawnPosition = surfaceData.Position + fixedOffset;
@@ -189,11 +194,11 @@ public class WasteSpawner : MonoBehaviour
         {
             if (_surfaceProvider == null)
             {
-                Debug.LogWarning("<color=red>[DEDEKTİF]</color> Sahnede ISurfaceProvider (Örn: SurfaceManager) YOK! Eski havadan doğma noktasına geçiliyor.");
+                Debug.LogWarning("<color=red>[DEDEKTÄ°F]</color> Sahnede ISurfaceProvider (Ã–rn: SurfaceManager) YOK! Eski havadan doÄŸma noktasÄ±na geÃ§iliyor.");
             }
             else
             {
-                Debug.LogWarning($"<color=red>[DEDEKTİF]</color> Sahnede '{targetSurfaceType}' türünde bir MockSurface YOK veya Yüzey Bulunamadı! Eski noktaya geçiliyor.");
+                Debug.LogWarning($"<color=red>[DEDEKTÄ°F]</color> Sahnede '{targetSurfaceType}' tÃ¼rÃ¼nde bir MockSurface YOK veya YÃ¼zey BulunamadÄ±! Eski noktaya geÃ§iliyor.");
             }
             finalSpawnPosition = spawnPoint.position + fixedOffset;
         }
@@ -202,43 +207,43 @@ public class WasteSpawner : MonoBehaviour
             return false;
         }
 
-        // 1.5 Özellik: Doğma noktasının henüz boşalıp boşalmadığını kontrol et (Üst üste doğup patlamayı %100 engeller)
+        // 1.5 Ã–zellik: DoÄŸma noktasÄ±nÄ±n henÃ¼z boÅŸalÄ±p boÅŸalmadÄ±ÄŸÄ±nÄ± kontrol et (Ãœst Ã¼ste doÄŸup patlamayÄ± %100 engeller)
         Collider[] existingColliders = Physics.OverlapSphere(finalSpawnPosition, 0.15f);
         foreach (var col in existingColliders)
         {
             if (spawnPoint != null && col.transform.root != spawnPoint.root && !col.isTrigger && col.attachedRigidbody != null)
             {
-                // Sadece çöpler engellesin (Bandın kendisi engel sayılmasın!)
+                // Sadece Ã§Ã¶pler engellesin (BandÄ±n kendisi engel sayÄ±lmasÄ±n!)
                 if (HasWasteTag(col.gameObject))
                 {
-                    return false; // Dolu olduğu için üretemedik
+                    return false; // Dolu olduÄŸu iÃ§in Ã¼retemedik
                 }
             }
         }
 
         float randomRoll = Random.Range(0f, 100f);
         
-        // 5. Özel: Altın Çöp Şansı veya Sürpriz Kutu Şansı
+        // 5. Ã–zel: AltÄ±n Ã‡Ã¶p ÅansÄ± veya SÃ¼rpriz Kutu ÅansÄ±
         GameObject selectedPrefab = null;
         
-        // Önce paketi kontrol et, paket gelmezse altın çöpe bak
+        // Ã–nce paketi kontrol et, paket gelmezse altÄ±n Ã§Ã¶pe bak
         if (wastePackagePrefab != null && randomRoll <= packageSpawnChance)
         {
             selectedPrefab = wastePackagePrefab;
-            Debug.Log($"<color=#D87093>[WasteSpawner]</color> SÜRPRİZ KUTU (PACKAGE) Üretiliyor!");
+            Debug.Log($"<color=#D87093>[WasteSpawner]</color> SÃœRPRÄ°Z KUTU (PACKAGE) Ãœretiliyor!");
         }
         else if (goldenWastePrefab != null)
         {
-            // Paket şansının üzerine ekleniyor (örn: paket %5 ise altın çöp 5 ile 10 arasında değerlendirilir)
+            // Paket ÅŸansÄ±nÄ±n Ã¼zerine ekleniyor (Ã¶rn: paket %5 ise altÄ±n Ã§Ã¶p 5 ile 10 arasÄ±nda deÄŸerlendirilir)
             if (randomRoll <= (packageSpawnChance + goldenSpawnChance))
             {
                 selectedPrefab = goldenWastePrefab;
-                Debug.Log($"<color=yellow>[WasteSpawner]</color> BÜYÜK ŞANS! Altın Çöp üretiliyor!");
+                Debug.Log($"<color=yellow>[WasteSpawner]</color> BÃœYÃœK ÅANS! AltÄ±n Ã‡Ã¶p Ã¼retiliyor!");
                 OnGoldenWasteSpawned?.Invoke(); // Analiz sistemine haber ver
             }
         }
 
-        // Eğer altın çöp çıkmadıysa normal rastgele çöplerden seç
+        // EÄŸer altÄ±n Ã§Ã¶p Ã§Ä±kmadÄ±ysa normal rastgele Ã§Ã¶plerden seÃ§
         if (selectedPrefab == null)
         {
             selectedPrefab = GetRandomPrefab();
@@ -246,19 +251,19 @@ public class WasteSpawner : MonoBehaviour
 
         if (selectedPrefab == null) return false;
 
-        Debug.Log($"<color=magenta>[WasteSpawner]</color> Çöp üretimi tetiklendi: {selectedPrefab.name}");
+        Debug.Log($"<color=magenta>[WasteSpawner]</color> Ã‡Ã¶p Ã¼retimi tetiklendi: {selectedPrefab.name}");
 
-        // 4. Özellik: Dik Rotasyon
+        // 4. Ã–zellik: Dik Rotasyon
         Quaternion uprightRandomRotation = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
 
-        // Obje üretimi veya havuzdan çekim
+        // Obje Ã¼retimi veya havuzdan Ã§ekim
         GameObject spawnedA = ObjectPoolManager.Instance.SpawnFromPool(selectedPrefab.tag, selectedPrefab, finalSpawnPosition, uprightRandomRotation);
         
-        // Composite Waste (Yapışık Çöp) Mantığı
+        // Composite Waste (YapÄ±ÅŸÄ±k Ã‡Ã¶p) MantÄ±ÄŸÄ±
         float compositeChance = GetCompositeChance();
         bool spawnComposite = (randomRoll > goldenSpawnChance) && (Random.Range(0f, 100f) <= compositeChance);
         
-        // Dirty Waste (Kirli Çöp) Mantığı - Composite ile çakışmaz!
+        // Dirty Waste (Kirli Ã‡Ã¶p) MantÄ±ÄŸÄ± - Composite ile Ã§akÄ±ÅŸmaz!
         bool spawnDirty = false;
         if (!spawnComposite && randomRoll > goldenSpawnChance)
         {
@@ -268,27 +273,27 @@ public class WasteSpawner : MonoBehaviour
 
         if (spawnComposite && _tapeMaterial != null)
         {
-            GameObject selectedB = GetRandomPrefab(); // İkinci rastgele çöp
+            GameObject selectedB = GetRandomPrefab(); // Ä°kinci rastgele Ã§Ã¶p
             if (selectedB != null)
             {
-                Vector3 offsetPos = finalSpawnPosition + new Vector3(0.35f, 0, 0); // Objeler iç içe girip patlamasın diye aralığı açtık
+                Vector3 offsetPos = finalSpawnPosition + new Vector3(0.35f, 0, 0); // Objeler iÃ§ iÃ§e girip patlamasÄ±n diye aralÄ±ÄŸÄ± aÃ§tÄ±k
                 GameObject spawnedB = ObjectPoolManager.Instance.SpawnFromPool(selectedB.tag, selectedB, offsetPos, uprightRandomRotation);
 
-                // Bileşenleri güvenli şekilde al veya ekle (Runtime Allocation'u önlemek için)
+                // BileÅŸenleri gÃ¼venli ÅŸekilde al veya ekle (Runtime Allocation'u Ã¶nlemek iÃ§in)
                 var glue = spawnedA.GetComponent<RecycleRush.Interaction.WasteGlue>();
                 if (glue == null) glue = spawnedA.AddComponent<RecycleRush.Interaction.WasteGlue>();
 
                 var ctrl = spawnedA.GetComponent<RecycleRush.Interaction.CompositeWasteController>();
                 if (ctrl == null) ctrl = spawnedA.AddComponent<RecycleRush.Interaction.CompositeWasteController>();
 
-                // Bağla
+                // BaÄŸla
                 var interactableA = spawnedA.GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>();
                 var interactableB = spawnedB.GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>();
                 
                 if (interactableA != null && interactableB != null)
                 {
                     glue.Bind(interactableA, interactableB, _tapeMaterial);
-                    Debug.Log($"<color=cyan>[Composite Waste]</color> İki çöp birbirine yapıştırıldı! ({selectedPrefab.name} + {selectedB.name})");
+                    Debug.Log($"<color=cyan>[Composite Waste]</color> Ä°ki Ã§Ã¶p birbirine yapÄ±ÅŸtÄ±rÄ±ldÄ±! ({selectedPrefab.name} + {selectedB.name})");
                 }
             }
         }
@@ -297,33 +302,33 @@ public class WasteSpawner : MonoBehaviour
             var dirtyCtrl = spawnedA.GetComponent<RecycleRush.Interaction.DirtyWasteController>();
             if (dirtyCtrl == null) dirtyCtrl = spawnedA.AddComponent<RecycleRush.Interaction.DirtyWasteController>();
 
-            // Kir görseli prefab'ı verilmişse ve objede henüz yoksa child olarak ekle
+            // Kir gÃ¶rseli prefab'Ä± verilmiÅŸse ve objede henÃ¼z yoksa child olarak ekle
             if (dirtyCtrl.dirtVisual == null && _dirtVisualPrefab != null)
             {
                 var visual = Instantiate(_dirtVisualPrefab, spawnedA.transform);
                 visual.transform.localPosition = Vector3.zero;
-                // Kutu gibi büyük, şişe gibi uzun objelere otomatik sarmalaması için boyutu çöpün boyutuna uydurabiliriz
+                // Kutu gibi bÃ¼yÃ¼k, ÅŸiÅŸe gibi uzun objelere otomatik sarmalamasÄ± iÃ§in boyutu Ã§Ã¶pÃ¼n boyutuna uydurabiliriz
                 visual.transform.localScale = Vector3.one; 
                 dirtyCtrl.dirtVisual = visual;
             }
 
             dirtyCtrl.InitializeDirtyState();
-            Debug.Log($"<color=brown>[Dirty Waste]</color> Kirli çöp üretildi: {selectedPrefab.name}");
+            Debug.Log($"<color=brown>[Dirty Waste]</color> Kirli Ã§Ã¶p Ã¼retildi: {selectedPrefab.name}");
         }
 
-        // Eğer portalımız varsa, çöp çıktığı anda şişme animasyonunu oynat!
+        // EÄŸer portalÄ±mÄ±z varsa, Ã§Ã¶p Ã§Ä±ktÄ±ÄŸÄ± anda ÅŸiÅŸme animasyonunu oynat!
         if (portalAnimator != null)
         {
             portalAnimator.PlaySpawnEffect();
         }
         
-        return true; // Başarıyla üretildi
+        return true; // BaÅŸarÄ±yla Ã¼retildi
     }
 
-    // Üst üste aynı objenin gelmesini engelleyen ve NULL elemanları süzcen fonksiyon
+    // Ãœst Ã¼ste aynÄ± objenin gelmesini engelleyen ve NULL elemanlarÄ± sÃ¼zcen fonksiyon
     GameObject GetRandomPrefab()
     {
-        // 1) Önce listedeki sadece NULL OLMAYAN (geçerli) prefab'ları topla
+        // 1) Ã–nce listedeki sadece NULL OLMAYAN (geÃ§erli) prefab'larÄ± topla
         System.Collections.Generic.List<GameObject> validPrefabs = new System.Collections.Generic.List<GameObject>();
         foreach (var p in wastePrefabs)
         {
@@ -352,7 +357,7 @@ public class WasteSpawner : MonoBehaviour
 
     private bool HasWasteTag(GameObject obj)
     {
-        // Untagged bile olsa üzerinde ARWastePhysicsTuner ve Altın Çöp tiki varsa engel say (Çakışma önleyici)
+        // Untagged bile olsa Ã¼zerinde ARWastePhysicsTuner ve AltÄ±n Ã‡Ã¶p tiki varsa engel say (Ã‡akÄ±ÅŸma Ã¶nleyici)
         var tuner = obj.GetComponentInChildren<RecycleRush.Interaction.ARWastePhysicsTuner>();
         if (tuner != null && tuner.isGoldenWaste)
         {
@@ -367,7 +372,7 @@ public class WasteSpawner : MonoBehaviour
 
     private float GetCompositeChance()
     {
-        // Seviyeye göre dinamik artan Composite şansı
+        // Seviyeye gÃ¶re dinamik artan Composite ÅŸansÄ±
         if (DifficultyManager.Instance == null) return 5f;
         int lvl = DifficultyManager.Instance.CurrentLevel;
         
@@ -379,7 +384,7 @@ public class WasteSpawner : MonoBehaviour
 
     private float GetDirtyChance()
     {
-        // Seviyeye göre artan Kirlilik Şansı (Oyuncunun belirttiği tablo)
+        // Seviyeye gÃ¶re artan Kirlilik ÅansÄ± (Oyuncunun belirttiÄŸi tablo)
         if (DifficultyManager.Instance == null) return 0f;
         int lvl = DifficultyManager.Instance.CurrentLevel;
 

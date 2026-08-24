@@ -200,7 +200,7 @@ namespace RecycleRush.Environment
             {
                 case ButtonType.Play:
                 case ButtonType.Retry:
-                    GameManager.Instance.RestartGame();
+                    GameManager.Instance.PrepareToStart();
                     break;
                 case ButtonType.Pause:
                     if (GameManager.Instance.CurrentState == GameState.Paused)
@@ -214,7 +214,7 @@ namespace RecycleRush.Environment
                     
                     if (targetManager == null || targetManager.settingsPanel == null)
                     {
-                        RecycleRush.UI.UIManager[] managers = FindObjectsOfType<RecycleRush.UI.UIManager>();
+                        RecycleRush.UI.UIManager[] managers = FindObjectsByType<RecycleRush.UI.UIManager>(FindObjectsSortMode.None);
                         foreach (var mgr in managers)
                         {
                             if (mgr.settingsPanel != null)
