@@ -64,10 +64,10 @@ namespace RecycleRush.Managers
 
         private void Start()
         {
-            // Eğer daha önce tamamlandıysa bu scripti komple kapat/yok et
+            // Eğer daha önce tamamlandıysa sadece bu scripti (component) yok et, tüm objeyi değil!
             if (PlayerPrefs.GetInt("TutorialDone", 0) == 1)
             {
-                Destroy(this.gameObject);
+                Destroy(this); // this.gameObject DEĞİL! Aksi takdirde Core_Managers'ı yok eder!
                 return;
             }
 
@@ -165,7 +165,7 @@ namespace RecycleRush.Managers
         {
             if (PlayerPrefs.GetInt("TutorialDone", 0) == 1) return;
 
-            if (state == GameState.Placement)
+            if (state == GameState.ReadyToStart)
             {
                 _currentStep = TutorialStep.PullLever;
                 UpdateTutorialUI("<color=yellow>TUTORIAL</color>\nPULL THE LEVER TO START");
@@ -285,8 +285,8 @@ namespace RecycleRush.Managers
                 GameManager.Instance.StartGame();
             }
             
-            // İşimiz bittiği için scripti yok edebiliriz
-            Destroy(this.gameObject);
+            // İşimiz bittiği için sadece bu scripti yok edebiliriz
+            Destroy(this);
         }
 
         private void UpdateTutorialUI(string message)

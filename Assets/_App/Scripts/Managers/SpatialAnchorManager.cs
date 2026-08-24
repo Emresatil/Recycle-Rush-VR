@@ -21,7 +21,7 @@ namespace RecycleRush.Managers
         {
             if (anchorManager == null)
             {
-                anchorManager = FindObjectOfType<ARAnchorManager>();
+                anchorManager = FindFirstObjectByType<ARAnchorManager>();
                 
                 if (anchorManager == null)
                 {
