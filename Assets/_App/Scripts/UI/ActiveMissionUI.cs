@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using TMPro;
 using RecycleRush.Managers;
 using System.Collections;
@@ -18,6 +18,7 @@ namespace RecycleRush.UI
         [SerializeField] private UnityEngine.UI.Image _backgroundImage;
 
         private Color _originalBackgroundColor;
+        private CanvasGroup _canvasGroup;
 
         private void Awake()
         {
@@ -25,26 +26,46 @@ namespace RecycleRush.UI
             {
                 _originalBackgroundColor = _backgroundImage.color;
             }
+            _canvasGroup = GetComponent<CanvasGroup>();
+            if (_canvasGroup == null)
+            {
+                _canvasGroup = gameObject.AddComponent<CanvasGroup>();
+            }
         }
 
         private void OnEnable()
         {
+            GameManager.OnGameStateChanged += HandleGameState;
             MissionManager.OnMissionProgressUpdated += HandleProgressUpdated;
             MissionManager.OnMissionCompleted += HandleMissionCompleted;
+            
+            if (GameManager.Instance != null)
+            {
+                HandleGameState(GameManager.Instance.CurrentState);
+            }
         }
 
         private void OnDisable()
         {
+            GameManager.OnGameStateChanged -= HandleGameState;
             MissionManager.OnMissionProgressUpdated -= HandleProgressUpdated;
             MissionManager.OnMissionCompleted -= HandleMissionCompleted;
         }
 
         private void Start()
         {
-            // İlk açılışta mevcut görevi çek
             if (MissionManager.Instance != null && MissionManager.Instance.ActiveMission != null)
             {
                 UpdateUI(MissionManager.Instance.ActiveMission);
+            }
+            
+            if (GameManager.Instance != null)
+            {
+                HandleGameState(GameManager.Instance.CurrentState);
+            }
+            else
+            {
+                HandleGameState(GameState.MainMenu);
             }
         }
 
@@ -76,7 +97,6 @@ namespace RecycleRush.UI
         {
             if (_backgroundImage != null)
             {
-                // Görev bittiğinde kısa süreliğine yeşil yap
                 _backgroundImage.color = Color.green;
                 
                 if (_missionDescriptionText != null) 
@@ -84,8 +104,18 @@ namespace RecycleRush.UI
                 
                 yield return new WaitForSeconds(2f);
                 
-                // Rengi eski haline döndür
                 _backgroundImage.color = _originalBackgroundColor;
+            }
+        }
+    
+        private void HandleGameState(GameState state)
+        {
+            bool show = (state == GameState.Playing);
+            if (_canvasGroup != null)
+            {
+                _canvasGroup.alpha = show ? 1f : 0f;
+                _canvasGroup.blocksRaycasts = show;
+                _canvasGroup.interactable = show;
             }
         }
     }

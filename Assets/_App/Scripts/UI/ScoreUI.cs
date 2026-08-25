@@ -1,13 +1,9 @@
-using UnityEngine;
+﻿using UnityEngine;
 using TMPro; 
 using RecycleRush.Core; 
 
 namespace RecycleRush.UI
 {
-    /// <summary>
-    /// ScoreManager'dan gelen (Event) sinyallerini dinleyip ekrandaki yazıyı güncelleyen UI sınıfı.
-    /// Profesyonel Lerp (Matematiksel İnterpolasyon) kullanılarak pürüzsüz animasyonlar sağlanır.
-    /// </summary>
     [RequireComponent(typeof(TextMeshProUGUI))] 
     public class ScoreUI : MonoBehaviour
     {
@@ -20,32 +16,54 @@ namespace RecycleRush.UI
 
         private TextMeshProUGUI _scoreText;
         private int _previousScore = 0;
+        private CanvasGroup _canvasGroup;
         
-        // Pürüzsüz (Smooth) geçiş hedefleri
         private Vector3 _originalScale;
         private Vector3 _targetScale;
         private Color _targetColor = Color.white;
 
         private void Awake()
         {
-            // Inspector'dan sürüklemeyi unutmalara karşı güvenli önbellekleme (Caching)
             _scoreText = GetComponent<TextMeshProUGUI>();
-            
             _originalScale = _scoreText.transform.localScale;
-            _targetScale = _originalScale; // Hedef boyut her zaman orijinal boyuttur
+            _targetScale = _originalScale;
+            
+            _canvasGroup = GetComponent<CanvasGroup>();
+            if (_canvasGroup == null)
+            {
+                _canvasGroup = gameObject.AddComponent<CanvasGroup>();
+            }
         }
 
-        private void Start()
+        private void OnEnable()
         {
+            GameManager.OnGameStateChanged += HandleGameState;
             if (ScoreManager.Instance != null)
             {
                 ScoreManager.Instance.OnScoreChanged += UpdateScoreDisplay;
                 UpdateScoreDisplay(ScoreManager.Instance.CurrentScore);
             }
+            if (GameManager.Instance != null)
+            {
+                HandleGameState(GameManager.Instance.CurrentState);
+            }
+        }
+
+        private void Start()
+        {
+            if (GameManager.Instance != null)
+            {
+                HandleGameState(GameManager.Instance.CurrentState);
+            }
+            else
+            {
+                HandleGameState(GameState.MainMenu);
+            }
         }
 
         private void OnDisable()
         {
+            GameManager.OnGameStateChanged -= HandleGameState;
             if (ScoreManager.Instance != null)
             {
                 ScoreManager.Instance.OnScoreChanged -= UpdateScoreDisplay;
@@ -54,9 +72,6 @@ namespace RecycleRush.UI
 
         private void Update()
         {
-            // PROFESYONEL DOKUNUŞ (Lerp): 
-            // Coroutine ile kaba saba bekleyip eski haline döndürmek yerine,
-            // her karede (frame) yazıyı pürüzsüz bir şekilde (tereyağı gibi) hedef boyutuna ve rengine küçültür.
             if (_scoreText.transform.localScale != _targetScale)
             {
                 _scoreText.transform.localScale = Vector3.Lerp(_scoreText.transform.localScale, _targetScale, Time.deltaTime * _lerpSpeed);
@@ -74,8 +89,6 @@ namespace RecycleRush.UI
 
             if (_previousScore != 0 || newScore != 0) 
             {
-                // Puan geldiğinde (veya düştüğünde) anında rengi ve boyutu patlatıyoruz (Pop).
-                // Update() fonksiyonu zaten onu zamanla yavaşça geriye (beyaza ve orijinal boyuta) çekecektir.
                 if (newScore < _previousScore)
                 {
                     _scoreText.color = Color.red; 
@@ -89,6 +102,17 @@ namespace RecycleRush.UI
             }
 
             _previousScore = newScore;
+        }
+    
+        private void HandleGameState(GameState state)
+        {
+            bool show = (state == GameState.Playing);
+            if (_canvasGroup != null)
+            {
+                _canvasGroup.alpha = show ? 1f : 0f;
+                _canvasGroup.blocksRaycasts = show;
+                _canvasGroup.interactable = show;
+            }
         }
     }
 }

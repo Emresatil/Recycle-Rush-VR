@@ -1,14 +1,10 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using RecycleRush.Core;
 
 namespace RecycleRush.UI
 {
-    /// <summary>
-    /// Kirlilik oranını holografik bir barda (Slider) ve yazıda (Text) gösterir.
-    /// RoomPollutionManager.OnPollutionChanged event'ini dinler.
-    /// </summary>
     public class PollutionUIController : MonoBehaviour
     {
         [Header("UI Referansları")]
@@ -26,45 +22,65 @@ namespace RecycleRush.UI
         [SerializeField] private Color _mildColor = Color.yellow;
         [SerializeField] private Color _dangerColor = Color.red;
 
+        private CanvasGroup _canvasGroup;
+
+        private void Awake()
+        {
+            _canvasGroup = GetComponent<CanvasGroup>();
+            if (_canvasGroup == null)
+            {
+                _canvasGroup = gameObject.AddComponent<CanvasGroup>();
+            }
+        }
+
         private void Start()
         {
             if (_pollutionBar != null)
             {
-                // Max değeri koddan sabitle (Normalde 100)
                 _pollutionBar.minValue = 0f;
-                _pollutionBar.maxValue = 100f; // Varsayılan max pollution
+                _pollutionBar.maxValue = 100f;
             }
-            
-            // Başlangıç değerini sıfırla
             UpdateUI(0f);
+            
+            if (GameManager.Instance != null)
+            {
+                HandleGameState(GameManager.Instance.CurrentState);
+            }
+            else
+            {
+                HandleGameState(GameState.MainMenu);
+            }
         }
 
         private void OnEnable()
         {
+            GameManager.OnGameStateChanged += HandleGameState;
             RoomPollutionManager.OnPollutionChanged += UpdateUI;
+            
+            if (GameManager.Instance != null)
+            {
+                HandleGameState(GameManager.Instance.CurrentState);
+            }
         }
 
         private void OnDisable()
         {
+            GameManager.OnGameStateChanged -= HandleGameState;
             RoomPollutionManager.OnPollutionChanged -= UpdateUI;
         }
 
         private void UpdateUI(float currentPollution)
         {
-            // Barı güncelle
             if (_pollutionBar != null)
             {
                 _pollutionBar.value = currentPollution;
             }
 
-            // Yazıyı güncelle
             if (_pollutionText != null)
             {
-                // Tam sayı olarak göster (%25, %40 gibi)
                 _pollutionText.text = $"%{Mathf.RoundToInt(currentPollution)}";
             }
 
-            // Opsiyonel: Tehlikeye göre barın rengini değiştir
             if (_barFillImage != null)
             {
                 if (currentPollution < 50f)
@@ -79,6 +95,17 @@ namespace RecycleRush.UI
                 {
                     _barFillImage.color = _dangerColor;
                 }
+            }
+        }
+    
+        private void HandleGameState(GameState state)
+        {
+            bool show = (state == GameState.Playing);
+            if (_canvasGroup != null)
+            {
+                _canvasGroup.alpha = show ? 1f : 0f;
+                _canvasGroup.blocksRaycasts = show;
+                _canvasGroup.interactable = show;
             }
         }
     }
