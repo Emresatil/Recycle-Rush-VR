@@ -857,21 +857,30 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9bf0314c8887ccb4885307e71d6c62cc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AudioManager
+  _bgmMixerGroup: {fileID: -194156481357678353, guid: 92d9fc42cee18c8429973214f73dbd62, type: 2}
+  _sfxMixerGroup: {fileID: 98596424173924642, guid: 92d9fc42cee18c8429973214f73dbd62, type: 2}
+  _uiMixerGroup: {fileID: -7591575854306164204, guid: 92d9fc42cee18c8429973214f73dbd62, type: 2}
+  _spatialMixerGroup: {fileID: 3662127069935127684, guid: 92d9fc42cee18c8429973214f73dbd62, type: 2}
   _bgmSource: {fileID: 0}
-  _bgmClip: {fileID: 0}
+  _bgmClip: {fileID: 8300000, guid: ced94add8f033fc47b684eb709a21da5, type: 3}
   _bgmVolume: 0.3
-  _uiSource: {fileID: 0}
-  _uiClickClip: {fileID: 0}
-  _uiVolume: 0.8
   _engineSource: {fileID: 0}
   _engineClip: {fileID: 0}
   _leverClip: {fileID: 0}
-  _dingClip: {fileID: 0}
-  _buzzerClip: {fileID: 0}
-  _grabClip: {fileID: 0}
-  _releaseClip: {fileID: 0}
-  _floorPenaltyClip: {fileID: 0}
-  _comboClip: {fileID: 0}
+  _perfectDingClip: {fileID: 8300000, guid: e5fc31c645f5d434289b55171ac0a279, type: 3}
+  _greatDingClip: {fileID: 8300000, guid: ac9a3bf2e8336b24a919ceb74b17142b, type: 3}
+  _goodDingClip: {fileID: 8300000, guid: 8e2ed7b1db75dcd458c735eabfd5a4c5, type: 3}
+  _dingClip: {fileID: 8300000, guid: 46e84f7f1d0a7984cb8af989c5d59499, type: 3}
+  _buzzerClip: {fileID: 8300000, guid: 6adf693548f42a6428f994564f255f31, type: 3}
+  _uiClickClip: {fileID: 8300000, guid: 7480ddf1f056e304eb9d09b59a713ccf, type: 3}
+  _grabClip: {fileID: 8300000, guid: 5e5908eed6c434f45a46e42edc1aca0f, type: 3}
+  _releaseClip: {fileID: 8300000, guid: 3163e918b0b2b594391af2a7d5295e09, type: 3}
+  _floorPenaltyClip: {fileID: 8300000, guid: e733fb34f58bc794185e79c892e501d1, type: 3}
+  _comboClip: {fileID: 8300000, guid: 406b74154f18b974fa9014b9792ee218, type: 3}
+  _levelUpFanfareClip: {fileID: 8300000, guid: e68db8663a9558446ad9b3434103ec9c, type: 3}
+  _goldenWasteClip: {fileID: 8300000, guid: b84ca4b163e80484897b7af3576aa09b, type: 3}
+  _coinCollectClip: {fileID: 8300000, guid: f08c95e17917462429ac6afa6511537b, type: 3}
+  _trashDropClip: {fileID: 8300000, guid: 1b401fe341899054fae88e19ba84a97e, type: 3}
 --- !u!114 &109085280
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -911,10 +920,14 @@ MonoBehaviour:
   missionPanel: {fileID: 806655963}
   xpPanel: {fileID: 1176417634}
   comboPanel: {fileID: 528430416}
-  safetyWarningPanel: {fileID: 1827505004}
+  pollutionPanel: {fileID: 0}
+  scorePanel: {fileID: 0}
   bgmSlider: {fileID: 0}
   sfxSlider: {fileID: 0}
   menuPauseAction: {fileID: 4116954447336496447, guid: 0be0028c24f2a4c14a96b6aa39055933, type: 3}
+  achievementPanel: {fileID: 0}
+  achievementTitleText: {fileID: 0}
+  achievementDescText: {fileID: 0}
 --- !u!114 &109085282
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -927,8 +940,56 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b9014e7cca74ed141be826015cb9995f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
+  CurrentSession:
+    TotalCorrectThrows: 0
+    TotalIncorrectThrows: 0
+    GoldenWastesCollected: 0
+    TotalPlayTime: 0
+    TotalPerfectThrows: 0
+    TotalGreatThrows: 0
+    TotalGoodThrows: 0
+    AveragePrecision: 0
+    BestPrecision: 0
+    PrecisionBonusScore: 0
+    MaxPrecisionStreak: 0
+    PrecisionM2: 0
+    PrecisionConsistency: 0
+    MaxCombo: 0
+    LongestStreak: 0
+    GraceUsedCount: 0
+    GoldenWastesMissed: 0
+    BaseScore: 0
+    ComboBonusScore: 0
+    GoldenWasteBonusScore: 0
+    PenaltyScore: 0
+    BaseXP: 0
+    ComboXP: 0
+    GoldenXP: 0
+    EarnedXP: 0
+    BaseCoin: 0
+    ComboCoin: 0
+    GoldenCoin: 0
+    EarnedCoins: 0
+    AccuracyPercentage: 0
+    PerformanceGrade: 
+    AccuracyGradeScore: 0
+    PrecisionGradeScore: 0
+    ComboGradeScore: 0
+    GoldenGradeScore: 0
+    TotalGradeScore: 0
+    IsNewHighScore: 0
+    ScoreDelta: 0
+    IsNewBestAccuracy: 0
+    AccuracyDelta: 0
+    IsNewBestCombo: 0
+    ComboDelta: 0
+    ScorePerMinute: 0
+    XPPerMinute: 0
+    ThrowsPerMinute: 0
+    SuggestedNextGoal: 
+    SessionHighlight: 
+    EarnedMedals: []
   _gameDuration: 60
-  wasteSpawner: {fileID: 860334676}
 --- !u!114 &109085283
 MonoBehaviour:
   m_ObjectHideFlags: 0
