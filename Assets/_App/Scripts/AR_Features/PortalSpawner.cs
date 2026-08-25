@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using RecycleRush.Managers;
@@ -49,6 +49,11 @@ namespace RecycleRush.AR_Features
         private void Awake()
         {
             _originalSpawnInterval = spawnInterval;
+            
+            if (spawnCenter == null && Camera.main != null)
+            {
+                spawnCenter = Camera.main.transform;
+            }
         }
 
         private void OnEnable()
@@ -56,6 +61,12 @@ namespace RecycleRush.AR_Features
             EventManager.OnGameEventStarted += HandleGameEventStarted;
             EventManager.OnGameEventEnded += HandleGameEventEnded;
             DifficultyManager.OnDifficultyLevelChanged += UpdateSpawnSpeed;
+            GameManager.OnGameStateChanged += HandleGameStateChanged;
+
+            if (GameManager.Instance != null && GameManager.Instance.CurrentState == GameState.Playing)
+            {
+                StartSpawning();
+            }
         }
 
         private void OnDisable()
@@ -63,6 +74,37 @@ namespace RecycleRush.AR_Features
             EventManager.OnGameEventStarted -= HandleGameEventStarted;
             EventManager.OnGameEventEnded -= HandleGameEventEnded;
             DifficultyManager.OnDifficultyLevelChanged -= UpdateSpawnSpeed;
+            GameManager.OnGameStateChanged -= HandleGameStateChanged;
+        }
+
+        private void Start()
+        {
+            if (ObjectPoolManager.Instance == null)
+            {
+                Debug.LogWarning("<color=red>[PortalSpawner]</color> Sahnede ObjectPoolManager bulunamadı!");
+            }
+            
+            if (spawnCenter == null && Camera.main != null)
+            {
+                spawnCenter = Camera.main.transform;
+            }
+
+            if (GameManager.Instance != null && GameManager.Instance.CurrentState == GameState.Playing)
+            {
+                StartSpawning();
+            }
+        }
+
+        private void Update()
+        {
+            if (!_isSpawning) return;
+
+            _spawnTimer += Time.deltaTime;
+            if (_spawnTimer >= spawnInterval)
+            {
+                SpawnWaste();
+                _spawnTimer = 0f;
+            }
         }
 
         private void UpdateSpawnSpeed(float multiplier)
@@ -92,31 +134,18 @@ namespace RecycleRush.AR_Features
             Debug.Log("<color=cyan>[PortalSpawner]</color> Etkinlik bitti, normal spawn hızına dönüldü.");
         }
 
-        private void Start()
+        private void HandleGameStateChanged(GameState state)
         {
-            if (ObjectPoolManager.Instance == null)
+            if (state == GameState.Playing)
             {
-                Debug.LogError("<color=red>[PortalSpawner]</color> Sahnede ObjectPoolManager bulunamadı! Lütfen Core sistemleri ekleyin.");
+                StartSpawning();
             }
-            
-            // GameManager artık spawner'ı kontrol ettiği için otomatik başlamayı kaldırdık.
-        }
-
-        private void Update()
-        {
-            if (!_isSpawning) return;
-
-            _spawnTimer += Time.deltaTime;
-            if (_spawnTimer >= spawnInterval)
+            else
             {
-                SpawnWaste();
-                _spawnTimer = 0f;
+                StopSpawning();
             }
         }
 
-        /// <summary>
-        /// Atık düşürme döngüsünü başlatır. GameManager tarafından çağrılır (Örn: Playing state'e geçildiğinde).
-        /// </summary>
         public void StartSpawning()
         {
             _isSpawning = true;
@@ -124,9 +153,6 @@ namespace RecycleRush.AR_Features
             Debug.Log("<color=cyan>[PortalSpawner]</color> Atık üretimi başladı.");
         }
 
-        /// <summary>
-        /// Atık düşürme döngüsünü durdurur. GameManager tarafından çağrılır (Örn: Oyun bitince veya duraklatılınca).
-        /// </summary>
         public void StopSpawning()
         {
             _isSpawning = false;
@@ -138,23 +164,30 @@ namespace RecycleRush.AR_Features
         /// </summary>
         private void SpawnWaste()
         {
-            if (wastePrefabs == null || wastePrefabs.Length == 0)
+            List<GameObject> validPrefabs = new List<GameObject>();
+            if (wastePrefabs != null)
             {
-                Debug.LogWarning("<color=orange>[PortalSpawner]</color> Prefab listesi boş!");
+                foreach (var p in wastePrefabs)
+                {
+                    if (p != null) validPrefabs.Add(p);
+                }
+            }
+
+            if (validPrefabs.Count == 0)
+            {
+                Debug.LogWarning("<color=orange>[PortalSpawner]</color> wastePrefabs listesi boş veya tüm elemanlar None! Inspector'dan prefab ekleyin.");
                 return;
             }
 
-            // Rastgele bir konum hesapla (SpawnCenter'ın etrafında X ve Z ekseninde rastgele bir çember)
+            // Rastgele bir konum hesapla
             Vector3 centerPos = spawnCenter != null ? spawnCenter.position : Vector3.zero;
             
-            // Rastgele bir açı (0-360) ve yarıçap (0 - spawnRadius) belirle
             float randomAngle = Random.Range(0f, Mathf.PI * 2f);
-            float randomDist = Random.Range(0f, spawnRadius);
+            float randomDist = Random.Range(0.2f, spawnRadius);
 
             float randomX = Mathf.Cos(randomAngle) * randomDist;
             float randomZ = Mathf.Sin(randomAngle) * randomDist;
 
-            // Düşme noktası: Merkezden X ve Z kadar uzaklaş, yüksekliği (Y) ise merkezden spawnHeight kadar yukarıda tut.
             Vector3 randomSpawnPos = new Vector3(
                 centerPos.x + randomX, 
                 centerPos.y + spawnHeight, 
@@ -162,24 +195,22 @@ namespace RecycleRush.AR_Features
             );
 
             // --- ÇAKIŞMA ÖNLEYİCİ (Overlap Check) ---
-            // Objeler spawn olurken tavanla veya birbirleriyle iç içe geçerse yatayda (havada) mermi gibi fırlarlar.
-            // Bunu engellemek için spawn noktasının boş olup olmadığını kontrol ediyoruz.
-            Collider[] existingColliders = Physics.OverlapSphere(randomSpawnPos, 0.4f);
+            // Sadece diğer atıklarla iç içe girmeyi engelle (Oda veya zemin mesh'lerini yok say)
+            Collider[] existingColliders = Physics.OverlapSphere(randomSpawnPos, 0.3f);
             foreach (var col in existingColliders)
             {
-                if (!col.isTrigger)
+                if (!col.isTrigger && col.attachedRigidbody != null)
                 {
-                    // Çakışma var, bu spawn döngüsünü iptal et (Sonraki döngüde başka bir yerde dener)
-                    Debug.LogWarning($"<color=orange>[PortalSpawner]</color> Spawn noktası dolu! ({col.gameObject.name}). Patlama (Ghosting) önlendi.");
-                    return; 
+                    if (IsWaste(col.gameObject))
+                    {
+                        Debug.LogWarning($"<color=orange>[PortalSpawner]</color> Spawn noktası dolu! ({col.gameObject.name}).");
+                        return; 
+                    }
                 }
             }
-            // ----------------------------------------
 
-            // Golden Waste (Altın Çöp) İhtimal Hesaplama (RNG) Algoritması
             GameObject selectedPrefab = null;
             
-            // Mevcut oyun aşamasını (Stage) LevelSelectionManager'dan al
             int currentStage = 1;
             if (LevelSelectionManager.Instance != null)
             {
@@ -187,17 +218,13 @@ namespace RecycleRush.AR_Features
             }
             else if (LevelManager.Instance != null)
             {
-                currentStage = LevelManager.Instance.CurrentLevel; // Yedek sistem
+                currentStage = LevelManager.Instance.CurrentLevel;
             }
 
-            // --- ALTIN ÇÖP MANTIĞI (Sabit İhtimal) ---
-            // Seviyeye göre altın çöp şansının artması, ileri seviyelerde oyunun dengesini bozduğu için kaldırıldı.
-            // Ayrıca etkinliklerin (LuckyDrop) bu ihtimali değiştirmesi istendiği gibi iptal edildi.
             float currentGoldenChance = 0.05f;
 
-            // --- POWER-UP: KUM SAATİ SPAWN MANTIĞI (Level 20-30 Arası) ---
+            // POWER-UP: Kum Saati (Level 20-30 Arası)
             bool isHourglassSpawned = false;
-            // %10 ihtimalle kum saati fırlat (Zamanın daraldığı anlar için çok kritik)
             if (hourglassPrefab != null && currentStage >= 20 && currentStage <= 30)
             {
                 if (Random.value <= 0.1f) 
@@ -208,11 +235,11 @@ namespace RecycleRush.AR_Features
                 }
             }
 
-            // Eğer kum saati DÜŞMEDİYSE mıknatıs düşme ihtimaline bak (Level 20-30 arası)
+            // POWER-UP: Mıknatıs (Level 20-30 Arası)
             bool isMagnetSpawned = false;
             if (!isHourglassSpawned && magnetPrefab != null && currentStage >= 20 && currentStage <= 30)
             {
-                if (Random.value <= 0.08f) // %8 İhtimal
+                if (Random.value <= 0.08f)
                 {
                     selectedPrefab = magnetPrefab;
                     isMagnetSpawned = true;
@@ -220,31 +247,27 @@ namespace RecycleRush.AR_Features
                 }
             }
 
-            // Eğer hiçbir power-up DÜŞMEDİYSE normal çöplere ve altın çöpe bak
             if (!isHourglassSpawned && !isMagnetSpawned)
             {
-                // Rastgele zar at (0.0 ile 1.0 arası)
                 if (goldenWastePrefab != null && Random.value <= currentGoldenChance)
                 {
-                    // Şans yaver gitti, Altın Çöp seçildi!
                     selectedPrefab = goldenWastePrefab;
-                    // Konsola bilgi yazdır
-                    Debug.Log($"<color=yellow>[PortalSpawner]</color> Jackpot! Altın Çöp düştü! (Mevcut İhtimal: %{currentGoldenChance * 100})");
+                    Debug.Log($"<color=yellow>[PortalSpawner]</color> Jackpot! Altın Çöp düştü!");
                 }
                 else
                 {
-                    // --- GÖREV ODAKLI SPAWN SİSTEMİ (Mission Biasing) ---
+                    // Görev odaklı spawn (Mission Biasing)
                     bool missionBiased = false;
-                    if (RecycleRush.Managers.MissionManager.Instance != null && 
-                        RecycleRush.Managers.MissionManager.Instance.ActiveMission != null &&
-                        RecycleRush.Managers.MissionManager.Instance.ActiveMission.Type == RecycleRush.Managers.MissionType.CollectWaste &&
-                        !RecycleRush.Managers.MissionManager.Instance.ActiveMission.IsCompleted)
+                    if (MissionManager.Instance != null && 
+                        MissionManager.Instance.ActiveMission != null &&
+                        MissionManager.Instance.ActiveMission.Type == MissionType.CollectWaste &&
+                        !MissionManager.Instance.ActiveMission.IsCompleted)
                     {
-                        if (Random.value <= 0.6f) // %60 şansla görev hedefini seç
+                        if (Random.value <= 0.6f)
                         {
-                            string targetTag = RecycleRush.Managers.MissionManager.Instance.ActiveMission.TargetWaste.ToString();
+                            string targetTag = MissionManager.Instance.ActiveMission.TargetWaste.ToString();
                             List<GameObject> targetPrefabs = new List<GameObject>();
-                            foreach (var p in wastePrefabs)
+                            foreach (var p in validPrefabs)
                             {
                                 if (p != null && p.CompareTag(targetTag)) targetPrefabs.Add(p);
                             }
@@ -259,41 +282,50 @@ namespace RecycleRush.AR_Features
                     
                     if (!missionBiased)
                     {
-                        // Şans tutmadı, rastgele standart atık (Kağıt/Cam/Plastik) seç
-                        selectedPrefab = wastePrefabs[Random.Range(0, wastePrefabs.Length)];
+                        selectedPrefab = validPrefabs[Random.Range(0, validPrefabs.Count)];
                     }
                 }
             }
 
-            // Objeyi havuzdan çek (Instantiate yerine bellek dostu havuzlama)
-            GameObject spawnedWaste = ObjectPoolManager.Instance.SpawnFromPool(
-                selectedPrefab.name, 
-                selectedPrefab, 
-                randomSpawnPos, 
-                Random.rotation // Havada rastgele dönerek düşmesi için
-            );
+            if (selectedPrefab == null) return;
 
-            if (spawnedWaste != null)
+            if (ObjectPoolManager.Instance != null)
             {
-                // AR ortamı için Fizik ayarlarını yerçekimine uygun hale getir (Serbest Düşüş)
-                Rigidbody rb = spawnedWaste.GetComponent<Rigidbody>();
-                if (rb != null)
+                GameObject spawnedWaste = ObjectPoolManager.Instance.SpawnFromPool(
+                    selectedPrefab.name, 
+                    selectedPrefab, 
+                    randomSpawnPos, 
+                    Random.rotation
+                );
+
+                if (spawnedWaste != null)
                 {
-                    rb.isKinematic = false;
-                    rb.useGravity = true;
-                    // Aşağıya doğru çok hafif bir ilk hız (Force) uygulayarak portalın içinden fırlamasını sağla
-                    rb.linearVelocity = Vector3.down * 1.5f; 
+                    Rigidbody rb = spawnedWaste.GetComponent<Rigidbody>();
+                    if (rb != null)
+                    {
+                        rb.isKinematic = false;
+                        rb.useGravity = true;
+                        rb.linearVelocity = Vector3.down * 1.5f; 
+                    }
                 }
             }
+            else
+            {
+                Instantiate(selectedPrefab, randomSpawnPos, Random.rotation);
+            }
+        }
+
+        private bool IsWaste(GameObject obj)
+        {
+            return obj.CompareTag("Paper") || obj.CompareTag("Glass") || obj.CompareTag("Plastic") || 
+                   obj.CompareTag("Metal") || obj.CompareTag("Organic") || obj.CompareTag("Hazardous") ||
+                   obj.CompareTag("Untagged");
         }
         
-        /// <summary>
-        /// Seviye (Level) ilerledikçe hızın artması için dışarıdan (LevelManager) çağrılabilir.
-        /// </summary>
         public void SetSpawnInterval(float newInterval)
         {
             spawnInterval = Mathf.Max(0.5f, newInterval);
-            _originalSpawnInterval = spawnInterval; // Temel hızı güncelle
+            _originalSpawnInterval = spawnInterval;
         }
     }
 }
