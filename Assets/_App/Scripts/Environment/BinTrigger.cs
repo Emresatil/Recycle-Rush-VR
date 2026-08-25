@@ -18,7 +18,8 @@ public struct SortResultData
     public int XpChange; // Gün 7: Kazanılacak XP
     public float HapticDuration;
     public float HapticAmplitude;
-    public Vector3 ActionPosition; // Ses ve Partikül efektlerinin nerede çıkacağı
+    public Vector3 ActionPosition;
+    public WasteType ProcessedWasteType; // Ses ve Partikül efektlerinin nerede çıkacağı
 
     // Analitik Sistemi İçin Eklenen Veriler:
     public WasteType TargetBinType; // Hangi kutuya atıldı
@@ -289,4 +290,41 @@ public class BinTrigger : MonoBehaviour
             Destroy(Instantiate(_failParticlePrefab, spawnPosition, Quaternion.identity), 3f);
         }
     }
+
+
+    // --- MAGNET & HOURGLASS INJECTIONS ---
+    public static event System.Action<int> OnComboChanged;
+    private static System.Collections.Generic.Dictionary<WasteType, Transform> _binRegistry = new System.Collections.Generic.Dictionary<WasteType, Transform>();
+    
+    public static Transform GetBinTransform(WasteType type)
+    {
+        if (_binRegistry.TryGetValue(type, out Transform binTransform))
+            return binTransform;
+        return null;
+    }
+    
+    public static WasteType GetWasteTypeFromCollider(Collider col)
+    {
+        if (col == null) return WasteType.Untagged;
+        GameObject wasteObj = col.attachedRigidbody != null ? col.attachedRigidbody.gameObject : col.gameObject;
+        foreach (Transform child in wasteObj.GetComponentsInChildren<Transform>(true))
+        {
+            if (CheckTag(child.gameObject, out WasteType type)) 
+                return type;
+        }
+        return WasteType.Untagged;
+    }
+
+    public static bool CheckTag(GameObject obj, out WasteType type)
+    {
+        if (obj.CompareTag("Paper")) { type = WasteType.Paper; return true; }
+        if (obj.CompareTag("Glass")) { type = WasteType.Glass; return true; }
+        if (obj.CompareTag("Plastic")) { type = WasteType.Plastic; return true; }
+        if (obj.CompareTag("Metal")) { type = WasteType.Metal; return true; }
+        if (obj.CompareTag("Hourglass")) { type = WasteType.Hourglass; return true; }
+        if (obj.CompareTag("Magnet")) { type = WasteType.Magnet; return true; }
+        type = WasteType.Untagged;
+        return false;
+    }
+
 }

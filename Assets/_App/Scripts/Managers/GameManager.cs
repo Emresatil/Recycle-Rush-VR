@@ -840,4 +840,55 @@ public class GameManager : MonoBehaviour
             }
         }
     }
+
+
+    #region AR Power-Up (Magnet & Hourglass) Injections
+    public bool IsMagnetActive { get; private set; }
+    public float MagnetRemainingTime { get; private set; }
+    
+    public void PrepareToStart()
+    {
+        if (CurrentState == GameState.MainMenu || CurrentState == GameState.GameOver)
+        {
+            float calculatedDuration = _gameDuration;
+            if (RecycleRush.Managers.LevelSelectionManager.Instance != null)
+            {
+                int currentLvl = RecycleRush.Managers.LevelSelectionManager.Instance.CurrentPlayingLevelId;
+                calculatedDuration = _gameDuration + ((currentLvl - 1) * 10f);
+            }
+            if (RecycleRush.Managers.ObjectPoolManager.Instance != null)
+            {
+                RecycleRush.Managers.ObjectPoolManager.Instance.ReturnAllToPool();
+            }
+            ChangeState(GameState.Countdown);
+        }
+    }
+    
+    public void ActivateMagnet(float duration)
+    {
+        IsMagnetActive = true;
+        MagnetRemainingTime = duration;
+        StartCoroutine(MagnetRoutine());
+    }
+    
+    private System.Collections.IEnumerator MagnetRoutine()
+    {
+        while (MagnetRemainingTime > 0)
+        {
+            MagnetRemainingTime -= Time.deltaTime;
+            yield return null;
+        }
+        IsMagnetActive = false;
+    }
+    
+    public void AddTime(float seconds)
+    {
+        if (CurrentState == GameState.Playing)
+        {
+            RemainingTime += seconds;
+        }
+    }
+
 }
+#endregion
+
