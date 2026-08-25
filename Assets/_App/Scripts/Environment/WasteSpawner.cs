@@ -107,8 +107,8 @@ public class WasteSpawner : MonoBehaviour
     private void UpdateSpawnSpeed(float multiplier)
     {
         // Zorluk arttÄ±kÃ§a bekleme sÃ¼resi kÄ±salÄ±r ama Ã§akÄ±ÅŸmayÄ± Ã¶nlemek iÃ§in minimum 0.6s sÄ±nÄ±r konur
-        minSpawnInterval = Mathf.Max(0.6f, _baseMinSpawnInterval / multiplier);
-        maxSpawnInterval = Mathf.Max(1.0f, _baseMaxSpawnInterval / multiplier);
+        minSpawnInterval = Mathf.Max(0.4f, _baseMinSpawnInterval / multiplier); // Dengeleme: Son seviyelerde daha zorlu olmasi icin 0.4e dusuruldu
+        maxSpawnInterval = Mathf.Max(0.75f, _baseMaxSpawnInterval / multiplier); // Dengeleme: Son seviyelerde daha zorlu olmasi icin 0.75e dusuruldu
         
         Debug.Log($"<color=cyan>[WasteSpawner]</color> Yeni zorluÄŸa uyarlandÄ±! Ãœretim sÃ¼resi: {minSpawnInterval:F1}s - {maxSpawnInterval:F1}s");
     }
@@ -164,8 +164,8 @@ public class WasteSpawner : MonoBehaviour
             if (spawned)
             {
                 // 1. Ã–zellik: EÅŸit zaman aralÄ±klarÄ±. (Rastgelelik kaldÄ±rÄ±ldÄ±, tam orta deÄŸer kullanÄ±lÄ±yor)
-                float fixedWait = (minSpawnInterval + maxSpawnInterval) / 2f;
-                yield return new WaitForSeconds(fixedWait);
+                float organicWait = Random.Range(minSpawnInterval, maxSpawnInterval);
+                yield return new WaitForSeconds(organicWait);
             }
             else
             {
@@ -227,7 +227,29 @@ public class WasteSpawner : MonoBehaviour
         GameObject selectedPrefab = null;
         
         // Ã–nce paketi kontrol et, paket gelmezse altÄ±n Ã§Ã¶pe bak
-        if (wastePackagePrefab != null && randomRoll <= packageSpawnChance)
+        
+        // --- POWERUP DROP LOGIC ---
+        // Gucce gore poweruplari tetikle
+        int currentLvl = 1;
+        if (RecycleRush.Managers.LevelManager.Instance != null) {
+            currentLvl = RecycleRush.Managers.LevelManager.Instance.CurrentLevel;
+        }
+
+        // Magnet ve Hourglass sansi level arttikca hafif artabilir (veya sabit)
+        float currentMagnetChance = magnetSpawnChance + (currentLvl * 0.1f);
+        float currentHourglassChance = hourglassSpawnChance + (currentLvl * 0.1f);
+
+        if (hourglassPrefab != null && Random.Range(0f, 100f) <= currentHourglassChance)
+        {
+            selectedPrefab = hourglassPrefab;
+            Debug.Log("<color=cyan>[Game Feel]</color> Hourglass Uretildi!");
+        }
+        else if (magnetPrefab != null && Random.Range(0f, 100f) <= currentMagnetChance)
+        {
+            selectedPrefab = magnetPrefab;
+            Debug.Log("<color=cyan>[Game Feel]</color> Magnet Uretildi!");
+        }
+        else if (wastePackagePrefab != null && randomRoll <= packageSpawnChance)
         {
             selectedPrefab = wastePackagePrefab;
             Debug.Log($"<color=#D87093>[WasteSpawner]</color> SÃœRPRÄ°Z KUTU (PACKAGE) Ãœretiliyor!");
