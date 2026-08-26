@@ -80,7 +80,7 @@ namespace RecycleRush.UI
                 _backgroundImage.color = Color.green;
                 
                 if (_missionDescriptionText != null) 
-                    _missionDescriptionText.text = "GÖREV TAMAMLANDI!";
+                    _missionDescriptionText.text = "MISSION COMPLETED!";
                 
                 yield return new WaitForSeconds(2f);
                 
