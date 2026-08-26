@@ -92,6 +92,15 @@ public class WasteSpawner : MonoBehaviour
         // Event dinleyicisini ekle (Abone ol)
         GameManager.OnGameStateChanged += HandleGameStateChanged;
         DifficultyManager.OnDifficultyLevelChanged += UpdateSpawnSpeed;
+        
+        GameManager.OnMagnetStarted += HandleMagnetStarted;
+        GameManager.OnMagnetEnded += HandleMagnetEnded;
+        
+        if (RecycleRush.Managers.EventManager.Instance != null)
+        {
+            RecycleRush.Managers.EventManager.OnGameEventStarted += HandleGameEventStarted;
+            RecycleRush.Managers.EventManager.OnGameEventEnded += HandleGameEventEnded;
+        }
     }
 
     private void OnDisable()
@@ -99,18 +108,69 @@ public class WasteSpawner : MonoBehaviour
         // Script veya obje kapandığında Event aboneliğini kaldır (Memory leak önlemi)
         GameManager.OnGameStateChanged -= HandleGameStateChanged;
         DifficultyManager.OnDifficultyLevelChanged -= UpdateSpawnSpeed;
+        
+        GameManager.OnMagnetStarted -= HandleMagnetStarted;
+        GameManager.OnMagnetEnded -= HandleMagnetEnded;
+        
+        if (RecycleRush.Managers.EventManager.Instance != null)
+        {
+            RecycleRush.Managers.EventManager.OnGameEventStarted -= HandleGameEventStarted;
+            RecycleRush.Managers.EventManager.OnGameEventEnded -= HandleGameEventEnded;
+        }
     }
+
+    private float _currentEventMultiplier = 1f;
+    private bool _isMagnetActive = false;
 
     /// <summary>
     /// DifficultyManager'dan gelen hız çarpanına göre atık üretme sıklığını günceller.
     /// </summary>
     private void UpdateSpawnSpeed(float multiplier)
     {
-        // Zorluk arttıkça bekleme süresi kısalır ama çakışmayı önlemek için minimum 0.6s sınır konur
-        minSpawnInterval = Mathf.Max(0.4f, _baseMinSpawnInterval / multiplier); // Dengeleme: Son seviyelerde daha zorlu olmasi icin 0.4e dusuruldu
-        maxSpawnInterval = Mathf.Max(0.75f, _baseMaxSpawnInterval / multiplier); // Dengeleme: Son seviyelerde daha zorlu olmasi icin 0.75e dusuruldu
+        float finalMultiplier = multiplier * _currentEventMultiplier;
+        
+        if (_isMagnetActive) 
+        {
+            finalMultiplier *= 4f; // Magnet açıkken 4 kat daha hızlı çöpler yağsın!
+        }
+        
+        // Zorluk arttıkça bekleme süresi kısalır ama çakışmayı önlemek için minimum sınır konur
+        minSpawnInterval = Mathf.Max(0.15f, _baseMinSpawnInterval / finalMultiplier); 
+        maxSpawnInterval = Mathf.Max(0.2f, _baseMaxSpawnInterval / finalMultiplier); 
         
         Debug.Log($"<color=cyan>[WasteSpawner]</color> Yeni zorluğa uyarlandı! Üretim süresi: {minSpawnInterval:F1}s - {maxSpawnInterval:F1}s");
+    }
+
+    private void HandleMagnetStarted(float duration)
+    {
+        _isMagnetActive = true;
+        if (DifficultyManager.Instance != null) UpdateSpawnSpeed(DifficultyManager.Instance.CurrentLevel > 0 ? 1.15f : 1.0f);
+    }
+    
+    private void HandleMagnetEnded()
+    {
+        _isMagnetActive = false;
+        if (DifficultyManager.Instance != null) UpdateSpawnSpeed(DifficultyManager.Instance.CurrentLevel > 0 ? 1.15f : 1.0f);
+    }
+
+    private void HandleGameEventStarted(RecycleRush.Managers.GameEventType eventType)
+    {
+        if (eventType == RecycleRush.Managers.GameEventType.SpeedMode)
+        {
+            _currentEventMultiplier = 2f;
+            if (DifficultyManager.Instance != null) UpdateSpawnSpeed(DifficultyManager.Instance.CurrentLevel > 0 ? 1.15f : 1.0f);
+        }
+        else if (eventType == RecycleRush.Managers.GameEventType.FrenzyMode)
+        {
+            _currentEventMultiplier = 5f;
+            if (DifficultyManager.Instance != null) UpdateSpawnSpeed(DifficultyManager.Instance.CurrentLevel > 0 ? 1.15f : 1.0f);
+        }
+    }
+
+    private void HandleGameEventEnded()
+    {
+        _currentEventMultiplier = 1f;
+        if (DifficultyManager.Instance != null) UpdateSpawnSpeed(DifficultyManager.Instance.CurrentLevel > 0 ? 1.15f : 1.0f);
     }
 
     private void Start()
@@ -185,21 +245,8 @@ public class WasteSpawner : MonoBehaviour
         Vector3 fixedOffset = new Vector3(0f, 0.15f, 0f);
         Vector3 finalSpawnPosition = Vector3.zero;
 
-        // Yüzey (Surface) mimarisine göre doğma noktasını belirle
-        if (_surfaceProvider != null && _surfaceProvider.TryGetRandomSurfacePoint(targetSurfaceType, out var surfaceData))
+        if (spawnPoint != null)
         {
-            finalSpawnPosition = surfaceData.Position + fixedOffset;
-        }
-        else if (spawnPoint != null)
-        {
-            if (_surfaceProvider == null)
-            {
-                Debug.LogWarning("<color=red>[DEDEKTİF]</color> Sahnede ISurfaceProvider (Örn: SurfaceManager) YOK! Eski havadan doğma noktasına geçiliyor.");
-            }
-            else
-            {
-                Debug.LogWarning($"<color=red>[DEDEKTİF]</color> Sahnede '{targetSurfaceType}' türünde bir MockSurface YOK veya Yüzey Bulunamadı! Eski noktaya geçiliyor.");
-            }
             finalSpawnPosition = spawnPoint.position + fixedOffset;
         }
         else
@@ -268,7 +315,7 @@ public class WasteSpawner : MonoBehaviour
         GameObject spawnedA = ObjectPoolManager.Instance.SpawnFromPool(selectedPrefab.tag, selectedPrefab, finalSpawnPosition, uprightRandomRotation);
         // OYNANIS BUG FIX: Hizli firlatmalarda objenin kutunun icinden gecip gitmesini (tunneling) engellemek icin carpisma modunu Continuous yapiyoruz.
         Rigidbody rb = spawnedA.GetComponent<Rigidbody>();
-        if (rb != null) rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+        if (rb != null) rb.collisionDetectionMode = CollisionDetectionMode.Discrete;
         
         // Composite Waste (Yapışık Çöp) Mantığı
         float compositeChance = GetCompositeChance();
