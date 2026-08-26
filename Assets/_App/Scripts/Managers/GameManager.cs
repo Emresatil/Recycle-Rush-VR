@@ -148,11 +148,11 @@ public class GameManager : MonoBehaviour
         if (Instance != null && Instance != this)
         {
             Debug.LogWarning("[GameManager] Sahnede birden fazla GameManager bulundu, kopya siliniyor.");
-            Destroy(gameObject);
+            Destroy(this); // Core objesini toptan silmemesi icin sadece scripti siliyoruz;
             return;
         }
         
-        Instance = this;
+        Instance = this; Debug.Log("[GameManager] Awake calisti, Instance atandi! Obje Adi: "+gameObject.name);
         // GameManager'Ä±n sahneler arasÄ± referans kaybÄ± yaÅŸamamasÄ± iÃ§in kalÄ±cÄ± yapÄ±lmasÄ± (Ã–nerilen)
         DontDestroyOnLoad(gameObject);
     }

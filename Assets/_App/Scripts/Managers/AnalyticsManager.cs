@@ -105,7 +105,7 @@ namespace RecycleRush.Managers
             // Singleton (Thread-safe)
             if (Instance != null && Instance != this)
             {
-                Destroy(gameObject);
+                Destroy(this); // Core objesini toptan silmemesi icin sadece scripti siliyoruz;
                 return;
             }
             Instance = this;
