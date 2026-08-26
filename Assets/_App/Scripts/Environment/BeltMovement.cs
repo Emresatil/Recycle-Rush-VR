@@ -110,7 +110,9 @@ public class BeltMovement : MonoBehaviour
                     item.DetachFromBelt();
                     
                     // Ağırlık merkezi zaten uçurumda olduğu için, bu hız onu mükemmel bir şekilde devirecektir
-                    itemRb.AddForce(moveDir * 2f, ForceMode.VelocityChange);
+                    // ŞEYTANİ BUG: 2f hızıyla fırlatınca obje yerde kayarak FloorZone dışına çıkıyordu!
+                    // Objelerin uzağa gitmesini ve FloorZone'dan kaçmasını engellemek için itme gücünü çok azalttık (0.2f).
+                    itemRb.AddForce(moveDir * 0.2f, ForceMode.VelocityChange);
                     
                     // DetachFromBelt listeyi temizlediği için bu objeyi daha fazla işlemeyeceğiz
                     continue;
