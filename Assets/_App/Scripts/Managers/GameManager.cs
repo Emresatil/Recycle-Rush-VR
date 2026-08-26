@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+// TODO [Post-Merge]: Verify GameManager state transitions and missing prefab references after the massive PR merge.
+
 using UnityEngine;
 using RecycleRush.Managers; // <-- EKLENDÄ° (AchievementData iÃ§in)
 

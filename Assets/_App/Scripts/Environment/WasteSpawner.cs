@@ -33,6 +33,12 @@ public class WasteSpawner : MonoBehaviour
     [Tooltip("Sürpriz Kutu'nun çıkma ihtimali (Yüzde % olarak)")]
     [Range(0f, 100f)] public float packageSpawnChance = 5f;
 
+    [Header("Power-Up Ayarları")]
+    [Tooltip("Zaman uzatan Kum Saati prefabı")]
+    public GameObject hourglassPrefab;
+    [Tooltip("Çöpleri otomatik toplayan Mıknatıs prefabı")]
+    public GameObject magnetPrefab;
+
     [Header("Visual Effects")]
     [Tooltip("Çöplerin çıktığı portalın görsel animatörü (İsteğe bağlı)")]
     public RecycleRush.Environment.PortalAnimator portalAnimator;
@@ -42,9 +48,9 @@ public class WasteSpawner : MonoBehaviour
     
     [Header("Organik Zamanlama (Zorluk)")]
     [Tooltip("En az kaç saniyede bir atık düşsün?")]
-    public float minSpawnInterval = 0.8f;
+    public float minSpawnInterval = 0.6f;
     [Tooltip("En fazla kaç saniyede bir atık düşsün?")]
-    public float maxSpawnInterval = 1.5f;
+    public float maxSpawnInterval = 1.2f;
 
 
 
@@ -207,6 +213,20 @@ public class WasteSpawner : MonoBehaviour
             return false;
         }
 
+        // 1.5 Özellik: Doğma noktasının henüz boşalıp boşalmadığını kontrol et (Üst üste doğup patlamayı %100 engeller)
+        Collider[] existingColliders = Physics.OverlapSphere(finalSpawnPosition, 0.4f);
+        foreach (var col in existingColliders)
+        {
+            if (spawnPoint != null && col.transform.root != spawnPoint.root && !col.isTrigger && col.attachedRigidbody != null)
+            {
+                // Sadece çöpler engellesin (Bandın kendisi engel sayılmasın!)
+                if (HasWasteTag(col.gameObject))
+                {
+                    return false; // Dolu olduğu için üretemedik
+                }
+            }
+        }
+
         float randomRoll = Random.Range(0f, 100f);
         
         // 5. Özel: Altın Çöp Şansı veya Sürpriz Kutu Şansı
@@ -348,6 +368,63 @@ public class WasteSpawner : MonoBehaviour
 
         if (validPrefabs.Count == 0) return null;
 
+        // --- POWER-UP: KUM SAATİ SPAWN MANTIĞI (Level 20-30 Arası) ---
+        int currentStage = 1;
+        if (RecycleRush.Managers.LevelSelectionManager.Instance != null)
+        {
+            currentStage = RecycleRush.Managers.LevelSelectionManager.Instance.CurrentPlayingLevelId;
+        }
+        else if (RecycleRush.Managers.LevelManager.Instance != null)
+        {
+            currentStage = RecycleRush.Managers.LevelManager.Instance.CurrentLevel;
+        }
+
+        if (hourglassPrefab != null && currentStage >= 20 && currentStage <= 30)
+        {
+            if (Random.value <= 0.1f) // %10 İhtimal
+            {
+                Debug.Log($"<color=magenta>[WasteSpawner]</color> POWER-UP! Kum Saati Düştü! (Aşama: {currentStage})");
+                return hourglassPrefab;
+            }
+        }
+
+        // --- POWER-UP: MIKNATIS SPAWN MANTIĞI (Level 20-30 Arası) ---
+        // Oyunun en zorlandığı kısımlarda %8 ihtimalle çıkar.
+        if (magnetPrefab != null && currentStage >= 20 && currentStage <= 30)
+        {
+            if (Random.value <= 0.08f) // %8 İhtimal
+            {
+                Debug.Log($"<color=magenta>[WasteSpawner]</color> POWER-UP! Mıknatıs Düştü! (Aşama: {currentStage})");
+                return magnetPrefab;
+            }
+        }
+
+        // --- GÖREV ODAKLI SPAWN SİSTEMİ (Mission Biasing) ---
+        // Eğer aktif bir "Toplama" görevi varsa, %50 ihtimalle o çöpü yolla!
+        if (RecycleRush.Managers.MissionManager.Instance != null && 
+            RecycleRush.Managers.MissionManager.Instance.ActiveMission != null &&
+            RecycleRush.Managers.MissionManager.Instance.ActiveMission.Type == RecycleRush.Managers.MissionType.CollectWaste &&
+            !RecycleRush.Managers.MissionManager.Instance.ActiveMission.IsCompleted)
+        {
+            if (Random.value <= 0.6f) // %60 Şansla görevde istenen çöp gelir
+            {
+                string targetTag = RecycleRush.Managers.MissionManager.Instance.ActiveMission.TargetWaste.ToString();
+                System.Collections.Generic.List<GameObject> targetPrefabs = new System.Collections.Generic.List<GameObject>();
+                foreach (var p in validPrefabs)
+                {
+                    if (p.CompareTag(targetTag)) targetPrefabs.Add(p);
+                }
+                
+                if (targetPrefabs.Count > 0)
+                {
+                    GameObject missionTarget = targetPrefabs[Random.Range(0, targetPrefabs.Count)];
+                    _lastSpawnedPrefab = missionTarget;
+                    return missionTarget;
+                }
+            }
+        }
+        // ----------------------------------------------------
+
         GameObject selected = null;
         int maxAttempts = 3;
         
@@ -378,7 +455,8 @@ public class WasteSpawner : MonoBehaviour
         return obj.CompareTag("Paper") || 
                obj.CompareTag("Glass") || 
                obj.CompareTag("Plastic") || 
-               obj.CompareTag("Metal");
+               obj.CompareTag("Metal") ||
+               obj.CompareTag("Hourglass");
     }
 
     private float GetCompositeChance()
