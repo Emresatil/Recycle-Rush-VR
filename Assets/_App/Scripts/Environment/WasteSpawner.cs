@@ -16,6 +16,12 @@ public class WasteSpawner : MonoBehaviour
     [Tooltip("Atıkların düşeceği başlangıç noktası")]
     public Transform spawnPoint;
 
+    [Header("Spawn Distance & Area Settings")]
+    [Tooltip("Kutulardan oyuncuya doğru ne kadar önde doğsun? (Metre)")]
+    public float spawnDistanceFromBins = 6f;
+    [Tooltip("Yatay sağ-sol dağılım genişliği (Metre)")]
+    public float spawnHorizontalSpread = 2.0f;
+
     [Header("Golden Waste Settings")]
     [Tooltip("Nadir (Joker) olarak düşecek Altın Çöp Prefab'ı")]
     public GameObject goldenWastePrefab;
@@ -186,21 +192,54 @@ public class WasteSpawner : MonoBehaviour
         Vector3 fixedOffset = new Vector3(0f, 0.15f, 0f);
         Vector3 finalSpawnPosition = Vector3.zero;
 
-        // Yüzey (Surface) mimarisine göre doğma noktasını belirle
-        if (_surfaceProvider != null && _surfaceProvider.TryGetRandomSurfacePoint(targetSurfaceType, out var surfaceData))
+        // Yüzey veya Kutu mimarisine göre doğma noktasını belirle:
+        // Çöpler KUTULARIN ÜSTÜNE DEĞİL, OYUNCU İLE KUTULARIN ARASINDAKİ ALANA (Kutulardan spawnDistanceFromBins kadar öne) düşer!
+        if (BinTrigger.TryGetBinsCenter(out Vector3 binsCenter))
+        {
+            Vector3 frontDir = Vector3.back; // Varsayılan: Z ekseninde kutuların önü
+            Vector3 camPos = Camera.main != null ? Camera.main.transform.position : Vector3.zero;
+            Vector3 toCam = camPos - binsCenter;
+            toCam.y = 0f;
+            float totalDistance = toCam.magnitude;
+
+            if (toCam.sqrMagnitude > 0.25f)
+            {
+                frontDir = toCam / totalDistance;
+            }
+
+            Vector3 rightDir = Vector3.Cross(Vector3.up, frontDir).normalized;
+
+            // Kutulardan oyuncuya doğru spawn mesafesi (Örn: 2.4m önde)
+            // Eğer oyuncu kutulara çok yakınsa oyuncunun arkasına düşmesini önlemek için mesafeyi akıllıca sınırla
+            float actualDistance = totalDistance > 1.5f ? Mathf.Min(spawnDistanceFromBins, totalDistance - 0.7f) : spawnDistanceFromBins;
+            float frontOffset = actualDistance + Random.Range(-0.2f, 0.2f);
+            float rightOffset = Random.Range(-spawnHorizontalSpread * 0.5f, spawnHorizontalSpread * 0.5f);
+
+            float spawnY = (Camera.main != null ? Camera.main.transform.position.y : binsCenter.y + 1.2f);
+            spawnY = Mathf.Max(spawnY, binsCenter.y + 0.8f);
+
+            finalSpawnPosition = binsCenter + (frontDir * frontOffset) + (rightDir * rightOffset);
+            finalSpawnPosition.y = spawnY;
+        }
+        else if (Camera.main != null)
+        {
+            Transform camTransform = Camera.main.transform;
+            Vector3 camForward = camTransform.forward;
+            camForward.y = 0;
+            camForward.Normalize();
+            Vector3 camRight = camTransform.right;
+            camRight.y = 0;
+            camRight.Normalize();
+
+            finalSpawnPosition = camTransform.position + (camForward * 1.5f) + (camRight * Random.Range(-0.5f, 0.5f));
+            finalSpawnPosition.y = camTransform.position.y;
+        }
+        else if (_surfaceProvider != null && _surfaceProvider.TryGetRandomSurfacePoint(targetSurfaceType, out var surfaceData))
         {
             finalSpawnPosition = surfaceData.Position + fixedOffset;
         }
         else if (spawnPoint != null)
         {
-            if (_surfaceProvider == null)
-            {
-                Debug.LogWarning("<color=red>[DEDEKTİF]</color> Sahnede ISurfaceProvider (Örn: SurfaceManager) YOK! Eski havadan doğma noktasına geçiliyor.");
-            }
-            else
-            {
-                Debug.LogWarning($"<color=red>[DEDEKTİF]</color> Sahnede '{targetSurfaceType}' türünde bir MockSurface YOK veya Yüzey Bulunamadı! Eski noktaya geçiliyor.");
-            }
             finalSpawnPosition = spawnPoint.position + fixedOffset;
         }
         else

@@ -7,7 +7,9 @@ public enum WasteType
     Glass,
     Plastic,
     Metal,
-    Untagged
+    Untagged,
+    Hourglass,
+    Magnet
 }
 
 public struct SortResultData
@@ -22,6 +24,7 @@ public struct SortResultData
 
     // Analitik Sistemi İçin Eklenen Veriler:
     public WasteType TargetBinType; // Hangi kutuya atıldı
+    public WasteType ProcessedWasteType; // İşlenen çöp türü
     public bool WasGoldenWaste;     // Atılan obje altın çöp müydü?
     public float ReactionTime;      // Oyuncunun çöpü yakalayıp atma süresi
     
@@ -61,6 +64,7 @@ public class BinTrigger : MonoBehaviour
     [SerializeField] private GameObject _failParticlePrefab;
 
     public static event Action<SortResultData> OnWasteProcessed;
+    public static event Action<int> OnComboChanged;
 
     private Collider _binCollider;
 
@@ -75,6 +79,19 @@ public class BinTrigger : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+        if (other == null || other.isTrigger) return;
+
+        // Atık objesini (Rigidbody'si varsa onu, yoksa collider objesini) bul
+        GameObject wasteObj = other.attachedRigidbody != null ? other.attachedRigidbody.gameObject : other.gameObject;
+        if (wasteObj == null || !wasteObj.activeInHierarchy || wasteObj.transform.localScale.sqrMagnitude < 0.001f) return;
+
+        // Failsafe: Havuz yöneticisini veya konteyneri asla çöp sayıp havuza atmaya çalışma
+        if (ObjectPoolManager.Instance != null)
+        {
+            if (wasteObj == ObjectPoolManager.Instance.gameObject) return;
+            if (ObjectPoolManager.Instance.PoolContainer != null && (wasteObj == ObjectPoolManager.Instance.PoolContainer.gameObject || wasteObj.transform == ObjectPoolManager.Instance.PoolContainer)) return;
+        }
+
         if (GameManager.Instance != null && 
             GameManager.Instance.CurrentState != GameState.Playing && 
             GameManager.Instance.CurrentState != GameState.Tutorial)
@@ -82,11 +99,9 @@ public class BinTrigger : MonoBehaviour
             return;
         }
 
-        if (other.isTrigger) return;
-
         // --- COMPOSITE WASTE KONTROLÜ ---
         bool isGlued = false;
-        var glueA = other.transform.root.GetComponentInChildren<RecycleRush.Interaction.WasteGlue>();
+        var glueA = wasteObj.GetComponentInChildren<RecycleRush.Interaction.WasteGlue>();
         if (glueA != null && glueA.IsActive) isGlued = true;
 
         if (!isGlued)
@@ -94,7 +109,7 @@ public class BinTrigger : MonoBehaviour
             var allGlues = FindObjectsByType<RecycleRush.Interaction.WasteGlue>(FindObjectsSortMode.None);
             foreach (var g in allGlues)
             {
-                if (g.IsActive && g.partB != null && g.partB.transform.root == other.transform.root)
+                if (g.IsActive && g.partB != null && (g.partB.gameObject == wasteObj || g.partB.transform.IsChildOf(wasteObj.transform)))
                 {
                     isGlued = true;
                     break;
@@ -110,7 +125,7 @@ public class BinTrigger : MonoBehaviour
         }
 
         // --- DIRTY WASTE KONTROLÜ ---
-        var dirty = other.transform.root.GetComponentInChildren<RecycleRush.Interaction.DirtyWasteController>();
+        var dirty = wasteObj.GetComponentInChildren<RecycleRush.Interaction.DirtyWasteController>();
         if (dirty != null && dirty.IsDirty)
         {
             Debug.Log("<color=red>[BinTrigger]</color> Bu çöp çamurlu! Kutuyu kirletmemek için önce yıkamalısın.");
@@ -120,8 +135,29 @@ public class BinTrigger : MonoBehaviour
 
         WasteType incomingType = GetWasteTypeFromCollider(other);
         
+        // Power-Up Kontrolleri
+        if (incomingType == WasteType.Hourglass)
+        {
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.AddTime(10f);
+            }
+            ObjectPoolManager.Instance.ReturnToPool(wasteObj);
+            return;
+        }
+
+        if (incomingType == WasteType.Magnet)
+        {
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.ActivateMagnet(15f);
+            }
+            ObjectPoolManager.Instance.ReturnToPool(wasteObj);
+            return;
+        }
+
         bool isGoldenWaste = false;
-        var physicsTuner = other.transform.root.GetComponentInChildren<RecycleRush.Interaction.ARWastePhysicsTuner>();
+        var physicsTuner = wasteObj.GetComponentInChildren<RecycleRush.Interaction.ARWastePhysicsTuner>();
         if (physicsTuner != null && physicsTuner.isGoldenWaste)
         {
             isGoldenWaste = true;
@@ -183,10 +219,11 @@ public class BinTrigger : MonoBehaviour
             HapticDuration = isCorrect ? _correctHapticDuration : _incorrectHapticDuration,
             HapticAmplitude = isCorrect ? _correctHapticAmplitude : _incorrectHapticAmplitude,
             TargetBinType = _acceptedWasteType,
+            ProcessedWasteType = incomingType,
             WasGoldenWaste = isGoldenWaste,
             ReactionTime = reactionTime,
             PrecisionData = precisionResult,
-            ProcessedWaste = other.transform.root.gameObject
+            ProcessedWaste = wasteObj
         };
 
         Debug.Log($"<color=magenta>[BinTrigger]</color> OnWasteProcessed sinyali fırlatılıyor! Puan: {resultData.ScoreChange} | Coin: {resultData.CoinChange} | XP: {resultData.XpChange}");
@@ -194,13 +231,14 @@ public class BinTrigger : MonoBehaviour
         // Event'i fırlat.
         OnWasteProcessed?.Invoke(resultData);
 
-        ObjectPoolManager.Instance.ReturnToPool(other.transform.root.gameObject);
+        ObjectPoolManager.Instance.ReturnToPool(wasteObj);
     }
 
-    private WasteType GetWasteTypeFromCollider(Collider col)
+    public static WasteType GetWasteTypeFromCollider(Collider col)
     {
-        Transform rootTransform = col.transform.root;
-        foreach (Transform child in rootTransform.GetComponentsInChildren<Transform>(true))
+        if (col == null) return WasteType.Untagged;
+        GameObject target = col.attachedRigidbody != null ? col.attachedRigidbody.gameObject : col.gameObject;
+        foreach (Transform child in target.GetComponentsInChildren<Transform>(true))
         {
             if (CheckTag(child.gameObject, out WasteType type)) 
             {
@@ -210,13 +248,51 @@ public class BinTrigger : MonoBehaviour
         return WasteType.Untagged;
     }
 
-    private bool CheckTag(GameObject obj, out WasteType type)
+    public static bool CheckTag(GameObject obj, out WasteType type)
     {
+        if (obj == null) { type = WasteType.Untagged; return false; }
         if (obj.CompareTag("Paper")) { type = WasteType.Paper; return true; }
         if (obj.CompareTag("Glass")) { type = WasteType.Glass; return true; }
         if (obj.CompareTag("Plastic")) { type = WasteType.Plastic; return true; }
         if (obj.CompareTag("Metal")) { type = WasteType.Metal; return true; }
+        if (obj.CompareTag("Hourglass")) { type = WasteType.Hourglass; return true; }
+        if (obj.CompareTag("Magnet")) { type = WasteType.Magnet; return true; }
         type = WasteType.Untagged;
+        return false;
+    }
+
+    public static Transform GetBinTransform(WasteType type)
+    {
+        BinTrigger[] bins = FindObjectsByType<BinTrigger>(FindObjectsSortMode.None);
+        foreach (var b in bins)
+        {
+            if (b._acceptedWasteType == type) return b.transform;
+        }
+        return null;
+    }
+
+    public static bool TryGetBinsCenter(out Vector3 center)
+    {
+        center = Vector3.zero;
+        BinTrigger[] bins = FindObjectsByType<BinTrigger>(FindObjectsSortMode.None);
+        if (bins != null && bins.Length > 0)
+        {
+            Vector3 sum = Vector3.zero;
+            int count = 0;
+            foreach (var b in bins)
+            {
+                if (b != null && b.gameObject.activeInHierarchy)
+                {
+                    sum += b.transform.position;
+                    count++;
+                }
+            }
+            if (count > 0)
+            {
+                center = sum / count;
+                return true;
+            }
+        }
         return false;
     }
 

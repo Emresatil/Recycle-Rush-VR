@@ -20,6 +20,7 @@ public class ObjectPoolManager : MonoBehaviour
     // Sahnede aktif olan havuz objelerini takip etmek için liste
     private List<GameObject> _activeObjects = new List<GameObject>();
     private Transform _poolContainer;
+    public Transform PoolContainer => _poolContainer;
 
     private void Awake()
     {
@@ -73,6 +74,7 @@ public class ObjectPoolManager : MonoBehaviour
         objToSpawn.transform.SetParent(null); // Objeyi havuz deposundan çıkar ki kendi Root'u olsun
         objToSpawn.transform.position = position;
         objToSpawn.transform.rotation = rotation;
+        objToSpawn.transform.localScale = prefab.transform.localScale; // Ölçek bozulmasını (0 veya devasa) %100 engeller
 
         // Önceki hareketinden kalan Fiziksel etkileri ve kilitleri tam fabrika ayarlarına sıfırla
         Rigidbody[] rbs = objToSpawn.GetComponentsInChildren<Rigidbody>(true);
@@ -89,24 +91,17 @@ public class ObjectPoolManager : MonoBehaviour
             rb.isKinematic = true; 
             
             // 3. Child Rigidbody'lerin (varsa) kendi lokal pozisyonlarını bozmamak için direkt taşıma (position/rotation ataması) YAPMIYORUZ.
-            // Zaten root transform taşındığı için children otomatik taşındı.
             
             // 4. Taşıma bitti, yerçekimine geri bırak
             rb.isKinematic = false; // Bant olmadığı için doğrudan yerçekimiyle düşmeli
             rb.useGravity = true;
             rb.constraints = RigidbodyConstraints.None;
-            
-            // ŞEYTANİ BUG 2: maxDepenetrationVelocity'yi 0.5f yapmak, yerçekiminin (9.81) itme gücünü yenmesine sebep oluyordu!
-            // Bu yüzden objeler yere çarpınca yukarı sekmek yerine zeminin içine yavaş yavaş batıp aşağı (Kill-Z'ye) düşüyordu!
-            // Bunu makul bir seviyeye (5.0f) çekiyoruz ki hem patlamalar engellensin hem de zeminden batmasınlar.
-            rb.maxDepenetrationVelocity = 5.0f; 
+            rb.maxDepenetrationVelocity = 2.0f; 
         }
 
         // Hızlar ve konum sıfırlandıktan SONRA objeyi aktif et (Böylece Physics motoru fırlatmaz)
         objToSpawn.SetActive(true);
 
-        // MR Güncellemesi: BeltItem (VR Taşıyıcı Bant) kaldırıldı. Objeler AR ortamında serbest düşüş yapacak.
-        
         // 2) Tutma ve fırlatma seslerinin çalışması için WasteAudioFeedback bileşenini dinamik ekle
         if (objToSpawn.GetComponent<RecycleRush.Interaction.WasteAudioFeedback>() == null &&
             objToSpawn.GetComponentInChildren<RecycleRush.Interaction.WasteAudioFeedback>() == null)
@@ -155,19 +150,32 @@ public class ObjectPoolManager : MonoBehaviour
 
         // 1) EĞER OYUNCU OBJEYİ ELİNDE TUTARKEN HAVUZA GİDERSE (Süre bitimi, yere düşme vs.)
         // XR sistemi bug'a girer ve obje tekrar doğduğunda oyuncunun eline veya uzaya mermi gibi fırlar!
-        // Bunu önlemek için grab bileşenini kapatıp açarak zorla elinden düşürtüyoruz.
+        // Bunu önlemek için grab bağlantısını XR Interaction Manager üzerinden iptal ediyoruz.
         var grab = obj.GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>();
         if (grab == null) 
-            grab = obj.GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>(); // Eski sürüm yedeği
+            grab = obj.GetComponentInChildren<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>();
             
         if (grab != null && grab.isSelected)
         {
+            if (grab.interactionManager != null)
+            {
+                grab.interactionManager.CancelInteractableSelection((UnityEngine.XR.Interaction.Toolkit.Interactables.IXRSelectInteractable)grab);
+            }
             grab.enabled = false;
             grab.enabled = true; // Kapat-aç yapmak grab bağlantısını kesin olarak koparır.
         }
 
+        // Havuza dönerken tüm fiziksel kuvvetleri temizle ve kinematic yap
+        Rigidbody[] returnRbs = obj.GetComponentsInChildren<Rigidbody>(true);
+        foreach (var r in returnRbs)
+        {
+            r.isKinematic = true;
+            r.linearVelocity = Vector3.zero;
+            r.angularVelocity = Vector3.zero;
+        }
+
         // 2) EBEVEYN (PARENT) RESETLEME
-        // Objeleri ObjectPool_Container içine saklıyoruz ki root (Core_Managers) kirlenmesin.
+        // Objeleri ObjectPool_Container içine saklıyoruz ki root kirlenmesin.
         if (_poolContainer != null)
         {
             obj.transform.SetParent(_poolContainer);
