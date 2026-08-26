@@ -121,6 +121,13 @@ namespace RecycleRush.Managers
             LoadAnalytics();
         }
 
+        public void ResetAnalytics()
+        {
+            CurrentData = new AnalyticsData();
+            if (File.Exists(_analyticsFilePath)) File.Delete(_analyticsFilePath);
+            Debug.Log("<color=red>[AnalyticsManager]</color> Tüm analitik verileri SIFIRLANDI!");
+        }
+
         /// <summary>
         /// Analiz verilerini JSON formatında yerel cihaza kaydeder.
         /// </summary>

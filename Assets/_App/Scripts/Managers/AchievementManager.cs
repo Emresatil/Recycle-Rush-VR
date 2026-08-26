@@ -128,6 +128,13 @@ namespace RecycleRush.Managers
             }
         }
 
+        public void ResetAchievements()
+        {
+            if (File.Exists(_savePath)) File.Delete(_savePath);
+            InitializeDefaultDatabase();
+            Debug.Log("<color=red>[AchievementManager]</color> Tüm başarımlar SIFIRLANDI!");
+        }
+
         public void SaveAchievements()
         {
             try

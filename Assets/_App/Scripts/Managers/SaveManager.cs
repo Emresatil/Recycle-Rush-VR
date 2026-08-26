@@ -188,6 +188,15 @@ namespace RecycleRush.Managers
                 if (File.Exists(_tempPath)) File.Delete(_tempPath);
                 
                 CurrentData = new SaveData(); // Belleği de sıfırla
+                
+                // Seviye haritası (Bölüm) ilerlemelerini de tamamen sıfırla
+                PlayerPrefs.DeleteKey("LevelSelectionProgress");
+                PlayerPrefs.Save();
+                
+                // Analiz ve Başarımları da tamamen sıfırla
+                if (AnalyticsManager.Instance != null) AnalyticsManager.Instance.ResetAnalytics();
+                if (AchievementManager.Instance != null) AchievementManager.Instance.ResetAchievements();
+                
                 Debug.Log("<color=red>[SaveManager]</color> Tüm kayıt ve yedek dosyaları SİLİNDİ! İlerleme sıfırlandı.");
             }
             catch (Exception e)
