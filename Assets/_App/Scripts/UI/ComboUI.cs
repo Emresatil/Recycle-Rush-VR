@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using TMPro;
 using System.Collections;
 
@@ -18,12 +18,18 @@ namespace RecycleRush.UI
         [SerializeField] private float _fadeSpeed = 3f;
 
         private Coroutine _hideCoroutine;
+        private CanvasGroup _canvasGroup;
 
         private void Awake()
         {
+            _canvasGroup = GetComponent<CanvasGroup>();
+            if (_canvasGroup == null)
+            {
+                _canvasGroup = gameObject.AddComponent<CanvasGroup>();
+            }
+
             if (_comboText != null)
             {
-                // Başlangıçta yazıyı görünmez (şeffaf) yap
                 Color c = _comboText.color;
                 c.a = 0f;
                 _comboText.color = c;
@@ -32,11 +38,30 @@ namespace RecycleRush.UI
 
         private void OnEnable()
         {
+            GameManager.OnGameStateChanged += HandleGameState;
             BinTrigger.OnComboChanged += HandleComboChanged;
+            
+            if (GameManager.Instance != null)
+            {
+                HandleGameState(GameManager.Instance.CurrentState);
+            }
+        }
+
+        private void Start()
+        {
+            if (GameManager.Instance != null)
+            {
+                HandleGameState(GameManager.Instance.CurrentState);
+            }
+            else
+            {
+                HandleGameState(GameState.MainMenu);
+            }
         }
 
         private void OnDisable()
         {
+            GameManager.OnGameStateChanged -= HandleGameState;
             BinTrigger.OnComboChanged -= HandleComboChanged;
         }
 
@@ -46,7 +71,6 @@ namespace RecycleRush.UI
 
             if (currentCombo > 1)
             {
-                // Kombo varsa yazıyı göster ve efekti başlat
                 _comboText.text = $"Kombo x{currentCombo}!";
                 
                 if (_hideCoroutine != null)
@@ -57,7 +81,6 @@ namespace RecycleRush.UI
             }
             else
             {
-                // Kombo kırıldıysa (0 veya 1 ise) yazıyı anında gizle
                 if (_hideCoroutine != null)
                 {
                     StopCoroutine(_hideCoroutine);
@@ -72,17 +95,14 @@ namespace RecycleRush.UI
 
         private IEnumerator ShowAndFadeRoutine()
         {
-            // Yazıyı anında görünür (Opak) yap ve biraz büyüt
             Color c = _comboText.color;
             c.a = 1f;
             _comboText.color = c;
             
             _comboText.transform.localScale = Vector3.one * 1.5f;
 
-            // Yazı biraz ekranda kalsın
             yield return new WaitForSeconds(_displayDuration);
 
-            // Sönümlenerek kaybolsun ve küçülsün (Fade Out & Shrink)
             while (c.a > 0f)
             {
                 c.a -= Time.deltaTime * _fadeSpeed;
@@ -94,7 +114,18 @@ namespace RecycleRush.UI
                 yield return null;
             }
             
-            _comboText.transform.localScale = Vector3.one; // Boyutu sıfırla
+            _comboText.transform.localScale = Vector3.one;
+        }
+    
+        private void HandleGameState(GameState state)
+        {
+            bool show = (state == GameState.Playing);
+            if (_canvasGroup != null)
+            {
+                _canvasGroup.alpha = show ? 1f : 0f;
+                _canvasGroup.blocksRaycasts = show;
+                _canvasGroup.interactable = show;
+            }
         }
     }
 }

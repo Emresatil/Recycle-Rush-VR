@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using RecycleRush.Managers;
@@ -20,25 +20,51 @@ namespace RecycleRush.UI
         [SerializeField] private float _fillSpeed = 5f;
 
         private float _targetProgress = 0f;
+        private CanvasGroup _canvasGroup;
+
+        private void Awake()
+        {
+            _canvasGroup = GetComponent<CanvasGroup>();
+            if (_canvasGroup == null)
+            {
+                _canvasGroup = gameObject.AddComponent<CanvasGroup>();
+            }
+        }
 
         private void OnEnable()
         {
+            GameManager.OnGameStateChanged += HandleGameState;
             if (LevelManager.Instance != null)
             {
                 LevelManager.Instance.OnXpChanged += HandleXpChanged;
                 LevelManager.Instance.OnLevelUp += HandleLevelUp;
                 
-                // Başlangıç değerlerini çek
                 UpdateLevelText(LevelManager.Instance.CurrentLevel);
                 HandleXpChanged(LevelManager.Instance.CurrentXP, LevelManager.Instance.RequiredXP);
                 
-                // Barın başlangıçta aniden dolması için Lerp'siz eşitle
                 if (_xpSlider != null) _xpSlider.value = _targetProgress;
+            }
+            if (GameManager.Instance != null)
+            {
+                HandleGameState(GameManager.Instance.CurrentState);
+            }
+        }
+
+        private void Start()
+        {
+            if (GameManager.Instance != null)
+            {
+                HandleGameState(GameManager.Instance.CurrentState);
+            }
+            else
+            {
+                HandleGameState(GameState.MainMenu);
             }
         }
 
         private void OnDisable()
         {
+            GameManager.OnGameStateChanged -= HandleGameState;
             if (LevelManager.Instance != null)
             {
                 LevelManager.Instance.OnXpChanged -= HandleXpChanged;
@@ -48,7 +74,6 @@ namespace RecycleRush.UI
 
         private void Update()
         {
-            // Slider değerini yumuşak bir şekilde hedefe doğru doldur (Lerp)
             if (_xpSlider != null && _xpSlider.value != _targetProgress)
             {
                 _xpSlider.value = Mathf.Lerp(_xpSlider.value, _targetProgress, Time.deltaTime * _fillSpeed);
@@ -66,9 +91,8 @@ namespace RecycleRush.UI
         private void HandleLevelUp(int oldLevel, int newLevel)
         {
             UpdateLevelText(newLevel);
-            // Seviye atladığında bar sıfırlanır
             _targetProgress = 0f;
-            if (_xpSlider != null) _xpSlider.value = 0f; // Anında sıfırla ki geriye doğru lerp olmasın
+            if (_xpSlider != null) _xpSlider.value = 0f;
         }
 
         private void UpdateLevelText(int level)
@@ -76,6 +100,17 @@ namespace RecycleRush.UI
             if (_levelText != null)
             {
                 _levelText.text = $"Level {level}";
+            }
+        }
+    
+        private void HandleGameState(GameState state)
+        {
+            bool show = (state == GameState.Playing);
+            if (_canvasGroup != null)
+            {
+                _canvasGroup.alpha = show ? 1f : 0f;
+                _canvasGroup.blocksRaycasts = show;
+                _canvasGroup.interactable = show;
             }
         }
     }

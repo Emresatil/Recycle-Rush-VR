@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 // TODO [Post-Merge]: Verify GameManager state transitions and missing prefab references after the massive PR merge.
 
@@ -116,17 +116,6 @@ public class GameManager : MonoBehaviour
     [Tooltip("Oyunun toplam süresi (saniye cinsinden)")]
     [SerializeField] private float _gameDuration = 60f;
     
-    [Header("UI / Modüller")]
-    [Tooltip("Fiziksel butonların bulunduğu modül (Play, Settings vb.)")]
-    public GameObject buttonsModule;
-    
-    [Tooltip("Oyun başladığında animasyonla belirecek çevre modülleri (Boş bırakırsanız otomatik bulur)")]
-    public GameObject[] environmentModules;
-    
-    private Vector3 _buttonsOriginalPos;
-    private Quaternion _buttonsOriginalRot;
-    private bool _hasSavedButtonsTransform = false;
-    private Coroutine _hideButtonsCoroutine;
     
     // Oyun durumunun okunabilmesi ama sadece bu sınıf tarafından değiştirilebilmesi için Property
     public GameState CurrentState { get; private set; }
@@ -134,9 +123,7 @@ public class GameManager : MonoBehaviour
     
     public float RemainingTime { get; private set; }
     
-    [Header("Dalga (Wave) Altyapısı (Skeleton)")]
-    public int CurrentWave { get; private set; }
-    [SerializeField] private int _maxWave = 5;
+
 
     // Event'ler (Olaylar): Spagetti kodu engeller. Diğer sınıflar sadece bu eventleri dinler.
     // Örneğin; UI yöneticisi OnGameStateChanged'i dinler ve GameOver gelince bitiş panelini açar.
@@ -184,17 +171,7 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        // Çevre modülleri inspector'dan atanmadıysa otomatik olarak bul
-        if (environmentModules == null || environmentModules.Length == 0)
-        {
-            environmentModules = new GameObject[]
-            {
-                GameObject.Find("ConveyorSystem_Module"),
-                GameObject.Find("RecyclingArea_Module"),
-                GameObject.Find("scoreboard"),
-                GameObject.Find("QC_Drone")
-            };
-        }
+
 
         // Oyun ilk açıldığında hazırlık evresinden geçer, ardından ana menü (veya doğrudan oyun) başlar.
         ChangeState(GameState.Initialization);
@@ -237,7 +214,7 @@ public class GameManager : MonoBehaviour
         switch (CurrentState)
         {
             case GameState.MainMenu:
-                if (newState == GameState.Playing || newState == GameState.Paused || newState == GameState.GameOver) isValidTransition = false;
+                if (newState == GameState.Paused || newState == GameState.GameOver) isValidTransition = false;
                 break;
             case GameState.Placement:
                 if (newState != GameState.Countdown && newState != GameState.MainMenu) isValidTransition = false;
@@ -273,53 +250,6 @@ public class GameManager : MonoBehaviour
         // Yeni state'e giriş işlemlerini çalıştır (FSM OnEnter)
         OnStateEnter(CurrentState);
         
-        // Modülleri Duruma Göre Otomatik Yönet (Butonlar vb.)
-        if (buttonsModule != null)
-        {
-            if (!_hasSavedButtonsTransform)
-            {
-                _buttonsOriginalPos = buttonsModule.transform.position;
-                _buttonsOriginalRot = buttonsModule.transform.rotation;
-                _hasSavedButtonsTransform = true;
-            }
-
-            if (CurrentState == GameState.MainMenu)
-            {
-                if (_hideButtonsCoroutine != null)
-                {
-                    StopCoroutine(_hideButtonsCoroutine);
-                    _hideButtonsCoroutine = null;
-                }
-                
-                // Eski haline (dik konumuna ve orijinal pozisyonuna) geri getir
-                buttonsModule.transform.position = _buttonsOriginalPos;
-                buttonsModule.transform.rotation = _buttonsOriginalRot;
-                buttonsModule.SetActive(true);
-
-                // Eğer Ana Menüye dönüldüyse çevreyi tekrar gizle (Scale 0)
-                if (environmentModules != null)
-                {
-                    foreach (var module in environmentModules)
-                    {
-                        if (module != null) module.transform.localScale = Vector3.zero;
-                    }
-                }
-            }
-            else if (CurrentState == GameState.Placement || CurrentState == GameState.Countdown)
-            {
-                // Sadece Butonlar görünür durumdaysa devrilme animasyonu başlat (örn: MainMenu'den gelirsek)
-                if (buttonsModule.activeSelf)
-                {
-                    if (_hideButtonsCoroutine != null) StopCoroutine(_hideButtonsCoroutine);
-                    _hideButtonsCoroutine = StartCoroutine(HideButtonsRoutine());
-                }
-            }
-            else
-            {
-                if (_hideButtonsCoroutine != null) StopCoroutine(_hideButtonsCoroutine);
-                buttonsModule.SetActive(false);
-            }
-        }
 
         // Durum değişikliğini tüm sisteme yayınla (Broadcast)
         OnGameStateChanged?.Invoke(CurrentState);
@@ -389,45 +319,9 @@ public class GameManager : MonoBehaviour
 
             // 5. Motor hızını sıfırla (Paused durumundan geliyorsak zaman durmuş olabilir)
             Time.timeScale = 1f;
-            
-            // 6. Dalga sistemini (Wave) sıfırla
-            CurrentWave = 1;
-
-            // 7. Geri Sayım (Countdown) durumuna geçerek oyunu başlat.
             ChangeState(GameState.Countdown);
         }
     }
-
-    #region Wave Skeleton (İleride Geliştirilecek)
-    
-    /// <summary>
-    /// Yeni bir dalgayı (Wave) başlatır. Zorluk seviyesi (Hız, Spawn süresi) burada artırılabilir.
-    /// (Solid: Açık/Kapalı prensibine uygun genişleme alanı)
-    /// </summary>
-    public void StartWave()
-    {
-        Debug.Log($"[GameManager] Wave {CurrentWave} Başlıyor!");
-        // TODO: Spawner sistemine "Daha hızlı üret" sinyali gönderilebilir.
-    }
-
-    /// <summary>
-    /// Mevcut dalgayı (Wave) sonlandırır.
-    /// </summary>
-    public void EndWave()
-    {
-        Debug.Log($"[GameManager] Wave {CurrentWave} Bitti!");
-        if (CurrentWave < _maxWave)
-        {
-            CurrentWave++;
-            StartWave();
-        }
-        else
-        {
-            EndGame(); // Son dalga bittiyse oyun biter
-        }
-    }
-    
-    #endregion
 
     /// <summary>
     /// Oyunu (veya gerekirse öğreticiyi) başlatır.
@@ -441,8 +335,7 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            RemainingTime = _gameDuration;
-            ChangeState(GameState.Playing);
+            PrepareToStart();
         }
     }
 
@@ -728,116 +621,74 @@ public class GameManager : MonoBehaviour
         FinalSessionReport = snapshot;
     }
 
-    /// <summary>
-    /// Butonların arkaya doğru taş gibi devrilip (Domino etkisi) bir süre sonra kaybolmasını sağlar.
-    /// </summary>
-    private System.Collections.IEnumerator HideButtonsRoutine()
+    #region AR Power-Up (Magnet & Hourglass) Injections
+    
+    public static event Action<float> OnMagnetStarted;
+    public static event Action<float> OnMagnetTimeUpdated;
+    public static event Action OnMagnetEnded;
+    public static event Action<float> OnHourglassUsed;
+
+    public bool IsMagnetActive { get; private set; }
+    public float MagnetRemainingTime { get; private set; }
+    
+    public void PrepareToStart()
     {
-        if (buttonsModule == null) yield break;
-
-        // 1) Butonların gerçek merkezini bul (3. butonun merkezi kaydırmaması için sadece Play ve Setting baz alınır)
-        Vector3 center = Vector3.zero;
-        int count = 0;
-        foreach (Transform child in buttonsModule.transform)
+        if (CurrentState == GameState.MainMenu || CurrentState == GameState.GameOver || CurrentState == GameState.Paused || CurrentState == GameState.Playing)
         {
-            // Sadece isminde Play veya Setting geçen butonları merkeze dahil et (Exit butonunu yoksay)
-            if (child.name.Contains("Play") || child.name.Contains("Setting"))
+            float calculatedDuration = _gameDuration;
+            if (RecycleRush.Managers.LevelSelectionManager.Instance != null)
             {
-                center += child.position;
-                count++;
+                int currentLvl = RecycleRush.Managers.LevelSelectionManager.Instance.CurrentPlayingLevelId;
+                calculatedDuration = _gameDuration + ((currentLvl - 1) * 10f);
             }
-        }
-        
-        if (count > 0) 
-            center /= count;
-        else 
-            center = buttonsModule.transform.position; // Fallback garantisi
+            RemainingTime = calculatedDuration;
+            OnGameTimeUpdated?.Invoke(RemainingTime);
 
-        // 2) Devrilme noktasını (Pivot) merkezin yarım metre altı (sanki zemine değdiği yer) olarak ayarla
-        Vector3 pivotPoint = center + Vector3.down * 0.5f;
-        
-        // 3) Hangi eksen etrafında dönecek? (Kendi sağına doğru olan eksen etrafında dönerse arkaya yatar)
-        Vector3 rotationAxis = buttonsModule.transform.right;
-
-        float duration = 1.0f; // 1 saniyede devrilir
-        float elapsed = 0f;
-        
-        float totalAngle = 90f; // Arkaya tam yatması için 90 derece
-        float currentAngle = 0f;
-
-        while (elapsed < duration)
-        {
-            elapsed += Time.deltaTime;
-            
-            // Düşme hızını ivmelendirmek için t'nin karesini (Ease-In) alıyoruz
-            float t = elapsed / duration;
-            t = t * t; 
-            
-            float targetAngle = Mathf.Lerp(0f, totalAngle, t);
-            float deltaAngle = targetAngle - currentAngle;
-            
-            // Objeyi kendi merkezi etrafında devir!
-            buttonsModule.transform.RotateAround(pivotPoint, rotationAxis, deltaAngle);
-            currentAngle = targetAngle;
-            
-            yield return null;
-        }
-
-        // Tamamen yere çarptıktan sonra oyuncunun bunu algılaması için 1 saniye yerde beklesin
-        yield return new WaitForSeconds(1.0f);
-
-        // Son olarak sahneden gizle
-        buttonsModule.SetActive(false);
-        _hideButtonsCoroutine = null;
-
-        // Butonlar kaybolduktan sonra çevreyi Arcade animasyonla ortaya çıkar
-        StartCoroutine(RevealEnvironmentRoutine());
-    }
-
-    /// <summary>
-    /// Makine, bant ve kutuları "Pop-up" (büyüyerek ve yaylanarak) Arcade stiliyle ortaya çıkarır.
-    /// </summary>
-    private System.Collections.IEnumerator RevealEnvironmentRoutine()
-    {
-        float duration = 0.8f; // Animasyon süresi (0.8 saniye çok dinamik durur)
-        float elapsed = 0f;
-        
-        // EaseOutBack formülü için sabitler (Hafifçe 1.0'ı geçip geri döner)
-        float c1 = 1.70158f;
-        float c3 = c1 + 1f;
-
-        while (elapsed < duration)
-        {
-            elapsed += Time.deltaTime;
-            float t = elapsed / duration;
-            
-            // Ease Out Back matematiği
-            float t_minus_1 = t - 1f;
-            float scaleValue = 1f + c3 * Mathf.Pow(t_minus_1, 3f) + c1 * Mathf.Pow(t_minus_1, 2f);
-
-            // Çok küçülmesini engellemek için min 0 sınırla
-            if (scaleValue < 0f) scaleValue = 0f;
-
-            Vector3 currentScale = Vector3.one * scaleValue;
-
-            foreach (var module in environmentModules)
+            if (RecycleRush.Core.ScoreManager.Instance != null)
             {
-                if (module != null)
-                {
-                    module.transform.localScale = currentScale;
-                }
+                RecycleRush.Core.ScoreManager.Instance.ResetScore();
             }
 
-            yield return null;
-        }
-
-        // Animasyon bitince tam %100 (1.0) boyutuna sabitle
-        foreach (var module in environmentModules)
-        {
-            if (module != null)
+            if (ObjectPoolManager.Instance != null)
             {
-                module.transform.localScale = Vector3.one;
+                ObjectPoolManager.Instance.ReturnAllToPool();
             }
+
+            Time.timeScale = 1f;
+            ChangeState(GameState.Countdown);
         }
     }
+    
+    public void ActivateMagnet(float duration)
+    {
+        IsMagnetActive = true;
+        MagnetRemainingTime = duration;
+        OnMagnetStarted?.Invoke(duration);
+        StartCoroutine(MagnetRoutine());
+    }
+    
+    private System.Collections.IEnumerator MagnetRoutine()
+    {
+        while (MagnetRemainingTime > 0)
+        {
+            MagnetRemainingTime -= Time.deltaTime;
+            OnMagnetTimeUpdated?.Invoke(MagnetRemainingTime);
+            yield return null;
+        }
+        IsMagnetActive = false;
+        OnMagnetEnded?.Invoke();
+    }
+    
+    public void AddTime(float seconds)
+    {
+        if (CurrentState == GameState.Playing)
+        {
+            RemainingTime += seconds;
+            OnGameTimeUpdated?.Invoke(RemainingTime);
+            OnHourglassUsed?.Invoke(seconds);
+        }
+    }
+
 }
+#endregion
+

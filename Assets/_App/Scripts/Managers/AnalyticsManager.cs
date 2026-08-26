@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using System.IO;
 using System;
 using RecycleRush.Core; // ScoreManager vb. için gerekli olabilir
@@ -258,16 +258,9 @@ namespace RecycleRush.Managers
                                 CurrentData.TotalPollutionGameOvers++;
                             }
                         }
-
-                        // En Yüksek Dalga (Wave) Tespiti
                         if (GameManager.Instance != null)
                         {
-                            if (GameManager.Instance.CurrentWave > CurrentData.MaxWaveReached)
-                            {
-                                CurrentData.MaxWaveReached = GameManager.Instance.CurrentWave;
-                            }
-                            
-                            // Yeni Snapshot'tan gelen AAA verilerini Analytics'e kaydet
+// Yeni Snapshot'tan gelen AAA verilerini Analytics'e kaydet
                             var finalReport = GameManager.Instance.FinalSessionReport;
                             
                             // YENİ: Precision Verilerini Kaydet
