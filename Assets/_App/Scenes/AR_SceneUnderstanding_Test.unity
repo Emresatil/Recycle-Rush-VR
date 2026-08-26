@@ -6453,6 +6453,7 @@ GameObject:
   m_Component:
   - component: {fileID: 860334677}
   - component: {fileID: 860334676}
+  - component: {fileID: 860334678}
   m_Layer: 0
   m_Name: Portal_Spawner
   m_TagString: Untagged
@@ -6467,7 +6468,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 860334675}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0ce8dba51d32120469cd523d96dfd5d9, type: 3}
   m_Name: 
@@ -6516,6 +6517,52 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &860334678
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 860334675}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4616269fad9687e4daa6507f121befe4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WasteSpawner
+  wastePrefabs:
+  - {fileID: 5683698396433277105, guid: 0531cad497e09df40bdf70c2d7b545d4, type: 3}
+  - {fileID: 1713471487485392943, guid: aa1fb1639a735c947a6e09985d3f08d1, type: 3}
+  - {fileID: 1932181740600318692, guid: 0237afd76c7a5d640919c432fb4a4a0f, type: 3}
+  - {fileID: 5472293216924229616, guid: b091faef77c6c4f459a332580f9e2425, type: 3}
+  - {fileID: 5088643706880887341, guid: fcb7b7f6d6b8dae478e0f208dd2ad797, type: 3}
+  - {fileID: 4912435163391296798, guid: cd971ed8264a1b544b9ccd8d524535fa, type: 3}
+  - {fileID: 5075607893889188300, guid: dc9da684b3a925143b3009b6d55d5615, type: 3}
+  - {fileID: 5622697448147783869, guid: 7738b8c79a3bc384aac5c78edaa237ad, type: 3}
+  - {fileID: 6401851785570166359, guid: a8f444e36644f904ea8dc79be5031457, type: 3}
+  - {fileID: 2224162825422352949, guid: f40946777103a8e438190a9a185496de, type: 3}
+  - {fileID: 1155517191667315498, guid: df74783096f23964cb3e270bceca413d, type: 3}
+  - {fileID: 3199166170169763079, guid: 09e21d7564c94b4418971db260dcf71d, type: 3}
+  - {fileID: 1712690235699389714, guid: fbe12c384f50aed42ae7e457f2f1cfbf, type: 3}
+  - {fileID: 8134708681774675193, guid: 8df0748676d76ab44aef43bafbc57d94, type: 3}
+  - {fileID: 5089588363924917385, guid: 76e45dd3b58ab6f4da7b3fd7b9714bd5, type: 3}
+  - {fileID: 2661205264216994680, guid: 3cea4afddf71e2343896ff67df3fae1b, type: 3}
+  - {fileID: 1467448516992097433, guid: 7e46d3968ed195f4daf41d6cd3f73036, type: 3}
+  - {fileID: 2708535198319623563, guid: 02e2628647d18414f8b8cfeef3a520b1, type: 3}
+  - {fileID: 6939626159800628730, guid: 013a840c4d63f7d499c29d44e8c54e66, type: 3}
+  - {fileID: 4297595811316896341, guid: fb2b06f9eb5043a4fb5b0a7112c32f35, type: 3}
+  targetSurfaceType: 3
+  spawnPoint: {fileID: 2017040578}
+  goldenWastePrefab: {fileID: 899901206736937025, guid: 26356dcf67d5801419ee7124ce2c8717, type: 3}
+  goldenSpawnChance: 5
+  wastePackagePrefab: {fileID: 4789151615679747076, guid: 44435026f82f5c84eab85df1a790d607, type: 3}
+  packageSpawnChance: 5
+  hourglassPrefab: {fileID: 2062538595629661584, guid: ad791056c0618b24085d89969692c03d, type: 3}
+  magnetPrefab: {fileID: 172894208174886923, guid: 17a24d376272f524998d8f815ac7cc55, type: 3}
+  portalAnimator: {fileID: 0}
+  minSpawnInterval: 4
+  maxSpawnInterval: 7
+  _tapeMaterial: {fileID: 0}
+  _dirtVisualPrefab: {fileID: 8520451897343361221, guid: be1d78e2e4e95ab4c8941c3ac27229a3, type: 3}
 --- !u!1 &862048632
 GameObject:
   m_ObjectHideFlags: 0
