@@ -1,4 +1,4 @@
-#if UNITY_EDITOR
+﻿#if UNITY_EDITOR
 using UnityEditor;
 using UnityEngine;
 using UnityEditor.SceneManagement;
@@ -58,7 +58,7 @@ public class UltimateMerger : MonoBehaviour
             CopyScript<LevelManager>();
             CopyScript<AudioManager>();
             CopyScript<VFXManager>();
-            CopyScript<RecycleRush.Core.PackageChallengeTracker>();
+            
             CopyScript<ObjectPoolManager>();
         }
 
@@ -133,3 +133,4 @@ public class UltimateMerger : MonoBehaviour
     }
 }
 #endif
+

@@ -100,7 +100,17 @@ namespace RecycleRush.Managers
             }
             else
             {
-                BreakCombo();
+                // OYNANIS BUG FIX: Yanlis cop atildiginda combo aninda SIFIRLANMASIN, yari yariya dussun!
+                // Cocuklari sinirlendirmemek icin cok daha adil bir sistem.
+                if (CurrentCombo > 5) {
+                    CurrentCombo = CurrentCombo / 2;
+                    _lastThrowTime = Time.time;
+                    CurrentMultiplier = CalculateMultiplier(CurrentCombo);
+                    OnComboChanged?.Invoke(CurrentCombo, CurrentMultiplier, false);
+                    Debug.Log("<color=orange>[ComboManager]</color> Yanlis atis! Kombo yariya dustu: " + CurrentCombo);
+                } else {
+                    BreakCombo();
+                }
             }
         }
 
