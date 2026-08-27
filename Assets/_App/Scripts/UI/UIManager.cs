@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using TMPro; // TextMeshPro (YazÄ±lar) iÃ§in gerekli
 using System.Collections; // Coroutine (Lerp animasyonlarÄ±) iÃ§in gerekli
 using UnityEngine.UI;
@@ -32,8 +32,11 @@ namespace RecycleRush.UI
         [Header("Etkinlik ve Power-Up Bildirimleri")]
         [Tooltip("Aktif EtkinliÄŸi (Frenzy vb.) gÃ¶sterecek yazÄ±")]
         public TextMeshProUGUI eventNotificationText;
-        [Tooltip("Aktif Power-Up'Ä± (Magnet, Hourglass) gÃ¶sterecek yazÄ±")]
+        [Tooltip("Aktif Power-Up'ı (Magnet, Hourglass) gösterecek yazı")]
         public TextMeshProUGUI powerupNotificationText;
+        
+        [Tooltip("Başarım kazanıldığında ekranda çıkacak pop-up yazısı")]
+        public TextMeshProUGUI achievementNotificationText;
         
         [Header("Paneller ve ArayÃ¼z Kontrolleri")]
         [Tooltip("Ayarlar (Settings) Paneli")]
@@ -90,9 +93,11 @@ namespace RecycleRush.UI
             // GÃ¼venlik uyarÄ±sÄ± dinleyicisi
             Managers.EnvironmentSafetyManager.OnSafetyWarningTriggered += HandleSafetyWarning;
 
-            // Etkinlik yÃ¶neticisi (Frenzy vb.) dinleyicisi
+            // Etkinlik yöneticisi (Frenzy vb.) dinleyicisi
             Managers.EventManager.OnGameEventStarted += HandleGameEventStarted;
             Managers.EventManager.OnGameEventEnded += HandleGameEventEnded;
+            
+            Managers.AchievementManager.OnAchievementUnlocked += HandleAchievementUnlocked;
 
             if (menuPauseAction != null && menuPauseAction.action != null)
             {
@@ -119,6 +124,7 @@ namespace RecycleRush.UI
             if (comboText != null) comboText.gameObject.SetActive(false);
             if (eventNotificationText != null) eventNotificationText.gameObject.SetActive(false);
             if (powerupNotificationText != null) powerupNotificationText.gameObject.SetActive(false);
+            if (achievementNotificationText != null) achievementNotificationText.gameObject.SetActive(false);
 
             // SliderlarÄ± AudioManager'a baÄŸla
             if (bgmSlider != null && AudioManager.Instance != null)
@@ -207,6 +213,8 @@ namespace RecycleRush.UI
             
             Managers.EventManager.OnGameEventStarted -= HandleGameEventStarted;
             Managers.EventManager.OnGameEventEnded -= HandleGameEventEnded;
+            
+            Managers.AchievementManager.OnAchievementUnlocked -= HandleAchievementUnlocked;
             
             if (Core.ScoreManager.Instance != null)
             {
@@ -703,6 +711,28 @@ namespace RecycleRush.UI
             {
                 powerupNotificationText.gameObject.SetActive(false);
             }
+        }
+
+        private void HandleAchievementUnlocked(Managers.AchievementData achData)
+        {
+            if (achievementNotificationText != null)
+            {
+                StartCoroutine(ShowAchievementNotification(achData));
+            }
+        }
+
+        private IEnumerator ShowAchievementNotification(Managers.AchievementData achData)
+        {
+            achievementNotificationText.gameObject.SetActive(true);
+            achievementNotificationText.color = Color.yellow;
+            achievementNotificationText.text = $"🏆 ACHIEVEMENT UNLOCKED: {achData.Title}\n<size=70%>{achData.Description}</size>";
+            
+            // Havai fişek patlat
+            if (Managers.VFXManager.Instance != null) Managers.VFXManager.Instance.PlayConfetti();
+            
+            yield return new WaitForSeconds(3.5f);
+            
+            achievementNotificationText.gameObject.SetActive(false);
         }
 
         public void QuitApplication()

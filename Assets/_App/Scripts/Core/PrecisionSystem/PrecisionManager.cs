@@ -28,7 +28,7 @@ namespace RecycleRush.Core.PrecisionSystem
             }
             else
             {
-                Destroy(gameObject);
+                Destroy(this);
             }
         }
 

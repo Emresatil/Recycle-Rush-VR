@@ -38,7 +38,7 @@ namespace RecycleRush.Core
             {
                 // Eğer sahneye yanlışlıkla 2. bir ScoreManager eklenirse oyunun çökmesini engeller
                 Debug.LogWarning("Sahneye birden fazla ScoreManager eklendi! Fazlalık siliniyor.");
-                Destroy(gameObject);
+                Destroy(this);
                 return;
             }
 

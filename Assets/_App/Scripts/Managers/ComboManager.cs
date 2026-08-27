@@ -50,7 +50,7 @@ namespace RecycleRush.Managers
             }
             else
             {
-                Destroy(gameObject);
+                Destroy(this);
             }
         }
 

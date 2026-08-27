@@ -105,7 +105,7 @@ namespace RecycleRush.Managers
             // Singleton (Thread-safe)
             if (Instance != null && Instance != this)
             {
-                Destroy(gameObject);
+                Destroy(this); // Core objesini toptan silmemesi icin sadece scripti siliyoruz;
                 return;
             }
             Instance = this;
@@ -119,6 +119,13 @@ namespace RecycleRush.Managers
             _analyticsFilePath = Path.Combine(Application.persistentDataPath, "AnalyticsData.json");
 
             LoadAnalytics();
+        }
+
+        public void ResetAnalytics()
+        {
+            CurrentData = new AnalyticsData();
+            if (File.Exists(_analyticsFilePath)) File.Delete(_analyticsFilePath);
+            Debug.Log("<color=red>[AnalyticsManager]</color> Tüm analitik verileri SIFIRLANDI!");
         }
 
         /// <summary>

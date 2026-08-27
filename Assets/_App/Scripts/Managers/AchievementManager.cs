@@ -72,7 +72,7 @@ namespace RecycleRush.Managers
         {
             if (Instance != null && Instance != this)
             {
-                Destroy(gameObject);
+                Destroy(this); // Core objesini toptan silmemesi icin sadece scripti siliyoruz;
                 return;
             }
             
@@ -126,6 +126,13 @@ namespace RecycleRush.Managers
             {
                 InitializeDefaultDatabase();
             }
+        }
+
+        public void ResetAchievements()
+        {
+            if (File.Exists(_savePath)) File.Delete(_savePath);
+            InitializeDefaultDatabase();
+            Debug.Log("<color=red>[AchievementManager]</color> Tüm başarımlar SIFIRLANDI!");
         }
 
         public void SaveAchievements()

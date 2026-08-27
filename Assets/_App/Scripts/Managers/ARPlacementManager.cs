@@ -18,7 +18,7 @@ namespace RecycleRush.Managers
 
         [Header("Sahnede Zaten Var Olan Objeler")]
         [Tooltip("Sırayla: Bant, Kağıt, Plastik, Cam...")]
-        public List<GameObject> objectsToPlace;
+        public List<GameObject> objectsToPlace = new List<GameObject>();
 
         private int currentIndex = 0;
         private bool isSetupComplete = false;
@@ -43,6 +43,8 @@ namespace RecycleRush.Managers
 
         private void Start()
         {
+            if (objectsToPlace == null) objectsToPlace = new List<GameObject>();
+
             // Oyun başlarken Listedeki tüm objeleri görünmez yap (Sakla)
             foreach (var obj in objectsToPlace)
             {
@@ -50,7 +52,13 @@ namespace RecycleRush.Managers
                     obj.SetActive(false);
             }
 
-            if (objectsToPlace.Count > 0)
+            // İlk GEÇERLİ objeye kadar ilerle
+            while (currentIndex < objectsToPlace.Count && objectsToPlace[currentIndex] == null)
+            {
+                currentIndex++;
+            }
+
+            if (currentIndex < objectsToPlace.Count)
             {
                 // Sadece sıradaki objeyi görünür yap
                 objectsToPlace[currentIndex].SetActive(true);
@@ -64,6 +72,7 @@ namespace RecycleRush.Managers
         private void Update()
         {
             if (isSetupComplete || rightController == null || raycastManager == null) return;
+            if (objectsToPlace == null || currentIndex >= objectsToPlace.Count) return;
 
             GameObject currentObj = objectsToPlace[currentIndex];
             if (currentObj == null) return;
@@ -76,25 +85,31 @@ namespace RecycleRush.Managers
             {
                 Pose hitPose = hits[0].pose;
                 currentObj.transform.position = hitPose.position;
-
-                // Oyuncuya (Kameraya) baksın
-                Vector3 lookPos = Camera.main.transform.position;
-                lookPos.y = currentObj.transform.position.y;
-                currentObj.transform.LookAt(lookPos);
+                
+                // Rotasyonu da yüzeye uydur
+                currentObj.transform.rotation = hitPose.rotation;
             }
         }
 
         private void OnTriggerPressed(InputAction.CallbackContext context)
         {
             if (isSetupComplete) return;
+            if (objectsToPlace == null || currentIndex >= objectsToPlace.Count) return;
 
             GameObject currentObj = objectsToPlace[currentIndex];
+            if (currentObj == null) return;
 
             // 1. Objeyi olduğu yere sabitle (Anchor)
-            anchorManager.AnchorObject(currentObj);
+            if (anchorManager != null)
+            {
+                anchorManager.AnchorObject(currentObj);
+            }
 
-            // 2. Sıradaki objeye geç
-            currentIndex++;
+            // 2. Sıradaki objeye geç (Geçerli bir obje bulana kadar)
+            do
+            {
+                currentIndex++;
+            } while (currentIndex < objectsToPlace.Count && objectsToPlace[currentIndex] == null);
 
             if (currentIndex < objectsToPlace.Count)
             {
