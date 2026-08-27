@@ -6,20 +6,31 @@ namespace RecycleRush.Tutorial
     /// <summary>
     /// AR ortamında hedef objelerin (çöp, geri dönüşüm kutusu vb.) üzerinde beliren,
     /// yaylanarak (bounce) ve dönerek dikkat çeken 3D Hologram Yönlendirme Oku.
+    /// Tüm görsel ve boyut ayarları Inspector üzerinden kolayca ayarlanabilir.
     /// </summary>
     public class ARHoloPointer : MonoBehaviour
     {
-        [Header("Görsel Ayarlar")]
-        [SerializeField] private Color _pointerColor = new Color(0.2f, 0.9f, 1f, 0.95f); // Hologram Camgöbeği (Cyan)
-        [SerializeField] private float _bounceAmplitude = 0.12f;
-        [SerializeField] private float _bounceFrequency = 4f;
-        [SerializeField] private float _rotationSpeed = 60f;
-        [SerializeField] private float _heightOffset = 0.35f;
+        [Header("🔤 Boyut & Font")]
+        [Tooltip("3D Hologram Oku Font / Simge Boyutu")]
+        [Range(0.2f, 5.0f)] public float pointerFontSize = 1.8f;
+
+        [Header("🎨 Görsel Ayarlar")]
+        [Tooltip("Varsayılan Ok Rengi")]
+        public Color pointerColor = new Color(0.2f, 0.9f, 1f, 0.95f); // Hologram Cyan
+
+        [Header("📍 Hareket & Yaylanma Ayarları")]
+        [Tooltip("Hedefin üzerindeki dikey yükseklik mesafesi")]
+        [Range(0.05f, 1.5f)] public float heightOffset = 0.30f;
+
+        [Tooltip("Yaylanma genliği (yukarı-aşağı ne kadar oynasın)")]
+        [Range(0.01f, 0.5f)] public float bounceAmplitude = 0.08f;
+
+        [Tooltip("Yaylanma hızı")]
+        [Range(0.5f, 10.0f)] public float bounceFrequency = 4.0f;
 
         private Transform _targetTransform;
         private TextMeshPro _arrowText;
         private GameObject _visualHolder;
-        private Vector3 _baseOffset;
 
         private void Awake()
         {
@@ -28,18 +39,33 @@ namespace RecycleRush.Tutorial
 
         private void SetupVisuals()
         {
+            if (_visualHolder != null) return;
+
             _visualHolder = new GameObject("VisualHolder");
             _visualHolder.transform.SetParent(transform, false);
 
-            // TextMeshPro ile 3D Keskin ve Parlak Hologram Ok
             _arrowText = _visualHolder.AddComponent<TextMeshPro>();
             _arrowText.text = "▼";
-            _arrowText.fontSize = 26;
-            _arrowText.color = _pointerColor;
+            _arrowText.fontSize = pointerFontSize;
+            _arrowText.color = pointerColor;
             _arrowText.fontStyle = FontStyles.Bold;
             _arrowText.alignment = TextAlignmentOptions.Center;
 
             gameObject.SetActive(false);
+        }
+
+        public void ApplySettings()
+        {
+            if (_arrowText != null)
+            {
+                _arrowText.fontSize = pointerFontSize;
+                _arrowText.color = pointerColor;
+            }
+        }
+
+        private void OnValidate()
+        {
+            ApplySettings();
         }
 
         /// <summary>
@@ -47,16 +73,15 @@ namespace RecycleRush.Tutorial
         /// </summary>
         public void SetTarget(Transform target, Color? color = null, string symbol = "▼", float extraHeight = 0f)
         {
+            if (_visualHolder == null) SetupVisuals();
+
             _targetTransform = target;
 
-            if (color.HasValue && _arrowText != null)
+            if (_arrowText != null)
             {
-                _arrowText.color = color.Value;
-            }
-
-            if (!string.IsNullOrEmpty(symbol) && _arrowText != null)
-            {
-                _arrowText.text = symbol;
+                if (color.HasValue) _arrowText.color = color.Value;
+                if (!string.IsNullOrEmpty(symbol)) _arrowText.text = symbol;
+                _arrowText.fontSize = pointerFontSize;
             }
 
             if (_targetTransform == null)
@@ -82,7 +107,6 @@ namespace RecycleRush.Tutorial
 
         private void UpdatePosition(bool instant = false, float extraHeight = 0f)
         {
-            // Hedefin görsel sınırlarını (Collider Bounds) hesapla
             Vector3 centerPos = _targetTransform.position;
             float topY = centerPos.y;
 
@@ -115,13 +139,11 @@ namespace RecycleRush.Tutorial
                 }
             }
 
-            // Dikey eksende sinüs yaylanma hareketi
-            float bounce = Mathf.Sin(Time.time * _bounceFrequency) * _bounceAmplitude;
-            Vector3 targetPos = new Vector3(centerPos.x, topY + _heightOffset + extraHeight + bounce, centerPos.z);
+            float bounce = Mathf.Sin(Time.time * bounceFrequency) * bounceAmplitude;
+            Vector3 targetPos = new Vector3(centerPos.x, topY + heightOffset + extraHeight + bounce, centerPos.z);
 
             transform.position = instant ? targetPos : Vector3.Lerp(transform.position, targetPos, Time.deltaTime * 12f);
 
-            // Oyuncunun kamerasına dön (Billboard)
             Camera mainCam = Camera.main;
             if (mainCam != null)
             {

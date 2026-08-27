@@ -21,20 +21,35 @@ namespace RecycleRush.Tutorial
     /// <summary>
     /// AR Passthrough ortamında oyuncuyu adım adım eğiten ve aksiyonları zorunlu kılan
     /// Holografik 3D Tutorial Durum Makinesi Yöneticisi.
+    /// Tüm spawn mesafeleri, bileşenler ve süreler Inspector üzerinden ayarlanabilir.
     /// </summary>
     public class ARHoloTutorialManager : MonoBehaviour
     {
         public static ARHoloTutorialManager Instance { get; private set; }
 
-        [Header("Örnek Atık Prefabları (Opsiyonel - Atanmazsa sahneden otomatik bulunur)")]
+        [Header("🎛️ Alt Bileşenler (Otomatik oluşturulur veya atanabilir)")]
+        public ARHoloStepCard stepCard;
+        public ARHoloPointer wastePointer;
+        public ARHoloPointer binPointer;
+        public ARHoloHandGuide handGuide;
+
+        [Header("📦 Örnek Atık Prefabları (Opsiyonel)")]
         [Tooltip("Adım 2 için kullanılacak basit atık (Örn: Kağıt Bardak / Gazete)")]
         public GameObject basicWastePrefab;
-        [Tooltip("Adım 3 için kullanılacak uzaktan çekilecek atık (Örn: Şişe)")]
-        public float distantSpawnDistance = 2.4f;
         [Tooltip("Adım 4 için kullanılacak kompozit/yapışık atık prefabı")]
         public GameObject compositeWastePrefab;
 
-        [Header("Geri Dönüşüm Kutuları (Atanmazsa otomatik bulunur)")]
+        [Header("📍 Adım Spawn Konumları (Kameraya Göre Bağıl)")]
+        [Tooltip("Adım 2: Önüne çöp düşme mesafesi (İleri, Yukarı, Sağa)")]
+        public Vector3 step2SpawnOffset = new Vector3(0f, 0.1f, 0.9f);
+
+        [Tooltip("Adım 3: Uzaktan çekilecek çöpün mesafesi")]
+        public Vector3 step3SpawnOffset = new Vector3(0f, 0.1f, 2.3f);
+
+        [Tooltip("Adım 4: Kompozit çöpün spawn mesafesi")]
+        public Vector3 step4SpawnOffset = new Vector3(0f, 0.1f, 0.9f);
+
+        [Header("🗑️ Geri Dönüşüm Kutuları (Atanmazsa otomatik bulunur)")]
         public Transform paperBinTransform;
         public Transform plasticBinTransform;
         public Transform glassBinTransform;
@@ -45,14 +60,8 @@ namespace RecycleRush.Tutorial
         public static event Action<TutorialStep> OnTutorialStepStarted;
         public static event Action<TutorialStep> OnTutorialStepCompleted;
 
-        private ARHoloPointer _wastePointer;
-        private ARHoloPointer _binPointer;
-        private ARHoloStepCard _stepCard;
-        private ARHoloHandGuide _handGuide;
-
         private GameObject _activeTutorialWaste;
         private Coroutine _stepRoutine;
-        private bool _isActionInProgress = false;
 
         private void Awake()
         {
@@ -83,24 +92,33 @@ namespace RecycleRush.Tutorial
 
         private void InitializeHoloComponents()
         {
-            // 3D Pointer'lar
-            GameObject wastePtrObj = new GameObject("HoloWastePointer");
-            wastePtrObj.transform.SetParent(transform);
-            _wastePointer = wastePtrObj.AddComponent<ARHoloPointer>();
+            if (wastePointer == null)
+            {
+                GameObject wastePtrObj = new GameObject("HoloWastePointer");
+                wastePtrObj.transform.SetParent(transform);
+                wastePointer = wastePtrObj.AddComponent<ARHoloPointer>();
+            }
 
-            GameObject binPtrObj = new GameObject("HoloBinPointer");
-            binPtrObj.transform.SetParent(transform);
-            _binPointer = binPtrObj.AddComponent<ARHoloPointer>();
+            if (binPointer == null)
+            {
+                GameObject binPtrObj = new GameObject("HoloBinPointer");
+                binPtrObj.transform.SetParent(transform);
+                binPointer = binPtrObj.AddComponent<ARHoloPointer>();
+            }
 
-            // Floating HUD Card
-            GameObject cardObj = new GameObject("HoloStepCard");
-            cardObj.transform.SetParent(transform);
-            _stepCard = cardObj.AddComponent<ARHoloStepCard>();
+            if (stepCard == null)
+            {
+                GameObject cardObj = new GameObject("HoloStepCard");
+                cardObj.transform.SetParent(transform);
+                stepCard = cardObj.AddComponent<ARHoloStepCard>();
+            }
 
-            // Gesture Guide
-            GameObject guideObj = new GameObject("HoloHandGuide");
-            guideObj.transform.SetParent(transform);
-            _handGuide = guideObj.AddComponent<ARHoloHandGuide>();
+            if (handGuide == null)
+            {
+                GameObject guideObj = new GameObject("HoloHandGuide");
+                guideObj.transform.SetParent(transform);
+                handGuide = guideObj.AddComponent<ARHoloHandGuide>();
+            }
         }
 
         private void AutoFindBins()
@@ -132,6 +150,17 @@ namespace RecycleRush.Tutorial
             if (CurrentStep == TutorialStep.Completed) return;
 
             Debug.Log("<color=cyan>[ARHoloTutorial]</color> Öğretici Başlatılıyor...");
+
+            // GameManager'ı Tutorial state'ine al
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.ChangeState(GameState.Tutorial);
+            }
+
+            // LevelSelectionBoard'u gizle
+            var levelBoard = GameObject.Find("LevelSelectionBoard") ?? GameObject.Find("LevelBoard");
+            if (levelBoard != null) levelBoard.SetActive(false);
+
             SetStep(TutorialStep.Placement);
         }
 
@@ -169,21 +198,23 @@ namespace RecycleRush.Tutorial
 
         private IEnumerator StepPlacementRoutine()
         {
-            _stepCard.DisplayStep(
-                "ADIM 1: OYUN ALANI",
-                "Geri dönüşüm kutularına ve istasyona yaklaşın.",
-                "[ ● ○ ○ ○ ]"
-            );
+            if (stepCard != null)
+            {
+                stepCard.DisplayStep(
+                    "ADIM 1: OYUN ALANI",
+                    "Geri dönüşüm kutularına ve istasyona yaklaşın.",
+                    "[ ● ○ ○ ○ ]"
+                );
+            }
 
-            // İstasyon veya kutuların üzerinde parıldayan hologram ok göster
             Transform target = paperBinTransform != null ? paperBinTransform : transform;
-            _binPointer.SetTarget(target, Color.cyan, "★", 0.4f);
-            _handGuide.Hide();
+            if (binPointer != null) binPointer.SetTarget(target, Color.cyan, "★", 0.4f);
+            if (handGuide != null) handGuide.Hide();
 
             yield return new WaitForSeconds(3.5f);
 
-            _binPointer.SetTarget(null);
-            _stepCard.ShowSuccess("İSTASYON HAZIR ✔");
+            if (binPointer != null) binPointer.SetTarget(null);
+            if (stepCard != null) stepCard.ShowSuccess("İSTASYON HAZIR ✔");
 
             yield return new WaitForSeconds(1.5f);
             SetStep(TutorialStep.GrabAndDrop);
@@ -195,20 +226,22 @@ namespace RecycleRush.Tutorial
 
         private IEnumerator StepGrabAndDropRoutine()
         {
-            _stepCard.DisplayStep(
-                "ADIM 2: TUT VE AT",
-                "Önünüzdeki atığı tutup doğru geri dönüşüm kutusuna atın!",
-                "[ ● ● ○ ○ ]"
-            );
+            if (stepCard != null)
+            {
+                stepCard.DisplayStep(
+                    "ADIM 2: TUT VE AT",
+                    "Önünüzdeki atığı tutup doğru geri dönüşüm kutusuna atın!",
+                    "[ ● ● ○ ○ ]"
+                );
+            }
 
-            yield return SpawnTutorialWaste(Vector3.forward * 0.8f + Vector3.up * 0.2f);
+            yield return SpawnTutorialWaste(step2SpawnOffset);
 
             if (_activeTutorialWaste != null)
             {
-                _wastePointer.SetTarget(_activeTutorialWaste.transform, Color.yellow, "▼");
-                _handGuide.ShowGesture(GuideGestureType.SingleGrab, _activeTutorialWaste.transform);
+                if (wastePointer != null) wastePointer.SetTarget(_activeTutorialWaste.transform, Color.yellow, "▼");
+                if (handGuide != null) handGuide.ShowGesture(GuideGestureType.SingleGrab, _activeTutorialWaste.transform);
 
-                // Tutulma anını dinle
                 var grab = _activeTutorialWaste.GetComponentInChildren<XRGrabInteractable>();
                 if (grab != null)
                 {
@@ -216,18 +249,37 @@ namespace RecycleRush.Tutorial
                 }
             }
 
-            // Kutuya atılmasını bekle
             BinTrigger.OnWasteProcessed += OnStep2WasteSorted;
+        }
+
+        private Transform GetMatchingBinForWaste(GameObject waste)
+        {
+            if (waste == null) return paperBinTransform != null ? paperBinTransform : transform;
+            string t = waste.tag.ToLower();
+            string n = waste.name.ToLower();
+
+            if (t.Contains("paper") || n.Contains("paper") || n.Contains("gazete") || n.Contains("bardak"))
+                return paperBinTransform != null ? paperBinTransform : transform;
+
+            if (t.Contains("plastic") || n.Contains("plastic") || n.Contains("pet") || n.Contains("sise"))
+                return plasticBinTransform != null ? plasticBinTransform : transform;
+
+            if (t.Contains("glass") || n.Contains("glass") || n.Contains("cam"))
+                return glassBinTransform != null ? glassBinTransform : transform;
+
+            if (t.Contains("metal") || n.Contains("metal") || n.Contains("teneke") || n.Contains("can"))
+                return metalBinTransform != null ? metalBinTransform : transform;
+
+            return paperBinTransform != null ? paperBinTransform : transform;
         }
 
         private void OnStep2WasteGrabbed(SelectEnterEventArgs args)
         {
-            _wastePointer.SetTarget(null);
-            _handGuide.Hide();
+            if (wastePointer != null) wastePointer.SetTarget(null);
+            if (handGuide != null) handGuide.Hide();
 
-            // Hedef kutu üzerine hologram oku çevir
-            Transform targetBin = paperBinTransform != null ? paperBinTransform : transform;
-            _binPointer.SetTarget(targetBin, Color.green, "⬇", 0.3f);
+            Transform targetBin = GetMatchingBinForWaste(_activeTutorialWaste);
+            if (binPointer != null) binPointer.SetTarget(targetBin, Color.green, "⬇", 0.3f);
         }
 
         private void OnStep2WasteSorted(SortResultData data)
@@ -237,15 +289,14 @@ namespace RecycleRush.Tutorial
             if (data.IsCorrect)
             {
                 BinTrigger.OnWasteProcessed -= OnStep2WasteSorted;
-                _binPointer.SetTarget(null);
-                _stepCard.ShowSuccess("MÜKEMMEL ATTIM! ✔");
+                if (binPointer != null) binPointer.SetTarget(null);
+                if (stepCard != null) stepCard.ShowSuccess("MÜKEMMEL ATIM! ✔");
 
                 StartCoroutine(AdvanceAfterDelay(TutorialStep.GravityPull));
             }
             else
             {
-                // Yanlış kutuya attıysa tekrar dene
-                _stepCard.DisplayStep("HATALI KUTU!", "Yanlış kutuya attınız. Tekrar deneyin!", "[ ● ● ○ ○ ]");
+                if (stepCard != null) stepCard.DisplayStep("HATALI KUTU!", "Yanlış kutuya attınız. Tekrar deneyin!", "[ ● ● ○ ○ ]");
                 StartCoroutine(RetryStep(StepGrabAndDropRoutine()));
             }
         }
@@ -256,18 +307,21 @@ namespace RecycleRush.Tutorial
 
         private IEnumerator StepGravityPullRoutine()
         {
-            _stepCard.DisplayStep(
-                "ADIM 3: UZAKTAN ÇEKME (GRAVITY PULL)",
-                "Uzakta duran atığa elinizi doğrultup GRIP ile kendinize çekin!",
-                "[ ● ● ● ○ ]"
-            );
+            if (stepCard != null)
+            {
+                stepCard.DisplayStep(
+                    "ADIM 3: UZAKTAN ÇEKME (GRAVITY PULL)",
+                    "Uzakta duran atığa elinizi doğrultup GRIP ile kendinize çekin!",
+                    "[ ● ● ● ○ ]"
+                );
+            }
 
-            yield return SpawnTutorialWaste(Vector3.forward * distantSpawnDistance + Vector3.up * 0.1f);
+            yield return SpawnTutorialWaste(step3SpawnOffset, isComposite: false, floatInAir: true);
 
             if (_activeTutorialWaste != null)
             {
-                _wastePointer.SetTarget(_activeTutorialWaste.transform, Color.magenta, "⚡");
-                _handGuide.ShowGesture(GuideGestureType.GravityPull, _activeTutorialWaste.transform);
+                if (wastePointer != null) wastePointer.SetTarget(_activeTutorialWaste.transform, Color.magenta, "⚡");
+                if (handGuide != null) handGuide.ShowGesture(GuideGestureType.GravityPull, _activeTutorialWaste.transform);
 
                 var grab = _activeTutorialWaste.GetComponentInChildren<XRGrabInteractable>();
                 if (grab != null)
@@ -281,30 +335,44 @@ namespace RecycleRush.Tutorial
 
         private void OnStep3WasteGrabbed(SelectEnterEventArgs args)
         {
-            _wastePointer.SetTarget(null);
-            _handGuide.Hide();
+            if (_activeTutorialWaste != null)
+            {
+                var rb = _activeTutorialWaste.GetComponent<Rigidbody>();
+                if (rb != null)
+                {
+                    rb.isKinematic = false;
+                    rb.useGravity = true;
+                }
 
-            Transform targetBin = plasticBinTransform != null ? plasticBinTransform : paperBinTransform;
-            _binPointer.SetTarget(targetBin, Color.yellow, "⬇", 0.3f);
+                var grab = _activeTutorialWaste.GetComponentInChildren<XRGrabInteractable>();
+                if (grab != null)
+                {
+                    grab.selectEntered.RemoveListener(OnStep3WasteGrabbed);
+                }
+            }
+
+            BinTrigger.OnWasteProcessed -= OnStep3WasteSorted;
+
+            if (wastePointer != null) wastePointer.SetTarget(null);
+            if (handGuide != null) handGuide.Hide();
+            if (binPointer != null) binPointer.SetTarget(null);
+
+            // Uzaktan çekme mekaniği başarıyla yapıldı! Doğrudan adımı tamamla
+            if (stepCard != null) stepCard.ShowSuccess("HARİKA ÇEKİŞ! ✔");
+
+            StartCoroutine(AdvanceAfterDelay(TutorialStep.CompositeWaste));
         }
 
         private void OnStep3WasteSorted(SortResultData data)
         {
+            // Eğer oyuncu geçiş olmadan önce kutuya atarsa da güvenli tamamlama
             if (CurrentStep != TutorialStep.GravityPull) return;
 
-            if (data.IsCorrect)
-            {
-                BinTrigger.OnWasteProcessed -= OnStep3WasteSorted;
-                _binPointer.SetTarget(null);
-                _stepCard.ShowSuccess("HARİKA ÇEKİŞ! ✔");
+            BinTrigger.OnWasteProcessed -= OnStep3WasteSorted;
+            if (binPointer != null) binPointer.SetTarget(null);
+            if (stepCard != null) stepCard.ShowSuccess("HARİKA ÇEKİŞ! ✔");
 
-                StartCoroutine(AdvanceAfterDelay(TutorialStep.CompositeWaste));
-            }
-            else
-            {
-                _stepCard.DisplayStep("TEKRAR DENE!", "Doğru kutuya atın!", "[ ● ● ● ○ ]");
-                StartCoroutine(RetryStep(StepGravityPullRoutine()));
-            }
+            StartCoroutine(AdvanceAfterDelay(TutorialStep.CompositeWaste));
         }
 
         #endregion
@@ -313,21 +381,23 @@ namespace RecycleRush.Tutorial
 
         private IEnumerator StepCompositeWasteRoutine()
         {
-            _stepCard.DisplayStep(
-                "ADIM 4: YAPIŞIK ÇÖPLERİ AYIRMA",
-                "İki elinizle iki parçayı tutup zıt yönlere çekerek ayırın!",
-                "[ ● ● ● ● ]"
-            );
+            if (stepCard != null)
+            {
+                stepCard.DisplayStep(
+                    "ADIM 4: YAPIŞIK ÇÖPLERİ AYIRMA",
+                    "İki elinizle iki parçayı tutup zıt yönlere çekerek ayırın!",
+                    "[ ● ● ● ● ]"
+                );
+            }
 
-            yield return SpawnTutorialWaste(Vector3.forward * 0.9f + Vector3.up * 0.2f, isComposite: true);
+            yield return SpawnTutorialWaste(step4SpawnOffset, isComposite: true, floatInAir: false);
 
             if (_activeTutorialWaste != null)
             {
-                _wastePointer.SetTarget(_activeTutorialWaste.transform, Color.red, "✂");
-                _handGuide.ShowGesture(GuideGestureType.BimanualTear, _activeTutorialWaste.transform);
+                if (wastePointer != null) wastePointer.SetTarget(_activeTutorialWaste.transform, Color.red, "✂");
+                if (handGuide != null) handGuide.ShowGesture(GuideGestureType.BimanualTear, _activeTutorialWaste.transform);
             }
 
-            // Ayrılmayı dinle (WasteGlue veya parçaların ayrılması)
             float timeout = 25f;
             float timer = 0f;
             bool separated = false;
@@ -345,9 +415,9 @@ namespace RecycleRush.Tutorial
                 yield return null;
             }
 
-            _wastePointer.SetTarget(null);
-            _handGuide.Hide();
-            _stepCard.ShowSuccess("BAŞARIYLA AYRILDI! ✔");
+            if (wastePointer != null) wastePointer.SetTarget(null);
+            if (handGuide != null) handGuide.Hide();
+            if (stepCard != null) stepCard.ShowSuccess("BAŞARIYLA AYRILDI! ✔");
 
             yield return new WaitForSeconds(2.5f);
             SetStep(TutorialStep.Completed);
@@ -359,27 +429,33 @@ namespace RecycleRush.Tutorial
 
         private IEnumerator StepCompletedRoutine()
         {
-            _stepCard.DisplayStep(
-                "TEBRİKLER!",
-                "Tüm mekanikleri öğrendiniz! Geri dönüşüm başlıyor...",
-                "[ ✔ ✔ ✔ ✔ ]"
-            );
+            if (stepCard != null)
+            {
+                stepCard.DisplayStep(
+                    "TEBRİKLER!",
+                    "Tüm mekanikleri öğrendiniz! Ana menü açılıyor...",
+                    "[ ✔ ✔ ✔ ✔ ]"
+                );
+            }
 
             CleanupVisuals();
 
-            // Kalıcı olarak tamamlandı işaretle
             PlayerPrefs.SetInt("TutorialDone", 1);
             PlayerPrefs.Save();
             Debug.Log("<color=green>[ARHoloTutorial]</color> Öğretici Tamamlandı!");
 
             yield return new WaitForSeconds(3.5f);
 
-            if (_stepCard != null) _stepCard.gameObject.SetActive(false);
+            if (stepCard != null) stepCard.gameObject.SetActive(false);
 
-            // Ana oyunu başlat
+            // LevelSelectionBoard'u yeniden aktif et
+            var levelBoard = GameObject.Find("LevelSelectionBoard") ?? GameObject.Find("LevelBoard");
+            if (levelBoard != null) levelBoard.SetActive(true);
+
             if (GameManager.Instance != null)
             {
-                GameManager.Instance.StartGame();
+                // Ana menüye güvenle geç
+                GameManager.Instance.ChangeState(GameState.MainMenu);
             }
         }
 
@@ -387,11 +463,19 @@ namespace RecycleRush.Tutorial
 
         #region Helpers & Spawning
 
-        private IEnumerator SpawnTutorialWaste(Vector3 relativeOffset, bool isComposite = false)
+        private IEnumerator SpawnTutorialWaste(Vector3 relativeOffset, bool isComposite = false, bool floatInAir = false)
         {
             if (_activeTutorialWaste != null)
             {
-                Destroy(_activeTutorialWaste);
+                if (global::ObjectPoolManager.Instance != null && !string.IsNullOrEmpty(_activeTutorialWaste.tag) && _activeTutorialWaste.tag != "Untagged")
+                {
+                    global::ObjectPoolManager.Instance.ReturnToPool(_activeTutorialWaste);
+                }
+                else
+                {
+                    Destroy(_activeTutorialWaste);
+                }
+                _activeTutorialWaste = null;
             }
 
             Camera cam = Camera.main;
@@ -400,23 +484,90 @@ namespace RecycleRush.Tutorial
             {
                 Vector3 forward = cam.transform.forward;
                 forward.y = 0;
+                if (forward.sqrMagnitude < 0.001f) forward = cam.transform.forward;
                 forward.Normalize();
-                spawnPos = cam.transform.position + forward * relativeOffset.z + Vector3.up * relativeOffset.y;
+
+                Vector3 right = cam.transform.right;
+                right.y = 0;
+                right.Normalize();
+
+                spawnPos = cam.transform.position + forward * relativeOffset.z + Vector3.up * relativeOffset.y + right * relativeOffset.x;
             }
 
+            // 1) Prefab'ı belirle veya sahnedeki Spawner'dan otomatik al
             GameObject prefabToSpawn = isComposite ? compositeWastePrefab : basicWastePrefab;
 
-            // Prefab atanmadıysa ObjectPool veya dinamik fallback
-            if (prefabToSpawn == null && global::ObjectPoolManager.Instance != null)
+            if (prefabToSpawn == null)
             {
-                _activeTutorialWaste = global::ObjectPoolManager.Instance.SpawnFromPool("TutorialWaste", null, spawnPos, Quaternion.identity);
-            }
-            else if (prefabToSpawn != null)
-            {
-                _activeTutorialWaste = Instantiate(prefabToSpawn, spawnPos, Quaternion.identity);
+                WasteSpawner spawner = FindFirstObjectByType<WasteSpawner>();
+                if (spawner != null && spawner.wastePrefabs != null && spawner.wastePrefabs.Length > 0)
+                {
+                    prefabToSpawn = spawner.wastePrefabs[0];
+                }
             }
 
-            yield return new WaitForSeconds(0.5f);
+            if (prefabToSpawn != null)
+            {
+                if (global::ObjectPoolManager.Instance != null)
+                {
+                    string tagToUse = !string.IsNullOrEmpty(prefabToSpawn.tag) && prefabToSpawn.tag != "Untagged" ? prefabToSpawn.tag : prefabToSpawn.name;
+                    _activeTutorialWaste = global::ObjectPoolManager.Instance.SpawnFromPool(tagToUse, prefabToSpawn, spawnPos, Quaternion.identity);
+                }
+
+                if (_activeTutorialWaste == null)
+                {
+                    _activeTutorialWaste = Instantiate(prefabToSpawn, spawnPos, Quaternion.identity);
+                }
+
+                if (_activeTutorialWaste != null)
+                {
+                    _activeTutorialWaste.transform.position = spawnPos;
+                    _activeTutorialWaste.SetActive(true);
+
+                    var rb = _activeTutorialWaste.GetComponent<Rigidbody>();
+                    if (rb != null)
+                    {
+                        rb.linearVelocity = Vector3.zero;
+                        rb.angularVelocity = Vector3.zero;
+                        rb.isKinematic = floatInAir;
+                        rb.useGravity = !floatInAir;
+                    }
+
+                    // Composite Çöp Fallback: Eğer composite prefab atanmamışsa 2. parça üret ve bağla
+                    if (isComposite && compositeWastePrefab == null)
+                    {
+                        SetupCompositeFallback(_activeTutorialWaste, spawnPos);
+                    }
+
+                    Debug.Log($"<color=cyan>[ARHoloTutorial]</color> Başarıyla Atık Üretildi: {_activeTutorialWaste.name} | Konum: {spawnPos} | Havada: {floatInAir}");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("<color=orange>[ARHoloTutorial]</color> Sahnede WasteSpawner veya atanmış atık prefabı bulunamadı!");
+            }
+
+            yield return new WaitForSeconds(0.3f);
+        }
+
+        private void SetupCompositeFallback(GameObject pieceA, Vector3 posA)
+        {
+            if (pieceA == null) return;
+
+            // İkinci parçayı hemen yanına üret
+            Vector3 posB = posA + Vector3.right * 0.35f;
+            GameObject pieceB = Instantiate(pieceA, posB, pieceA.transform.rotation);
+            if (pieceB == null) return;
+
+            var grabA = pieceA.GetComponentInChildren<XRGrabInteractable>();
+            var grabB = pieceB.GetComponentInChildren<XRGrabInteractable>();
+
+            if (grabA != null && grabB != null)
+            {
+                var glue = pieceA.GetComponent<WasteGlue>() ?? pieceA.AddComponent<WasteGlue>();
+                var controller = pieceA.GetComponent<CompositeWasteController>() ?? pieceA.AddComponent<CompositeWasteController>();
+                glue.Bind(grabA, grabB, null);
+            }
         }
 
         private IEnumerator RetryStep(IEnumerator routine)
@@ -434,9 +585,9 @@ namespace RecycleRush.Tutorial
 
         private void CleanupVisuals()
         {
-            if (_wastePointer != null) _wastePointer.gameObject.SetActive(false);
-            if (_binPointer != null) _binPointer.gameObject.SetActive(false);
-            if (_handGuide != null) _handGuide.gameObject.SetActive(false);
+            if (wastePointer != null) wastePointer.gameObject.SetActive(false);
+            if (binPointer != null) binPointer.gameObject.SetActive(false);
+            if (handGuide != null) handGuide.gameObject.SetActive(false);
         }
 
         private void OnDestroy()

@@ -173,6 +173,12 @@ public class GameManager : MonoBehaviour
     {
 
 
+        // Eğer Tutorial aktifse GameManager'ı MainMenu'ye çekip tutorial'i bozma
+        if (CurrentState == GameState.Tutorial)
+        {
+            return;
+        }
+
         // Oyun ilk açıldığında hazırlık evresinden geçer, ardından ana menü (veya doğrudan oyun) başlar.
         ChangeState(GameState.Initialization);
 
@@ -213,17 +219,23 @@ public class GameManager : MonoBehaviour
         bool isValidTransition = true;
         switch (CurrentState)
         {
+            case GameState.Initialization:
+                // Initialization her duruma geçebilir
+                break;
             case GameState.MainMenu:
                 if (newState == GameState.Paused || newState == GameState.GameOver) isValidTransition = false;
                 break;
             case GameState.Placement:
-                if (newState != GameState.Countdown && newState != GameState.MainMenu) isValidTransition = false;
+                if (newState != GameState.Countdown && newState != GameState.MainMenu && newState != GameState.Tutorial) isValidTransition = false;
+                break;
+            case GameState.Tutorial:
+                if (newState != GameState.Countdown && newState != GameState.MainMenu && newState != GameState.Playing && newState != GameState.Initialization) isValidTransition = false;
                 break;
             case GameState.Countdown:
                 if (newState != GameState.Playing && newState != GameState.MainMenu) isValidTransition = false;
                 break;
             case GameState.Playing:
-                if (newState != GameState.Paused && newState != GameState.GameOver) isValidTransition = false;
+                if (newState != GameState.Paused && newState != GameState.GameOver && newState != GameState.Countdown && newState != GameState.MainMenu) isValidTransition = false;
                 break;
             case GameState.Paused:
                 if (newState != GameState.Playing && newState != GameState.MainMenu && newState != GameState.Countdown) isValidTransition = false;

@@ -17,13 +17,25 @@ namespace RecycleRush.Tutorial
     /// </summary>
     public class ARHoloHandGuide : MonoBehaviour
     {
-        [Header("Görsel Ayarlar")]
-        [SerializeField] private float _animationSpeed = 3f;
+        [Header("🔤 Boyut & Font")]
+        [Tooltip("El / Hareket simgelerinin boyutu")]
+        [Range(0.2f, 4.0f)] public float gestureFontSize = 1.1f;
+
+        [Header("📍 Konum & Animasyon")]
+        [Tooltip("Hedefe göre dikey/yatay konum ofseti")]
+        public Vector3 customOffset = new Vector3(0, 0.22f, 0);
+
+        [Tooltip("İkonların yanıp sönme / geçiş hızı")]
+        [Range(0.5f, 8.0f)] public float animationSpeed = 2.5f;
+
+        [Header("🎨 Renkler")]
+        public Color grabColor = new Color(0.2f, 1f, 0.5f, 0.95f);
+        public Color pullColor = new Color(1f, 0.9f, 0.2f, 0.95f);
+        public Color tearColor = new Color(1f, 0.35f, 0.35f, 0.95f);
 
         private GuideGestureType _currentGesture = GuideGestureType.None;
         private TextMeshPro _gestureText;
         private Transform _targetTransform;
-        private Vector3 _customOffset = Vector3.up * 0.25f;
 
         private void Awake()
         {
@@ -32,17 +44,21 @@ namespace RecycleRush.Tutorial
 
         private void SetupGestureVisuals()
         {
+            if (_gestureText != null) return;
+
             _gestureText = gameObject.AddComponent<TextMeshPro>();
-            _gestureText.fontSize = 18;
+            _gestureText.fontSize = gestureFontSize;
             _gestureText.fontStyle = FontStyles.Bold;
             _gestureText.alignment = TextAlignmentOptions.Center;
-            _gestureText.color = new Color(0.2f, 1f, 0.6f, 0.95f); // Neon Green / Hologram
+            _gestureText.color = grabColor;
 
             gameObject.SetActive(false);
         }
 
         public void ShowGesture(GuideGestureType gesture, Transform target = null)
         {
+            if (_gestureText == null) SetupGestureVisuals();
+
             _currentGesture = gesture;
             _targetTransform = target;
 
@@ -66,13 +82,11 @@ namespace RecycleRush.Tutorial
         {
             if (_currentGesture == GuideGestureType.None) return;
 
-            // Hedef varsa hedefin üzerinde konumlan
             if (_targetTransform != null)
             {
-                transform.position = _targetTransform.position + _customOffset;
+                transform.position = _targetTransform.position + customOffset;
             }
 
-            // Kameraya doğru dön (Billboard)
             Camera mainCam = Camera.main;
             if (mainCam != null)
             {
@@ -83,25 +97,29 @@ namespace RecycleRush.Tutorial
                 }
             }
 
-            // Animasyonlu el / hareket ikonları
-            float cycle = Mathf.PingPong(Time.time * _animationSpeed, 1f);
+            float cycle = Mathf.PingPong(Time.time * animationSpeed, 1f);
 
-            switch (_currentGesture)
+            if (_gestureText != null)
             {
-                case GuideGestureType.SingleGrab:
-                    _gestureText.text = cycle > 0.5f ? "✊ [GRIP]" : "🖐 [REACH]";
-                    _gestureText.color = Color.Lerp(new Color(0.2f, 0.8f, 1f), new Color(0.2f, 1f, 0.4f), cycle);
-                    break;
+                _gestureText.fontSize = gestureFontSize;
 
-                case GuideGestureType.GravityPull:
-                    _gestureText.text = cycle > 0.5f ? "⚡ ➔ ✊ [PULL]" : "⚡ ➔ 🖐 [AIM RAY]";
-                    _gestureText.color = Color.Lerp(Color.yellow, Color.cyan, cycle);
-                    break;
+                switch (_currentGesture)
+                {
+                    case GuideGestureType.SingleGrab:
+                        _gestureText.text = cycle > 0.5f ? "✊ [GRIP]" : "🖐 [REACH]";
+                        _gestureText.color = Color.Lerp(new Color(0.2f, 0.8f, 1f), grabColor, cycle);
+                        break;
 
-                case GuideGestureType.BimanualTear:
-                    _gestureText.text = cycle > 0.5f ? "⬅ ✊  ||  ✊ ➡\n[PULL APART]" : "🖐 ➡  ||  ⬅ 🖐\n[GRAB BOTH]";
-                    _gestureText.color = Color.Lerp(new Color(1f, 0.4f, 0.4f), new Color(1f, 0.9f, 0.2f), cycle);
-                    break;
+                    case GuideGestureType.GravityPull:
+                        _gestureText.text = cycle > 0.5f ? "⚡ ➔ ✊ [PULL]" : "⚡ ➔ 🖐 [AIM RAY]";
+                        _gestureText.color = Color.Lerp(pullColor, Color.cyan, cycle);
+                        break;
+
+                    case GuideGestureType.BimanualTear:
+                        _gestureText.text = cycle > 0.5f ? "⬅ ✊  ||  ✊ ➡\n[PULL APART]" : "🖐 ➡  ||  ⬅ 🖐\n[GRAB BOTH]";
+                        _gestureText.color = Color.Lerp(tearColor, new Color(1f, 0.9f, 0.2f), cycle);
+                        break;
+                }
             }
         }
     }
