@@ -16,18 +16,16 @@ public struct SortResultData
 {
     public bool IsCorrect;
     public int ScoreChange;
-    public int CoinChange; // Gün 7: Kazanılacak Para
-    public int XpChange; // Gün 7: Kazanılacak XP
+    public int CoinChange;
+    public int XpChange;
     public float HapticDuration;
     public float HapticAmplitude;
-    public Vector3 ActionPosition; // Ses ve Partikül efektlerinin nerede çıkacağı
+    public Vector3 ActionPosition;
 
-    // Analitik Sistemi İçin Eklenen Veriler:
-    public WasteType TargetBinType; // Hangi kutuya atıldı
-    public bool WasGoldenWaste;     // Atılan obje altın çöp müydü?
-    public float ReactionTime;      // Oyuncunun çöpü yakalayıp atma süresi
+    public WasteType TargetBinType;
+    public bool WasGoldenWaste;
+    public float ReactionTime;
     
-    // YENİ: Precision (Hassasiyet) verisi
     public RecycleRush.Core.PrecisionSystem.PrecisionResult PrecisionData;
     public WasteType ProcessedWasteType;
     public GameObject ProcessedWaste;
@@ -37,10 +35,9 @@ public struct SortResultData
 public class BinTrigger : MonoBehaviour
 {
     private static System.Collections.Generic.Dictionary<WasteType, UnityEngine.Transform> _binRegistry = new System.Collections.Generic.Dictionary<WasteType, UnityEngine.Transform>();
+    
     [Header("Precision (Hassasiyet) Ayarları")]
-    [Tooltip("Kutunun çarpışma sınırlarından yarıçapı otomatik hesaplar")]
     [SerializeField] private bool _useDynamicRadius = true;
-    [Tooltip("Dinamik kapalıysa kullanılacak manuel yarıçap (Metre)")]
     [SerializeField] private float _precisionRadius = 0.5f;
 
     [Header("Kutu Ayarları")]
@@ -89,7 +86,6 @@ public class BinTrigger : MonoBehaviour
 
         if (other.isTrigger) return;
 
-        // --- COMPOSITE WASTE KONTROLÜ ---
         bool isGlued = false;
         var glueA = other.transform.root.GetComponentInChildren<RecycleRush.Interaction.WasteGlue>();
         if (glueA != null && glueA.IsActive) isGlued = true;
@@ -114,7 +110,6 @@ public class BinTrigger : MonoBehaviour
             return;
         }
 
-        // --- DIRTY WASTE KONTROLÜ ---
         var dirty = other.transform.root.GetComponentInChildren<RecycleRush.Interaction.DirtyWasteController>();
         if (dirty != null && dirty.IsDirty)
         {
@@ -149,8 +144,7 @@ public class BinTrigger : MonoBehaviour
         if (particleToSpawn != null)
         {
             Vector3 spawnPosition = transform.position + new Vector3(0, 0.5f, 0);
-            GameObject spawnedParticle = Instantiate(particleToSpawn, spawnPosition, Quaternion.identity);
-            Destroy(spawnedParticle, 3f);
+            Destroy(Instantiate(particleToSpawn, spawnPosition, Quaternion.identity), 3f);
         }
         
         float reactionTime = 0f;
@@ -159,7 +153,6 @@ public class BinTrigger : MonoBehaviour
             reactionTime = Time.time - physicsTuner.SpawnTime;
         }
 
-        // --- PRECISION HESAPLAMA ---
         RecycleRush.Core.PrecisionSystem.PrecisionResult precisionResult = default;
         if (isCorrect && RecycleRush.Core.PrecisionSystem.PrecisionManager.Instance != null)
         {
@@ -168,16 +161,13 @@ public class BinTrigger : MonoBehaviour
                 transform, _binCollider.bounds.center, radius, other.transform.position, incomingType, _acceptedWasteType
             );
             
-            // Eğer precision'dan ek bir skor veya haptic geldiyse, final puanlara ekleyebiliriz (veya ScoreManager ekler)
-            // Biz haptic gücünü tier'a göre artıralım:
             if (precisionResult.Tier == RecycleRush.Core.PrecisionSystem.PrecisionTier.Perfect)
             {
-                _correctHapticAmplitude = 1.0f; // Güçlü çift darbe hissi için
+                _correctHapticAmplitude = 1.0f;
                 _correctHapticDuration = 0.3f;
             }
         }
 
-        // Diğer Manager sınıflarına yayınlanacak veri paketi
         SortResultData resultData = new SortResultData
         {
             IsCorrect = isCorrect,
@@ -196,10 +186,47 @@ public class BinTrigger : MonoBehaviour
 
         Debug.Log($"<color=magenta>[BinTrigger]</color> OnWasteProcessed sinyali fırlatılıyor! Puan: {resultData.ScoreChange} | Coin: {resultData.CoinChange} | XP: {resultData.XpChange}");
 
-        // Event'i fırlat.
         OnWasteProcessed?.Invoke(resultData);
 
-        ObjectPoolManager.Instance.ReturnToPool(other.transform.root.gameObject);
+        // YENİ: Objeyi pat diye silmek yerine yutulma efekti (Swallow) Coroutine'i başlatıyoruz
+        StartCoroutine(SwallowRoutine(other.transform.root.gameObject));
+    }
+
+    // --- 3. YUTULMA EFEKTİ (SWALLOW VİSUAL) ---
+    private System.Collections.IEnumerator SwallowRoutine(GameObject wasteObject)
+    {
+        Rigidbody rb = wasteObject.GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+            rb.isKinematic = true;
+        }
+
+        Collider[] colliders = wasteObject.GetComponentsInChildren<Collider>();
+        foreach(var c in colliders) c.enabled = false;
+
+        Vector3 startScale = wasteObject.transform.localScale;
+        Vector3 startPos = wasteObject.transform.position;
+        Vector3 targetPos = transform.position + Vector3.up * 0.15f; 
+
+        float duration = 0.18f;
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            float t = elapsed / duration;
+            wasteObject.transform.localScale = Vector3.Lerp(startScale, Vector3.zero, t);
+            wasteObject.transform.position = Vector3.Lerp(startPos, targetPos, t);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        wasteObject.transform.localScale = startScale;
+        foreach(var c in colliders) c.enabled = true;
+        if (rb != null) rb.isKinematic = false;
+
+        ObjectPoolManager.Instance.ReturnToPool(wasteObject);
     }
 
     public static WasteType GetWasteTypeFromCollider(Collider col)
@@ -225,52 +252,6 @@ public class BinTrigger : MonoBehaviour
         return false;
     }
 
-#if UNITY_EDITOR
-    // --- PRECISION CALIBRATION TOOL (GIZMOS) ---
-    private void OnDrawGizmos()
-    {
-        if (_binCollider == null) _binCollider = GetComponent<Collider>();
-        if (_binCollider == null) return;
-
-        float radius = _useDynamicRadius ? Mathf.Min(_binCollider.bounds.extents.x, _binCollider.bounds.extents.z) : _precisionRadius;
-        Vector3 center = _binCollider.bounds.center;
-        
-        // Settings yoksa varsayılan oranlar
-        float perfectRatio = 0.2f; 
-        float greatRatio = 0.5f;
-        float goodRatio = 0.8f;
-        
-        Color perfectCol = new Color(1f, 0.84f, 0f, 0.5f); // Altın
-        Color greatCol = new Color(0.13f, 0.59f, 0.95f, 0.5f); // Mavi
-        Color goodCol = new Color(0.3f, 0.8f, 0.3f, 0.5f); // Yeşil
-        Color normalCol = new Color(1f, 1f, 1f, 0.2f); // Beyaz
-        
-        if (Application.isPlaying && RecycleRush.Core.PrecisionSystem.PrecisionManager.Instance != null && RecycleRush.Core.PrecisionSystem.PrecisionManager.Instance.Settings != null)
-        {
-            var settings = RecycleRush.Core.PrecisionSystem.PrecisionManager.Instance.Settings;
-            perfectCol = settings.PerfectColor;
-            greatCol = settings.GreatColor;
-            goodCol = settings.GoodColor;
-            
-            // Ayarlardan okunan kalibrasyon oranları
-            perfectRatio = settings.PerfectRadiusPercent;
-            greatRatio = settings.GreatRadiusPercent;
-            goodRatio = settings.GoodRadiusPercent;
-        }
-
-        UnityEditor.Handles.color = normalCol;
-        UnityEditor.Handles.DrawWireDisc(center, transform.up, radius);
-        
-        UnityEditor.Handles.color = goodCol;
-        UnityEditor.Handles.DrawWireDisc(center, transform.up, radius * goodRatio);
-        
-        UnityEditor.Handles.color = greatCol;
-        UnityEditor.Handles.DrawWireDisc(center, transform.up, radius * greatRatio);
-        
-        UnityEditor.Handles.color = perfectCol;
-        UnityEditor.Handles.DrawWireDisc(center, transform.up, radius * perfectRatio);
-    }
-#endif
     private void RejectWaste(Rigidbody rb)
     {
         if (rb != null)
@@ -283,8 +264,6 @@ public class BinTrigger : MonoBehaviour
             }
 
             rb.linearVelocity = Vector3.zero;
-            
-            // Fırlatma gücünü inanılmaz derecede kıstık. Sadece kutunun içinden hafifçe sekip hemen dibine (yere) düşecek.
             rb.AddForce(new Vector3(0, 1.5f, -0.5f), ForceMode.Impulse);
         }
 
@@ -303,6 +282,43 @@ public class BinTrigger : MonoBehaviour
         }
         return null;
     }
+
     public static event System.Action<int> OnComboChanged;
 
+    [Header("Aim Assist (Görünmez Nişan Desteği)")]
+    [SerializeField] private bool _enableAimAssist = true;
+    [SerializeField] private float _assistRadius = 1.3f;
+    [SerializeField] private float _assistForce = 7f;
+    private Collider[] _assistColliders = new Collider[10];
+
+    // --- 1. AIM ASSIST (MANYETİK ÇEKİM) ---
+    private void FixedUpdate()
+    {
+        if (!_enableAimAssist) return;
+        
+        int numColliders = Physics.OverlapSphereNonAlloc(transform.position + Vector3.up * 0.5f, _assistRadius, _assistColliders);
+        for (int i = 0; i < numColliders; i++)
+        {
+            Collider col = _assistColliders[i];
+            if (col.isTrigger) continue;
+            
+            Rigidbody rb = col.attachedRigidbody;
+            if (rb != null)
+            {
+                if (rb.linearVelocity.magnitude > 0.8f) 
+                {
+                    var grab = rb.GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>();
+                    if (grab != null && !grab.isSelected)
+                    {
+                        WasteType type = GetWasteTypeFromCollider(col);
+                        if (type != WasteType.Untagged && type == _acceptedWasteType) 
+                        {
+                            Vector3 dirToBin = (transform.position + Vector3.up * 0.2f) - rb.transform.position;
+                            rb.AddForce(dirToBin.normalized * _assistForce, ForceMode.Acceleration);
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
