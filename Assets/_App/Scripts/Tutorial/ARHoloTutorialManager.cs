@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System;
 
 namespace RecycleRush.Tutorial
@@ -35,7 +35,7 @@ namespace RecycleRush.Tutorial
         private void Start()
         {
             // Eğitim tamamlanmış mı kontrol et
-            if (PlayerPrefs.GetInt(""TutorialDone"", 0) == 1)
+            if (PlayerPrefs.GetInt("TutorialDone", 0) == 1)
             {
                 CurrentStep = TutorialStep.Completed;
             }
@@ -53,13 +53,13 @@ namespace RecycleRush.Tutorial
         {
             CurrentStep = step;
             OnTutorialStepStarted?.Invoke(CurrentStep);
-            Debug.Log($""<color=cyan>[Tutorial]</color> Adım Başladı: {CurrentStep}"");
+            Debug.Log($"<color=cyan>[Tutorial]</color> Adım Başladı: {CurrentStep}");
         }
 
         public void CompleteCurrentStep()
         {
             OnTutorialStepCompleted?.Invoke(CurrentStep);
-            Debug.Log($""<color=green>[Tutorial]</color> Adım Tamamlandı: {CurrentStep}"");
+            Debug.Log($"<color=green>[Tutorial]</color> Adım Tamamlandı: {CurrentStep}");
 
             // Bir sonraki adıma geç
             if (CurrentStep < TutorialStep.Completed)
@@ -69,9 +69,9 @@ namespace RecycleRush.Tutorial
             
             if (CurrentStep == TutorialStep.Completed)
             {
-                PlayerPrefs.SetInt(""TutorialDone"", 1);
+                PlayerPrefs.SetInt("TutorialDone", 1);
                 PlayerPrefs.Save();
-                Debug.Log(""<color=yellow>[Tutorial]</color> Eğitim tamamen bitirildi!"");
+                Debug.Log("<color=yellow>[Tutorial]</color> Eğitim tamamen bitirildi!");
             }
         }
     }
