@@ -152,6 +152,37 @@ public enum AudioPriority
             {
                 _engineSource.volume = Mathf.Lerp(_engineSource.volume, _targetEngineVolume, Time.deltaTime * 2f);
             }
+            else if (_engineSource != null)
+            {
+                _engineSource.volume = _targetEngineVolume;
+            }
+
+            // --- YENİ EKLENEN: ADAPTİF MÜZİK GERİLİMİ (Adaptive BGM Pitch) ---
+            if (_bgmSource != null && GameManager.Instance != null)
+            {
+                if (GameManager.Instance.CurrentState == GameState.Playing)
+                {
+                    float timeRemaining = GameManager.Instance.RemainingTime;
+                    
+                    // Son 30 saniyeye girildiğinde müziğin temposu (pitch) yavaşça artmaya başlar.
+                    // Bu, oyuncuya süre bitiyor telaşını ve adrenalinini hissettirmek için harika bir Game Feel numarasıdır.
+                    if (timeRemaining <= 30f && timeRemaining > 0f)
+                    {
+                        // 30 saniyede 1.0 pitch, 0 saniyede 1.3 pitch olacak şekilde lineer orantı (Lerp)
+                        float targetPitch = Mathf.Lerp(1.35f, 1.0f, timeRemaining / 30f);
+                        _bgmSource.pitch = targetPitch;
+                    }
+                    else
+                    {
+                        _bgmSource.pitch = 1.0f; // 30 saniyeden fazlaysa normal hız
+                    }
+                }
+                else
+                {
+                    // Oyun durduğunda veya bittiğinde müziği normale döndür
+                    _bgmSource.pitch = 1.0f; 
+                }
+            }
         }
 
         private void OnEnable()
