@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -407,9 +407,9 @@ namespace RecycleRush.Tutorial
             GameObject prefabToSpawn = isComposite ? compositeWastePrefab : basicWastePrefab;
 
             // Prefab atanmadıysa ObjectPool veya dinamik fallback
-            if (prefabToSpawn == null && Managers.ObjectPoolManager.Instance != null)
+            if (prefabToSpawn == null && global::ObjectPoolManager.Instance != null)
             {
-                _activeTutorialWaste = Managers.ObjectPoolManager.Instance.SpawnFromPool("TutorialWaste", null, spawnPos, Quaternion.identity);
+                _activeTutorialWaste = global::ObjectPoolManager.Instance.SpawnFromPool("TutorialWaste", null, spawnPos, Quaternion.identity);
             }
             else if (prefabToSpawn != null)
             {
