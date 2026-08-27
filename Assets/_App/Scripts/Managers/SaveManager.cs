@@ -71,10 +71,38 @@ namespace RecycleRush.Managers
         /// <summary>
         /// Mevcut veriyi JSON formatına çevirip geçici dosya üzerinden güvenle diske yazar.
         /// </summary>
+        
+        private void Start()
+        {
+            // Yoneticiler hazir oldugunda onlara verileri gonder
+            if (EconomyManager.Instance != null && CurrentData != null)
+            {
+                var ecoData = new EconomyManager.EconomySaveData { Coins = CurrentData.Coins };
+                EconomyManager.Instance.LoadSaveData(ecoData);
+            }
+
+            if (LevelManager.Instance != null && CurrentData != null)
+            {
+                var lvlData = new LevelManager.LevelSaveData { Level = CurrentData.Level, CurrentXp = CurrentData.XP };
+                LevelManager.Instance.LoadSaveData(lvlData);
+            }
+        }
+
         public void SaveGame()
         {
             try 
             {
+                
+            if (EconomyManager.Instance != null)
+            {
+                CurrentData.Coins = EconomyManager.Instance.GetSaveData().Coins;
+            }
+            if (LevelManager.Instance != null)
+            {
+                CurrentData.Level = LevelManager.Instance.GetSaveData().Level;
+                CurrentData.XP = LevelManager.Instance.GetSaveData().CurrentXp;
+            }
+
                 string json = JsonUtility.ToJson(CurrentData, true); // true = Pretty Print
                 
                 // 1. Önce geçici (TMP) dosyaya yaz. (Şarj biterse asıl dosya bozulmasın diye)
@@ -137,6 +165,20 @@ namespace RecycleRush.Managers
         /// <summary>
         /// Tüm kayıtları ve yedekleri tamamen siler.
         /// </summary>
+        
+        private void OnApplicationQuit()
+        {
+            SaveGame();
+        }
+
+        private void OnApplicationPause(bool pauseStatus)
+        {
+            if (pauseStatus)
+            {
+                SaveGame();
+            }
+        }
+
         public void DeleteSaveData()
         {
             try

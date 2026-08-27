@@ -3,14 +3,15 @@ using System.Collections.Generic;
 // TODO [Post-Merge]: Verify GameManager state transitions and missing prefab references after the massive PR merge.
 
 using UnityEngine;
-using RecycleRush.Managers; // <-- EKLENDİ (AchievementData için)
+using RecycleRush.Managers; // <-- EKLENDÄ° (AchievementData iÃ§in)
 
-// Oyunun anlık durumlarını belirten State yapısı
+// Oyunun anlÄ±k durumlarÄ±nÄ± belirten State yapÄ±sÄ±
 public enum GameState
 {
     Initialization,
     MainMenu,
-    Placement, // AR ortamında kutuların yerleştirildiği evre
+    ReadyToStart,
+    Placement, // AR ortamÄ±nda kutularÄ±n yerleÅŸtirildiÄŸi evre
     Tutorial,
     Countdown,
     Playing,
@@ -31,22 +32,22 @@ public struct GameSessionData
     public int TotalPerfectThrows;
     public int TotalGreatThrows;
     public int TotalGoodThrows;
-    public float AveragePrecision; // Ortalama İsabet Kalitesi (0-100)
-    public float BestPrecision;    // O maçtaki en yüksek isabet skoru
+    public float AveragePrecision; // Ortalama Ä°sabet Kalitesi (0-100)
+    public float BestPrecision;    // O maÃ§taki en yÃ¼ksek isabet skoru
     public int PrecisionBonusScore;
-    public int MaxPrecisionStreak; // O maçtaki en yüksek Perfect serisi
+    public int MaxPrecisionStreak; // O maÃ§taki en yÃ¼ksek Perfect serisi
     
-    // YENİ: Precision Consistency (Tutarlılık) 
-    public float PrecisionM2;      // Varyans hesabı için Welford algoritması ara değeri (Gösterilmez, hesaplama içindir)
-    public float PrecisionConsistency; // %0 - %100 arası oyuncu istikrarı
+    // YENÄ°: Precision Consistency (TutarlÄ±lÄ±k) 
+    public float PrecisionM2;      // Varyans hesabÄ± iÃ§in Welford algoritmasÄ± ara deÄŸeri (GÃ¶sterilmez, hesaplama iÃ§indir)
+    public float PrecisionConsistency; // %0 - %100 arasÄ± oyuncu istikrarÄ±
     
     [Header("Combo Stats")]
     public int MaxCombo;
-    public int LongestStreak;     // En uzun doğru atış serisi
-    public int GraceUsedCount;    // Kaç kere kombo affı kullanıldı
+    public int LongestStreak;     // En uzun doÄŸru atÄ±ÅŸ serisi
+    public int GraceUsedCount;    // KaÃ§ kere kombo affÄ± kullanÄ±ldÄ±
     
     [Header("Golden Waste Stats")]
-    public int GoldenWastesMissed; // Kaçırılan altın çöpler
+    public int GoldenWastesMissed; // KaÃ§Ä±rÄ±lan altÄ±n Ã§Ã¶pler
     
     [Header("Score Breakdown")]
     public int BaseScore;
@@ -78,7 +79,7 @@ public struct GameSessionData
     
     [Header("New Records & Deltas")]
     public bool IsNewHighScore;
-    public int ScoreDelta; // Yeni skor ile eski en iyi skor arasındaki fark
+    public int ScoreDelta; // Yeni skor ile eski en iyi skor arasÄ±ndaki fark
     
     public bool IsNewBestAccuracy;
     public float AccuracyDelta;
@@ -95,32 +96,32 @@ public struct GameSessionData
     public string SuggestedNextGoal;
     
     [Header("Highlight")]
-    public string SessionHighlight; // Oturumun öne çıkan anı
+    public string SessionHighlight; // Oturumun Ã¶ne Ã§Ä±kan anÄ±
     
     [Header("Medals")]
-    public List<string> EarnedMedals; // Oturum sonu kazanılan madalyalar
+    public List<string> EarnedMedals; // Oturum sonu kazanÄ±lan madalyalar
 }
 
 public class GameManager : MonoBehaviour
 {
-    // Singleton Pattern: GameManager'a her yerden güvenle ve tek bir instance üzerinden ulaşabilmek için.
+    // Singleton Pattern: GameManager'a her yerden gÃ¼venle ve tek bir instance Ã¼zerinden ulaÅŸabilmek iÃ§in.
     public static GameManager Instance { get; private set; }
 
     [Header("Session Data")]
     public GameSessionData CurrentSession;
     
-    // Oyun sonu ekranı (UI), Analytics veya SaveManager'ın güvenle okuyabileceği Immutable (değiştirilemez) Snapshot
+    // Oyun sonu ekranÄ± (UI), Analytics veya SaveManager'Ä±n gÃ¼venle okuyabileceÄŸi Immutable (deÄŸiÅŸtirilemez) Snapshot
     public GameSessionData FinalSessionReport { get; private set; }
 
     [Header("Game Timers")]
-    [Tooltip("Oyunun toplam süresi (saniye cinsinden)")]
+    [Tooltip("Oyunun toplam sÃ¼resi (saniye cinsinden)")]
     [SerializeField] private float _gameDuration = 60f;
     
-    [Header("UI / Modüller")]
-    [Tooltip("Fiziksel butonların bulunduğu modül (Play, Settings vb.)")]
+    [Header("UI / ModÃ¼ller")]
+    [Tooltip("Fiziksel butonlarÄ±n bulunduÄŸu modÃ¼l (Play, Settings vb.)")]
     public GameObject buttonsModule;
     
-    [Tooltip("Oyun başladığında animasyonla belirecek çevre modülleri (Boş bırakırsanız otomatik bulur)")]
+    [Tooltip("Oyun baÅŸladÄ±ÄŸÄ±nda animasyonla belirecek Ã§evre modÃ¼lleri (BoÅŸ bÄ±rakÄ±rsanÄ±z otomatik bulur)")]
     public GameObject[] environmentModules;
     
     private Vector3 _buttonsOriginalPos;
@@ -128,24 +129,24 @@ public class GameManager : MonoBehaviour
     private bool _hasSavedButtonsTransform = false;
     private Coroutine _hideButtonsCoroutine;
     
-    // Oyun durumunun okunabilmesi ama sadece bu sınıf tarafından değiştirilebilmesi için Property
+    // Oyun durumunun okunabilmesi ama sadece bu sÄ±nÄ±f tarafÄ±ndan deÄŸiÅŸtirilebilmesi iÃ§in Property
     public GameState CurrentState { get; private set; }
     public GameState PreviousState { get; private set; }
     
     public float RemainingTime { get; private set; }
     
-    [Header("Dalga (Wave) Altyapısı (Skeleton)")]
+    [Header("Dalga (Wave) AltyapÄ±sÄ± (Skeleton)")]
     public int CurrentWave { get; private set; }
     [SerializeField] private int _maxWave = 5;
 
-    // Event'ler (Olaylar): Spagetti kodu engeller. Diğer sınıflar sadece bu eventleri dinler.
-    // Örneğin; UI yöneticisi OnGameStateChanged'i dinler ve GameOver gelince bitiş panelini açar.
+    // Event'ler (Olaylar): Spagetti kodu engeller. DiÄŸer sÄ±nÄ±flar sadece bu eventleri dinler.
+    // Ã–rneÄŸin; UI yÃ¶neticisi OnGameStateChanged'i dinler ve GameOver gelince bitiÅŸ panelini aÃ§ar.
     public static event Action<GameState> OnGameStateChanged;
     public static event Action<float> OnGameTimeUpdated;
 
     private void Awake()
     {
-        // Thread-safe / Scene-transition safe Singleton Kurulumu (SOLID Uyumluluğu)
+        // Thread-safe / Scene-transition safe Singleton Kurulumu (SOLID UyumluluÄŸu)
         if (Instance != null && Instance != this)
         {
             Debug.LogWarning("[GameManager] Sahnede birden fazla GameManager bulundu, kopya siliniyor.");
@@ -154,7 +155,7 @@ public class GameManager : MonoBehaviour
         }
         
         Instance = this;
-        // GameManager'ın sahneler arası referans kaybı yaşamaması için kalıcı yapılması (Önerilen)
+        // GameManager'Ä±n sahneler arasÄ± referans kaybÄ± yaÅŸamamasÄ± iÃ§in kalÄ±cÄ± yapÄ±lmasÄ± (Ã–nerilen)
         DontDestroyOnLoad(gameObject);
     }
 
@@ -178,13 +179,13 @@ public class GameManager : MonoBehaviour
 
     private void HandlePollutionGameOver(RecycleRush.Core.PollutionStats stats)
     {
-        Debug.Log("<color=red>[GameManager]</color> Kirlilik maksimuma ulaştı! Oyun sona eriyor.");
+        Debug.Log("<color=red>[GameManager]</color> Kirlilik maksimuma ulaÅŸtÄ±! Oyun sona eriyor.");
         EndGame();
     }
 
     private void Start()
     {
-        // Çevre modülleri inspector'dan atanmadıysa otomatik olarak bul
+        // Ã‡evre modÃ¼lleri inspector'dan atanmadÄ±ysa otomatik olarak bul
         if (environmentModules == null || environmentModules.Length == 0)
         {
             environmentModules = new GameObject[]
@@ -196,11 +197,11 @@ public class GameManager : MonoBehaviour
             };
         }
 
-        // Oyun ilk açıldığında hazırlık evresinden geçer, ardından ana menü (veya doğrudan oyun) başlar.
+        // Oyun ilk aÃ§Ä±ldÄ±ÄŸÄ±nda hazÄ±rlÄ±k evresinden geÃ§er, ardÄ±ndan ana menÃ¼ (veya doÄŸrudan oyun) baÅŸlar.
         ChangeState(GameState.Initialization);
         
-        // Oyun artık otomatik BAŞLAMAYACAK. 
-        // Oyuncunun makinedeki kolu (Lever) çekmesini beklemek için MainMenu (veya bekleme) durumunda kalıyoruz.
+        // Oyun artÄ±k otomatik BAÅLAMAYACAK. 
+        // Oyuncunun makinedeki kolu (Lever) Ã§ekmesini beklemek iÃ§in MainMenu (veya bekleme) durumunda kalÄ±yoruz.
         ChangeState(GameState.MainMenu);
     }
 
@@ -212,12 +213,12 @@ public class GameManager : MonoBehaviour
         session.EarnedCoins += achData.RewardCoin;
         CurrentSession = session;
         
-        Debug.Log($"<color=green>[GameManager]</color> Başarım Ödülü Alındı: +{achData.RewardXP} XP | +{achData.RewardCoin} Coin");
+        Debug.Log($"<color=green>[GameManager]</color> BaÅŸarÄ±m Ã–dÃ¼lÃ¼ AlÄ±ndÄ±: +{achData.RewardXP} XP | +{achData.RewardCoin} Coin");
     }
 
     private void Update()
     {
-        // Zamanlayıcı sadece oyun oynanırken çalışır. (Pause veya GameOver'da durur).
+        // ZamanlayÄ±cÄ± sadece oyun oynanÄ±rken Ã§alÄ±ÅŸÄ±r. (Pause veya GameOver'da durur).
         if (CurrentState == GameState.Playing)
         {
             UpdateTimer();
@@ -225,14 +226,14 @@ public class GameManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Oyunun durumunu güvenli bir şekilde değiştirir ve diğer sistemlere anons eder.
-    /// Mantıksız geçişler (Örn: MainMenu -> Playing) engellenir.
+    /// Oyunun durumunu gÃ¼venli bir ÅŸekilde deÄŸiÅŸtirir ve diÄŸer sistemlere anons eder.
+    /// MantÄ±ksÄ±z geÃ§iÅŸler (Ã–rn: MainMenu -> Playing) engellenir.
     /// </summary>
     public void ChangeState(GameState newState)
     {
-        if (CurrentState == newState) return; // Zaten o durumdaysak işlem yapma
+        if (CurrentState == newState) return; // Zaten o durumdaysak iÅŸlem yapma
         
-        // State Transition Validation (Geçiş Kontrol Kalkanı - SOLID/Defensive Programming)
+        // State Transition Validation (GeÃ§iÅŸ Kontrol KalkanÄ± - SOLID/Defensive Programming)
         bool isValidTransition = true;
         switch (CurrentState)
         {
@@ -258,22 +259,22 @@ public class GameManager : MonoBehaviour
 
         if (!isValidTransition)
         {
-            Debug.LogError($"[GameManager] HATA (Geçersiz Geçiş): {CurrentState} durumundan {newState} durumuna geçilemez!");
+            Debug.LogError($"[GameManager] HATA (GeÃ§ersiz GeÃ§iÅŸ): {CurrentState} durumundan {newState} durumuna geÃ§ilemez!");
             return;
         }
 
         PreviousState = CurrentState;
         
-        // Eski state'den çıkış işlemlerini çalıştır (FSM OnExit)
+        // Eski state'den Ã§Ä±kÄ±ÅŸ iÅŸlemlerini Ã§alÄ±ÅŸtÄ±r (FSM OnExit)
         OnStateExit(PreviousState);
         
         CurrentState = newState;
-        Debug.Log($"[GameManager] Oyun durumu değişti: {PreviousState} -> {CurrentState}");
+        Debug.Log($"[GameManager] Oyun durumu deÄŸiÅŸti: {PreviousState} -> {CurrentState}");
         
-        // Yeni state'e giriş işlemlerini çalıştır (FSM OnEnter)
+        // Yeni state'e giriÅŸ iÅŸlemlerini Ã§alÄ±ÅŸtÄ±r (FSM OnEnter)
         OnStateEnter(CurrentState);
         
-        // Modülleri Duruma Göre Otomatik Yönet (Butonlar vb.)
+        // ModÃ¼lleri Duruma GÃ¶re Otomatik YÃ¶net (Butonlar vb.)
         if (buttonsModule != null)
         {
             if (!_hasSavedButtonsTransform)
@@ -296,7 +297,7 @@ public class GameManager : MonoBehaviour
                 buttonsModule.transform.rotation = _buttonsOriginalRot;
                 buttonsModule.SetActive(true);
 
-                // Eğer Ana Menüye dönüldüyse çevreyi tekrar gizle (Scale 0)
+                // EÄŸer Ana MenÃ¼ye dÃ¶nÃ¼ldÃ¼yse Ã§evreyi tekrar gizle (Scale 0)
                 if (environmentModules != null)
                 {
                     foreach (var module in environmentModules)
@@ -307,7 +308,7 @@ public class GameManager : MonoBehaviour
             }
             else if (CurrentState == GameState.Placement || CurrentState == GameState.Countdown)
             {
-                // Sadece Butonlar görünür durumdaysa devrilme animasyonu başlat (örn: MainMenu'den gelirsek)
+                // Sadece Butonlar gÃ¶rÃ¼nÃ¼r durumdaysa devrilme animasyonu baÅŸlat (Ã¶rn: MainMenu'den gelirsek)
                 if (buttonsModule.activeSelf)
                 {
                     if (_hideButtonsCoroutine != null) StopCoroutine(_hideButtonsCoroutine);
@@ -321,41 +322,41 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        // Durum değişikliğini tüm sisteme yayınla (Broadcast)
+        // Durum deÄŸiÅŸikliÄŸini tÃ¼m sisteme yayÄ±nla (Broadcast)
         OnGameStateChanged?.Invoke(CurrentState);
     }
     
-    #region FSM (Finite State Machine) Lifecycle Fonksiyonları
+    #region FSM (Finite State Machine) Lifecycle FonksiyonlarÄ±
     
     /// <summary>
-    /// Bir duruma (State) girildiğinde sadece bir kez çalışacak olan işlemler.
-    /// (Ses, animasyon, ışık vb. sistemlerin yönetimi için idealdir).
+    /// Bir duruma (State) girildiÄŸinde sadece bir kez Ã§alÄ±ÅŸacak olan iÅŸlemler.
+    /// (Ses, animasyon, Ä±ÅŸÄ±k vb. sistemlerin yÃ¶netimi iÃ§in idealdir).
     /// </summary>
     private void OnStateEnter(GameState state)
     {
         switch (state)
         {
             case GameState.Playing:
-                // Örn: Müzik başlayabilir, Spawner'a "hızlan" denilebilir.
+                // Ã–rn: MÃ¼zik baÅŸlayabilir, Spawner'a "hÄ±zlan" denilebilir.
                 break;
             case GameState.Paused:
-                // Örn: Çevre sesleri (Ambient) kısılabilir.
+                // Ã–rn: Ã‡evre sesleri (Ambient) kÄ±sÄ±labilir.
                 break;
             case GameState.GameOver:
-                // Örn: Tüm çöpler dondurulabilir, BGM durdurulabilir.
+                // Ã–rn: TÃ¼m Ã§Ã¶pler dondurulabilir, BGM durdurulabilir.
                 break;
         }
     }
 
     /// <summary>
-    /// Bir durumdan (State) çıkıldığında sadece bir kez çalışacak olan temizlik işlemleri.
+    /// Bir durumdan (State) Ã§Ä±kÄ±ldÄ±ÄŸÄ±nda sadece bir kez Ã§alÄ±ÅŸacak olan temizlik iÅŸlemleri.
     /// </summary>
     private void OnStateExit(GameState state)
     {
         switch (state)
         {
             case GameState.MainMenu:
-                // Ana menüden çıkarken menü sesleri kapatılabilir.
+                // Ana menÃ¼den Ã§Ä±karken menÃ¼ sesleri kapatÄ±labilir.
                 break;
         }
     }
@@ -363,55 +364,55 @@ public class GameManager : MonoBehaviour
     #endregion
 
     /// <summary>
-    /// Oyunu tamamen sıfırlar ve yeniden başlatır. 
-    /// Timer, SessionData, Skor, Kombo, Çöpler ve Dalgalar (Wave) sıfırlanır.
+    /// Oyunu tamamen sÄ±fÄ±rlar ve yeniden baÅŸlatÄ±r. 
+    /// Timer, SessionData, Skor, Kombo, Ã‡Ã¶pler ve Dalgalar (Wave) sÄ±fÄ±rlanÄ±r.
     /// </summary>
     public void RestartGame()
     {
         if (CurrentState == GameState.MainMenu || CurrentState == GameState.GameOver || CurrentState == GameState.Paused)
         {
-            // 1. Timer Sıfırla
+            // 1. Timer SÄ±fÄ±rla
             RemainingTime = _gameDuration;
             OnGameTimeUpdated?.Invoke(RemainingTime);
 
-            // 2. Session Data Sıfırla
+            // 2. Session Data SÄ±fÄ±rla
             CurrentSession = new GameSessionData();
-            CurrentSession.EarnedMedals = new List<string>(); // Listeyi başlat
+            CurrentSession.EarnedMedals = new List<string>(); // Listeyi baÅŸlat
 
-            // 3. Skor ve Komboyu Sıfırla
+            // 3. Skor ve Komboyu SÄ±fÄ±rla
             if (RecycleRush.Core.ScoreManager.Instance != null)
             {
                 RecycleRush.Core.ScoreManager.Instance.ResetScore();
             }
             
-            // 4. Havuzdaki çöpleri temizle (Eğer ObjectPoolManager varsa)
+            // 4. Havuzdaki Ã§Ã¶pleri temizle (EÄŸer ObjectPoolManager varsa)
             // if (ObjectPoolManager.Instance != null) ObjectPoolManager.Instance.ReturnAllToPool();
 
-            // 5. Motor hızını sıfırla (Paused durumundan geliyorsak zaman durmuş olabilir)
+            // 5. Motor hÄ±zÄ±nÄ± sÄ±fÄ±rla (Paused durumundan geliyorsak zaman durmuÅŸ olabilir)
             Time.timeScale = 1f;
             
-            // 6. Dalga sistemini (Wave) sıfırla
+            // 6. Dalga sistemini (Wave) sÄ±fÄ±rla
             CurrentWave = 1;
 
-            // 7. Geri Sayım (Countdown) durumuna geçerek oyunu başlat.
+            // 7. Geri SayÄ±m (Countdown) durumuna geÃ§erek oyunu baÅŸlat.
             ChangeState(GameState.Countdown);
         }
     }
 
-    #region Wave Skeleton (İleride Geliştirilecek)
+    #region Wave Skeleton (Ä°leride GeliÅŸtirilecek)
     
     /// <summary>
-    /// Yeni bir dalgayı (Wave) başlatır. Zorluk seviyesi (Hız, Spawn süresi) burada artırılabilir.
-    /// (Solid: Açık/Kapalı prensibine uygun genişleme alanı)
+    /// Yeni bir dalgayÄ± (Wave) baÅŸlatÄ±r. Zorluk seviyesi (HÄ±z, Spawn sÃ¼resi) burada artÄ±rÄ±labilir.
+    /// (Solid: AÃ§Ä±k/KapalÄ± prensibine uygun geniÅŸleme alanÄ±)
     /// </summary>
     public void StartWave()
     {
-        Debug.Log($"[GameManager] Wave {CurrentWave} Başlıyor!");
-        // TODO: Spawner sistemine "Daha hızlı üret" sinyali gönderilebilir.
+        Debug.Log($"[GameManager] Wave {CurrentWave} BaÅŸlÄ±yor!");
+        // TODO: Spawner sistemine "Daha hÄ±zlÄ± Ã¼ret" sinyali gÃ¶nderilebilir.
     }
 
     /// <summary>
-    /// Mevcut dalgayı (Wave) sonlandırır.
+    /// Mevcut dalgayÄ± (Wave) sonlandÄ±rÄ±r.
     /// </summary>
     public void EndWave()
     {
@@ -430,11 +431,11 @@ public class GameManager : MonoBehaviour
     #endregion
 
     /// <summary>
-    /// Oyunu (veya gerekirse öğreticiyi) başlatır.
+    /// Oyunu (veya gerekirse Ã¶ÄŸreticiyi) baÅŸlatÄ±r.
     /// </summary>
     public void StartGame()
     {
-        // Eğitimi hiç tamamlamamışsa (0 ise) veya anahtar yoksa Tutorial'e geç
+        // EÄŸitimi hiÃ§ tamamlamamÄ±ÅŸsa (0 ise) veya anahtar yoksa Tutorial'e geÃ§
         if (PlayerPrefs.GetInt("TutorialDone", 0) == 0)
         {
             ChangeState(GameState.Tutorial);
@@ -447,7 +448,7 @@ public class GameManager : MonoBehaviour
     }
 
     /// <summary>
-    /// UIManager geri sayım animasyonunu bitirdiğinde bu fonksiyonu çağırır ve oyunu asıl o zaman başlatır.
+    /// UIManager geri sayÄ±m animasyonunu bitirdiÄŸinde bu fonksiyonu Ã§aÄŸÄ±rÄ±r ve oyunu asÄ±l o zaman baÅŸlatÄ±r.
     /// </summary>
     public void FinishCountdown()
     {
@@ -456,14 +457,14 @@ public class GameManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Oyunu duraklatır.
+    /// Oyunu duraklatÄ±r.
     /// </summary>
     public void PauseGame()
     {
         if (CurrentState == GameState.Playing)
         {
             ChangeState(GameState.Paused);
-            Time.timeScale = 0f; // Fizik motorunu ve update sürelerini durdurur
+            Time.timeScale = 0f; // Fizik motorunu ve update sÃ¼relerini durdurur
         }
     }
 
@@ -475,12 +476,12 @@ public class GameManager : MonoBehaviour
         if (CurrentState == GameState.Paused)
         {
             ChangeState(GameState.Playing);
-            Time.timeScale = 1f; // Motoru tekrar normal hızına getirir
+            Time.timeScale = 1f; // Motoru tekrar normal hÄ±zÄ±na getirir
         }
     }
 
     /// <summary>
-    /// Oyunu durdurur veya devam ettirir (VR menü tuşu için idealdir).
+    /// Oyunu durdurur veya devam ettirir (VR menÃ¼ tuÅŸu iÃ§in idealdir).
     /// </summary>
     public void TogglePauseGame()
     {
@@ -495,7 +496,7 @@ public class GameManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Geri sayım sistemini günceller.
+    /// Geri sayÄ±m sistemini gÃ¼nceller.
     /// </summary>
     private void UpdateTimer()
     {
@@ -503,11 +504,11 @@ public class GameManager : MonoBehaviour
         {
             RemainingTime -= Time.deltaTime;
             
-            // Eğer süre sıfırın altına düştüyse sıfıra sabitle.
+            // EÄŸer sÃ¼re sÄ±fÄ±rÄ±n altÄ±na dÃ¼ÅŸtÃ¼yse sÄ±fÄ±ra sabitle.
             if (RemainingTime < 0) RemainingTime = 0;
 
-            // UI gibi diğer sistemlerin zamanı saniye saniye güncelleyebilmesi için event fırlatıyoruz.
-            // Optimizasyon notu: İstenirse sadece tamsayı değiştiğinde (saniyede 1) fırlatılabilir.
+            // UI gibi diÄŸer sistemlerin zamanÄ± saniye saniye gÃ¼ncelleyebilmesi iÃ§in event fÄ±rlatÄ±yoruz.
+            // Optimizasyon notu: Ä°stenirse sadece tamsayÄ± deÄŸiÅŸtiÄŸinde (saniyede 1) fÄ±rlatÄ±labilir.
             OnGameTimeUpdated?.Invoke(RemainingTime);
 
             if (RemainingTime <= 0)
@@ -517,23 +518,23 @@ public class GameManager : MonoBehaviour
         }
     }
     
-    #region VR Application Pause Koruması
+    #region VR Application Pause KorumasÄ±
     
     /// <summary>
-    /// Oyuncu VR gözlüğünü (Quest vb.) kafasından çıkardığında veya uygulama arka plana düştüğünde çalışır.
-    /// Sürenin boşa akmasını engeller.
+    /// Oyuncu VR gÃ¶zlÃ¼ÄŸÃ¼nÃ¼ (Quest vb.) kafasÄ±ndan Ã§Ä±kardÄ±ÄŸÄ±nda veya uygulama arka plana dÃ¼ÅŸtÃ¼ÄŸÃ¼nde Ã§alÄ±ÅŸÄ±r.
+    /// SÃ¼renin boÅŸa akmasÄ±nÄ± engeller.
     /// </summary>
     private void OnApplicationPause(bool pauseStatus)
     {
         if (pauseStatus && CurrentState == GameState.Playing)
         {
-            Debug.Log("<color=orange>[GameManager]</color> VR Gözlüğü çıkarıldı veya oyun alta alındı! Otomatik Pause Devrede.");
+            Debug.Log("<color=orange>[GameManager]</color> VR GÃ¶zlÃ¼ÄŸÃ¼ Ã§Ä±karÄ±ldÄ± veya oyun alta alÄ±ndÄ±! Otomatik Pause Devrede.");
             PauseGame();
         }
     }
 
     /// <summary>
-    /// Uygulama odağı (Focus) kaybettiğinde (Quest arayüzü açıldığında) çalışır.
+    /// Uygulama odaÄŸÄ± (Focus) kaybettiÄŸinde (Quest arayÃ¼zÃ¼ aÃ§Ä±ldÄ±ÄŸÄ±nda) Ã§alÄ±ÅŸÄ±r.
     /// </summary>
     private void OnApplicationFocus(bool hasFocus)
     {
@@ -546,7 +547,7 @@ public class GameManager : MonoBehaviour
     #endregion
 
     /// <summary>
-    /// Süre dolduğunda veya can bittiğinde çağrılır.
+    /// SÃ¼re dolduÄŸunda veya can bittiÄŸinde Ã§aÄŸrÄ±lÄ±r.
     /// </summary>
     private void EndGame()
     {
@@ -554,17 +555,17 @@ public class GameManager : MonoBehaviour
         CompileEndgameStats();
         
         ChangeState(GameState.GameOver);
-        // İstenirse burada oyun sonunda yapılacak özel işlemler çağrılabilir.
+        // Ä°stenirse burada oyun sonunda yapÄ±lacak Ã¶zel iÅŸlemler Ã§aÄŸrÄ±labilir.
     }
 
     /// <summary>
-    /// Oyun bittiğinde istatistikleri (İsabet Oranı vb.) hesaplar.
+    /// Oyun bittiÄŸinde istatistikleri (Ä°sabet OranÄ± vb.) hesaplar.
     /// </summary>
     private void CompileEndgameStats()
     {
         int totalThrows = CurrentSession.TotalCorrectThrows + CurrentSession.TotalIncorrectThrows;
         
-        // 1. İsabet Oranı
+        // 1. Ä°sabet OranÄ±
         if (totalThrows > 0)
         {
             CurrentSession.AccuracyPercentage = ((float)CurrentSession.TotalCorrectThrows / totalThrows) * 100f;
@@ -580,7 +581,7 @@ public class GameManager : MonoBehaviour
         if (totalGoldenSpawned > 0)
             goldenWasteRate = ((float)CurrentSession.GoldenWastesCollected / totalGoldenSpawned) * 100f;
             
-        // 3. Performans Harf Notu (Grade) ve Kırılımı (Breakdown)
+        // 3. Performans Harf Notu (Grade) ve KÄ±rÄ±lÄ±mÄ± (Breakdown)
         float comboScore = Mathf.Clamp01((float)CurrentSession.MaxCombo / 20f) * 100f;
         
         CurrentSession.AccuracyGradeScore = CurrentSession.AccuracyPercentage * 0.40f; // Max 40
@@ -608,22 +609,22 @@ public class GameManager : MonoBehaviour
         CurrentSession.EarnedCoins = CurrentSession.BaseCoin + CurrentSession.GoldenCoin;
         if (CurrentSession.AccuracyPercentage >= 90f)
         {
-            CurrentSession.EarnedCoins += 50; // Ustalık Bonusu
+            CurrentSession.EarnedCoins += 50; // UstalÄ±k Bonusu
         }
         
-        // 5. Session Efficiency (Oturum Verimliliği)
+        // 5. Session Efficiency (Oturum VerimliliÄŸi)
         float playMinutes = CurrentSession.TotalPlayTime > 0f ? CurrentSession.TotalPlayTime / 60f : 1f;
         CurrentSession.ScorePerMinute = finalScore / playMinutes;
         CurrentSession.XPPerMinute = CurrentSession.EarnedXP / playMinutes;
         CurrentSession.ThrowsPerMinute = totalThrows / playMinutes;
 
-        // 6. Kayıt (Save), Deltalar ve Yeni Rekor Kontrolü
+        // 6. KayÄ±t (Save), Deltalar ve Yeni Rekor KontrolÃ¼
         if (RecycleRush.Managers.SaveManager.Instance != null)
         {
             var saveData = RecycleRush.Managers.SaveManager.Instance.CurrentData;
             bool dataChanged = false;
             
-            // Deltaları hesapla (Güncellemeden önce)
+            // DeltalarÄ± hesapla (GÃ¼ncellemeden Ã¶nce)
             CurrentSession.ScoreDelta = finalScore - saveData.HighestScore;
             CurrentSession.AccuracyDelta = CurrentSession.AccuracyPercentage - saveData.BestAccuracy;
             CurrentSession.ComboDelta = CurrentSession.MaxCombo - saveData.BestCombo;
@@ -652,11 +653,11 @@ public class GameManager : MonoBehaviour
                 dataChanged = true;
             }
             
-            // Oyun sonu kazanımlarını kalıcı profile ekle
+            // Oyun sonu kazanÄ±mlarÄ±nÄ± kalÄ±cÄ± profile ekle
             saveData.XP += CurrentSession.EarnedXP;
             saveData.Coins += CurrentSession.EarnedCoins;
             
-            // 7. Match History (Maç Geçmişi) Kaydı
+            // 7. Match History (MaÃ§ GeÃ§miÅŸi) KaydÄ±
             var newRecord = new RecycleRush.Managers.MatchHistoryRecord
             {
                 Timestamp = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
@@ -669,16 +670,16 @@ public class GameManager : MonoBehaviour
             
             if (saveData.MatchHistory == null) saveData.MatchHistory = new System.Collections.Generic.List<RecycleRush.Managers.MatchHistoryRecord>();
             
-            saveData.MatchHistory.Insert(0, newRecord); // En başa (en yeni) ekle
+            saveData.MatchHistory.Insert(0, newRecord); // En baÅŸa (en yeni) ekle
             if (saveData.MatchHistory.Count > 10)
             {
-                saveData.MatchHistory.RemoveAt(saveData.MatchHistory.Count - 1); // 10'dan fazlasını sil
+                saveData.MatchHistory.RemoveAt(saveData.MatchHistory.Count - 1); // 10'dan fazlasÄ±nÄ± sil
             }
             
             RecycleRush.Managers.SaveManager.Instance.SaveGame();
         }
         
-        // 8. Next Goal Generator (Sonraki Hedef Üretici)
+        // 8. Next Goal Generator (Sonraki Hedef Ãœretici)
         if (CurrentSession.AccuracyPercentage < 90f)
             CurrentSession.SuggestedNextGoal = "Reach 90% Accuracy!";
         else if (CurrentSession.MaxCombo < 8)
@@ -690,7 +691,7 @@ public class GameManager : MonoBehaviour
         else
             CurrentSession.SuggestedNextGoal = "You're playing great, keep breaking records!";
             
-        // 9. Performance Medals (Performans Madalyaları)
+        // 9. Performance Medals (Performans MadalyalarÄ±)
         if (CurrentSession.EarnedMedals == null) CurrentSession.EarnedMedals = new List<string>();
         CurrentSession.EarnedMedals.Clear();
         
@@ -700,7 +701,7 @@ public class GameManager : MonoBehaviour
         if (CurrentSession.GraceUsedCount == 0 && totalThrows > 10) CurrentSession.EarnedMedals.Add("Survivor Medal");
         if (CurrentSession.ScorePerMinute >= 400f) CurrentSession.EarnedMedals.Add("Efficiency Medal");
         
-        // 10. Session Highlight (Oturumun Öne Çıkan Anı)
+        // 10. Session Highlight (Oturumun Ã–ne Ã‡Ä±kan AnÄ±)
         if (CurrentSession.IsNewHighScore) 
             CurrentSession.SessionHighlight = $"Legendary Run: New High Score of {finalScore}!";
         else if (CurrentSession.MaxCombo >= 15) 
@@ -719,7 +720,7 @@ public class GameManager : MonoBehaviour
         Debug.Log($"<color=cyan>[End of Session Report]</color>\nHighlight: {CurrentSession.SessionHighlight}\nGrade: {CurrentSession.PerformanceGrade} ({CurrentSession.TotalGradeScore:F1}/100) | Accuracy: %{CurrentSession.AccuracyPercentage:F1} | Score: {finalScore} (Delta: {CurrentSession.ScoreDelta})\nEarned XP: {CurrentSession.EarnedXP} | Suggested Goal: {CurrentSession.SuggestedNextGoal}\nMedals Earned: {medalsString}");
         
         // 11. End Session Snapshot (Immutable Copy)
-        // Oyun sonu paneli açıkken yanlışlıkla arka planda bir çöp çöp kutusuna düşerse, raporun bozulmaması için veriyi donduruyoruz.
+        // Oyun sonu paneli aÃ§Ä±kken yanlÄ±ÅŸlÄ±kla arka planda bir Ã§Ã¶p Ã§Ã¶p kutusuna dÃ¼ÅŸerse, raporun bozulmamasÄ± iÃ§in veriyi donduruyoruz.
         var snapshot = CurrentSession;
         if (CurrentSession.EarnedMedals != null)
         {
@@ -729,18 +730,18 @@ public class GameManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Butonların arkaya doğru taş gibi devrilip (Domino etkisi) bir süre sonra kaybolmasını sağlar.
+    /// ButonlarÄ±n arkaya doÄŸru taÅŸ gibi devrilip (Domino etkisi) bir sÃ¼re sonra kaybolmasÄ±nÄ± saÄŸlar.
     /// </summary>
     private System.Collections.IEnumerator HideButtonsRoutine()
     {
         if (buttonsModule == null) yield break;
 
-        // 1) Butonların gerçek merkezini bul (3. butonun merkezi kaydırmaması için sadece Play ve Setting baz alınır)
+        // 1) ButonlarÄ±n gerÃ§ek merkezini bul (3. butonun merkezi kaydÄ±rmamasÄ± iÃ§in sadece Play ve Setting baz alÄ±nÄ±r)
         Vector3 center = Vector3.zero;
         int count = 0;
         foreach (Transform child in buttonsModule.transform)
         {
-            // Sadece isminde Play veya Setting geçen butonları merkeze dahil et (Exit butonunu yoksay)
+            // Sadece isminde Play veya Setting geÃ§en butonlarÄ± merkeze dahil et (Exit butonunu yoksay)
             if (child.name.Contains("Play") || child.name.Contains("Setting"))
             {
                 center += child.position;
@@ -753,56 +754,56 @@ public class GameManager : MonoBehaviour
         else 
             center = buttonsModule.transform.position; // Fallback garantisi
 
-        // 2) Devrilme noktasını (Pivot) merkezin yarım metre altı (sanki zemine değdiği yer) olarak ayarla
+        // 2) Devrilme noktasÄ±nÄ± (Pivot) merkezin yarÄ±m metre altÄ± (sanki zemine deÄŸdiÄŸi yer) olarak ayarla
         Vector3 pivotPoint = center + Vector3.down * 0.5f;
         
-        // 3) Hangi eksen etrafında dönecek? (Kendi sağına doğru olan eksen etrafında dönerse arkaya yatar)
+        // 3) Hangi eksen etrafÄ±nda dÃ¶necek? (Kendi saÄŸÄ±na doÄŸru olan eksen etrafÄ±nda dÃ¶nerse arkaya yatar)
         Vector3 rotationAxis = buttonsModule.transform.right;
 
         float duration = 1.0f; // 1 saniyede devrilir
         float elapsed = 0f;
         
-        float totalAngle = 90f; // Arkaya tam yatması için 90 derece
+        float totalAngle = 90f; // Arkaya tam yatmasÄ± iÃ§in 90 derece
         float currentAngle = 0f;
 
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
             
-            // Düşme hızını ivmelendirmek için t'nin karesini (Ease-In) alıyoruz
+            // DÃ¼ÅŸme hÄ±zÄ±nÄ± ivmelendirmek iÃ§in t'nin karesini (Ease-In) alÄ±yoruz
             float t = elapsed / duration;
             t = t * t; 
             
             float targetAngle = Mathf.Lerp(0f, totalAngle, t);
             float deltaAngle = targetAngle - currentAngle;
             
-            // Objeyi kendi merkezi etrafında devir!
+            // Objeyi kendi merkezi etrafÄ±nda devir!
             buttonsModule.transform.RotateAround(pivotPoint, rotationAxis, deltaAngle);
             currentAngle = targetAngle;
             
             yield return null;
         }
 
-        // Tamamen yere çarptıktan sonra oyuncunun bunu algılaması için 1 saniye yerde beklesin
+        // Tamamen yere Ã§arptÄ±ktan sonra oyuncunun bunu algÄ±lamasÄ± iÃ§in 1 saniye yerde beklesin
         yield return new WaitForSeconds(1.0f);
 
         // Son olarak sahneden gizle
         buttonsModule.SetActive(false);
         _hideButtonsCoroutine = null;
 
-        // Butonlar kaybolduktan sonra çevreyi Arcade animasyonla ortaya çıkar
+        // Butonlar kaybolduktan sonra Ã§evreyi Arcade animasyonla ortaya Ã§Ä±kar
         StartCoroutine(RevealEnvironmentRoutine());
     }
 
     /// <summary>
-    /// Makine, bant ve kutuları "Pop-up" (büyüyerek ve yaylanarak) Arcade stiliyle ortaya çıkarır.
+    /// Makine, bant ve kutularÄ± "Pop-up" (bÃ¼yÃ¼yerek ve yaylanarak) Arcade stiliyle ortaya Ã§Ä±karÄ±r.
     /// </summary>
     private System.Collections.IEnumerator RevealEnvironmentRoutine()
     {
-        float duration = 0.8f; // Animasyon süresi (0.8 saniye çok dinamik durur)
+        float duration = 0.8f; // Animasyon sÃ¼resi (0.8 saniye Ã§ok dinamik durur)
         float elapsed = 0f;
         
-        // EaseOutBack formülü için sabitler (Hafifçe 1.0'ı geçip geri döner)
+        // EaseOutBack formÃ¼lÃ¼ iÃ§in sabitler (HafifÃ§e 1.0'Ä± geÃ§ip geri dÃ¶ner)
         float c1 = 1.70158f;
         float c3 = c1 + 1f;
 
@@ -811,11 +812,11 @@ public class GameManager : MonoBehaviour
             elapsed += Time.deltaTime;
             float t = elapsed / duration;
             
-            // Ease Out Back matematiği
+            // Ease Out Back matematiÄŸi
             float t_minus_1 = t - 1f;
             float scaleValue = 1f + c3 * Mathf.Pow(t_minus_1, 3f) + c1 * Mathf.Pow(t_minus_1, 2f);
 
-            // Çok küçülmesini engellemek için min 0 sınırla
+            // Ã‡ok kÃ¼Ã§Ã¼lmesini engellemek iÃ§in min 0 sÄ±nÄ±rla
             if (scaleValue < 0f) scaleValue = 0f;
 
             Vector3 currentScale = Vector3.one * scaleValue;
@@ -839,5 +840,52 @@ public class GameManager : MonoBehaviour
                 module.transform.localScale = Vector3.one;
             }
         }
+    }
+
+    // --- FRIEND'S ADDED METHODS ---
+    public bool IsMagnetActive { get; private set; }
+    public float MagnetRemainingTime { get; private set; }
+    
+    public static event System.Action<float> OnMagnetStarted;
+    public static event System.Action<float> OnMagnetTimeUpdated;
+    public static event System.Action OnMagnetEnded;
+    public static event System.Action<float> OnHourglassUsed;
+
+    public void PrepareToStart()
+    {
+        UnityEngine.Debug.Log($"<color=white>[GameManager]</color> PrepareToStart Cagirildi!");
+        if (CurrentState == GameState.MainMenu || CurrentState == GameState.GameOver) { ChangeState(GameState.Countdown); }
+    }
+
+    public void ActivateMagnet(float duration)
+    {
+        if (CurrentState == GameState.Playing)
+        {
+            StartCoroutine(MagnetRoutine(duration));
+        }
+    }
+
+    private System.Collections.IEnumerator MagnetRoutine(float duration)
+    {
+        IsMagnetActive = true;
+        MagnetRemainingTime = duration;
+        OnMagnetStarted?.Invoke(duration);
+
+        while (MagnetRemainingTime > 0)
+        {
+            MagnetRemainingTime -= UnityEngine.Time.deltaTime;
+            OnMagnetTimeUpdated?.Invoke(MagnetRemainingTime);
+            yield return null;
+        }
+
+        MagnetRemainingTime = 0;
+        IsMagnetActive = false;
+        OnMagnetTimeUpdated?.Invoke(0);
+        OnMagnetEnded?.Invoke();
+    }
+    
+    public void TriggerHourglassEvent(float seconds)
+    {
+        OnHourglassUsed?.Invoke(seconds);
     }
 }
