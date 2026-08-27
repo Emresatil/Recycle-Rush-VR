@@ -30,11 +30,6 @@ public class WasteSpawner : MonoBehaviour
 
     [Header("Mystery Package Settings")]
     [Tooltip("Nadir olarak düşecek Sürpriz Kutu Prefab'ı")]
-        [Header("Power-Up Settings (Friend)")]
-    public GameObject hourglassPrefab;
-    public GameObject magnetPrefab;
-    [Range(0f, 100f)] public float hourglassSpawnChance = 10f;
-    [Range(0f, 100f)] public float magnetSpawnChance = 8f;
     public GameObject wastePackagePrefab;
     [Tooltip("Sürpriz Kutu'nun çıkma ihtimali (Yüzde % olarak)")]
     [Range(0f, 100f)] public float packageSpawnChance = 5f;
@@ -44,6 +39,8 @@ public class WasteSpawner : MonoBehaviour
     public GameObject hourglassPrefab;
     [Tooltip("Çöpleri otomatik toplayan Mıknatıs prefabı")]
     public GameObject magnetPrefab;
+    [Range(0f, 100f)] public float hourglassSpawnChance = 10f;
+    [Range(0f, 100f)] public float magnetSpawnChance = 8f;
 
     [Header("Visual Effects")]
     [Tooltip("Çöplerin çıktığı portalın görsel animatörü (İsteğe bağlı)")]
