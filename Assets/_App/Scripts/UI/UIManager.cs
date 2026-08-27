@@ -435,9 +435,9 @@ namespace RecycleRush.UI
                     if (pausePanel != null) pausePanel.SetActive(false);
                     if (gameOverPanel != null) gameOverPanel.SetActive(false);
 
-                    // SADECE LevelSelectionBoard aktif olsun, oyun içi paneller kapansın
-                    
-                    if (levelSelectionBoard != null) levelSelectionBoard.SetActive(true);
+                    // SADECE LevelSelectionBoard aktif olsun (Eğer eğitim tamamlandıysa), oyun içi paneller kapansın
+                    bool isTutorialDone = PlayerPrefs.GetInt("TutorialDone", 0) == 1;
+                    if (levelSelectionBoard != null) levelSelectionBoard.SetActive(isTutorialDone);
                     if (missionPanel != null) missionPanel.SetActive(false);
                     if (xpPanel != null) xpPanel.SetActive(false);
                     if (comboPanel != null) comboPanel.SetActive(false);
@@ -461,10 +461,8 @@ namespace RecycleRush.UI
                     if (pauseButtonUIObj != null) pauseButtonUIObj.SetActive(true);
                     if (gameOverPanel != null) gameOverPanel.SetActive(false);
 
-                    if (pauseButtonUIObj != null) pauseButtonUIObj.SetActive(true); // Butona basÄ±lÄ±nca da Pause butonu gÃ¶rÃ¼nsÃ¼n!
-                    if (gameOverPanel != null) gameOverPanel.SetActive(false);
-                    
-                    if (levelSelectionBoard != null) levelSelectionBoard.SetActive(true);
+                    bool isTutDonePlacement = PlayerPrefs.GetInt("TutorialDone", 0) == 1;
+                    if (levelSelectionBoard != null) levelSelectionBoard.SetActive(isTutDonePlacement);
                     if (missionPanel != null) missionPanel.SetActive(false);
                     if (xpPanel != null) xpPanel.SetActive(false);
                     if (comboPanel != null) comboPanel.SetActive(false);
@@ -545,6 +543,12 @@ namespace RecycleRush.UI
                 case GameState.Tutorial:
                     // TutorialManager yazÄ±larÄ± kendisi yÃ¶netecek, burada sadece butonu gizliyoruz
                     if (levelSelectionBoard != null) levelSelectionBoard.SetActive(false);
+                    if (missionPanel != null) missionPanel.SetActive(false);
+                    if (xpPanel != null) xpPanel.SetActive(false);
+                    if (comboPanel != null) comboPanel.SetActive(false);
+                    if (pollutionPanel != null) pollutionPanel.SetActive(false);
+                    if (scorePanel != null) scorePanel.SetActive(false);
+                    if (timeText != null) timeText.gameObject.SetActive(false);
                     if (restartButtonObj != null) restartButtonObj.SetActive(false);
                     if (pausePanel != null) pausePanel.SetActive(false);
                     if (gameOverPanel != null) gameOverPanel.SetActive(false);

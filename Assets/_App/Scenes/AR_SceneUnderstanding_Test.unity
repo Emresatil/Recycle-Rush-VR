@@ -917,12 +917,12 @@ GameObject:
   - component: {fileID: 109085275}
   - component: {fileID: 109085279}
   - component: {fileID: 109085278}
-  - component: {fileID: 109085277}
   - component: {fileID: 109085276}
   - component: {fileID: 109085270}
   - component: {fileID: 109085274}
   - component: {fileID: 109085283}
   - component: {fileID: 109085284}
+  - component: {fileID: 109085285}
   m_Layer: 0
   m_Name: Core_Managers
   m_TagString: Untagged
@@ -1027,23 +1027,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RecycleRush.Managers.SpatialAnchorManager
   anchorManager: {fileID: 0}
---- !u!114 &109085277
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 109085269}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3bed734e40459d44599ef23dd1d797a5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RecycleRush.Managers.TutorialManager
-  tutorialText: {fileID: 0}
-  tutorialWastePrefab: {fileID: 0}
-  spawnPoint: {fileID: 0}
-  leverTransform: {fileID: 0}
-  targetBinTransform: {fileID: 0}
 --- !u!114 &109085278
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1231,6 +1214,31 @@ MonoBehaviour:
   goldenSparklePrefab: {fileID: 7938384439400024403, guid: 0bcc50de227006f428ec9b0a3be2062a, type: 3}
   confettiPrefab: {fileID: 5700784828077083704, guid: 88fbd09edfe9f4b469fe131eff4242de, type: 3}
   speedModeScreenFlash: {fileID: 8680598818964007281, guid: 74ec556d477505640a3cd1883bd6a831, type: 3}
+--- !u!114 &109085285
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 109085269}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c297425f21cd32e46a3caabc3b439cfd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RecycleRush.Tutorial.ARHoloTutorialManager
+  stepCard: {fileID: 0}
+  wastePointer: {fileID: 0}
+  binPointer: {fileID: 0}
+  handGuide: {fileID: 0}
+  basicWastePrefab: {fileID: 1467448516992097433, guid: 7e46d3968ed195f4daf41d6cd3f73036, type: 3}
+  compositeWastePrefab: {fileID: 0}
+  step2SpawnOffset: {x: 0, y: 0.1, z: 0.9}
+  step3SpawnOffset: {x: 0, y: 0.1, z: 2.3}
+  step4SpawnOffset: {x: 0, y: 0.1, z: 0.9}
+  paperBinTransform: {fileID: 0}
+  plasticBinTransform: {fileID: 0}
+  glassBinTransform: {fileID: 0}
+  metalBinTransform: {fileID: 0}
 --- !u!1 &111887242
 GameObject:
   m_ObjectHideFlags: 0
@@ -3347,7 +3355,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Status
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -11761,7 +11769,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: PowerupText
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -12582,7 +12590,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: time
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -13961,7 +13969,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: EventText
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
