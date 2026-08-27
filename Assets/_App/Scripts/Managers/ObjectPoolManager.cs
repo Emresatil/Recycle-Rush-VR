@@ -258,9 +258,9 @@ public class ObjectPoolManager : MonoBehaviour
             if (pos.y < killZLevel)
             {
                 Debug.Log($"<color=orange>[ObjectPoolManager - Kill Z]</color> {obj.name} yere düştü! (Konum: {pos}). Otomatik havuza çekiliyor.");
-                ReturnToPool(obj); 
-                // ReturnToPool metodu zaten '_activeObjects.Remove(obj)' yapacağı için listemiz temiz kalır.
+                if (RecycleRush.Managers.ComboManager.Instance != null) RecycleRush.Managers.ComboManager.Instance.BreakCombo(); if (RecycleRush.Core.ScoreManager.Instance != null) RecycleRush.Core.ScoreManager.Instance.AddScore(-5); ReturnToPool(obj); // ReturnToPool metodu zaten '_activeObjects.Remove(obj)' yapacağı için listemiz temiz kalır.
             }
         }
     }
 }
+

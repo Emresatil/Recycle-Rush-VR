@@ -1,33 +1,34 @@
-using UnityEngine;
-using TMPro; // TextMeshPro (Yazılar) için gerekli
-using System.Collections; // Coroutine (Lerp animasyonları) için gerekli
-using System.Collections.Generic; // Queue<T> için gerekli
+﻿using UnityEngine;
+using TMPro; // TextMeshPro (YazÄ±lar) iÃ§in gerekli
+using System.Collections; // Coroutine (Lerp animasyonlarÄ±) iÃ§in gerekli
 using UnityEngine.UI;
 using UnityEngine.InputSystem;
-using RecycleRush.Managers;
+using RecycleRush.Managers; // EKLENDÄ°: MissionManager, LevelSelectionManager gibi yÃ¶neticilere eriÅŸmek iÃ§in
 
 namespace RecycleRush.UI
 {
     /// <summary>
     /// GameManager ve EventManager durumlarını dinleyerek sahnede bulunan Monitör/UI arayüzlerini ve panelleri yönetir.
+    /// GameManager'Ä±n durumlarÄ±nÄ± dinleyerek sahnede bulunan 3D MonitÃ¶r (Ekran) Ã¼zerindeki yazÄ±larÄ± ve butonlarÄ± yÃ¶netir.
     /// </summary>
     public class UIManager : MonoBehaviour
     {
-        // Singleton Instance (Objeleri Destroy etmeden, panelleri dolu olana öncelik verir)
+        // Singleton Instance (Objeleri Destroy etmeden, panelleri dolu olana Ã¶ncelik verir)
         public static UIManager Instance { get; private set; }
 
-        [Header("Ekran (Monitör) Yazıları")]
-        [Tooltip("Süreyi gösterecek olan yazı bileşeni (Örn: 60)")]
+        [Header("Ekran (MonitÃ¶r) YazÄ±larÄ±")]
+        [Tooltip("SÃ¼reyi gÃ¶sterecek olan yazÄ± bileÅŸeni (Ã–rn: 60)")]
         public TextMeshProUGUI timeText;
         [Tooltip("Oyun durumunu gösterecek yazı (Örn: RECYCLING STARTED / SYSTEM ONLINE)")]
+        [Tooltip("Oyun durumunu gÃ¶sterecek yazÄ± (Ã–rn: OYUN BITTI)")]
         public TextMeshProUGUI statusText;
 
         [Header("Butonlar")]
-        [Tooltip("Oyun bitince çıkacak olan Fiziksel Restart Butonu objesi")]
+        [Tooltip("Oyun bitince Ã§Ä±kacak olan Fiziksel Restart Butonu objesi")]
         public GameObject restartButtonObj;
 
         [Header("Kombo Sistemi")]
-        [Tooltip("Kombo yazısını gösterecek TextMeshPro bileşeni")]
+        [Tooltip("Kombo yazÄ±sÄ±nÄ± gÃ¶sterecek TextMeshPro bileÅŸeni")]
         public TextMeshProUGUI comboText;
 
         [Header("Etkinlik ve Power-Up Bildirimleri")]
@@ -37,15 +38,23 @@ namespace RecycleRush.UI
         public TextMeshProUGUI powerupNotificationText;
 
         [Header("Paneller ve Arayüz Kontrolleri")]
+        
+        [Header("Etkinlik ve Power-Up Bildirimleri")]
+        [Tooltip("Aktif EtkinliÄŸi (Frenzy vb.) gÃ¶sterecek yazÄ±")]
+        public TextMeshProUGUI eventNotificationText;
+        [Tooltip("Aktif Power-Up'Ä± (Magnet, Hourglass) gÃ¶sterecek yazÄ±")]
+        public TextMeshProUGUI powerupNotificationText;
+        
+        [Header("Paneller ve ArayÃ¼z Kontrolleri")]
         [Tooltip("Ayarlar (Settings) Paneli")]
         public GameObject settingsPanel;
         [Tooltip("Duraklatma (Pause) Paneli")]
         public GameObject pausePanel;
         [Tooltip("Oyun Bitti (GameOver) Paneli")]
         public GameObject gameOverPanel;
-        [Tooltip("Oyun Bittiğinde son skoru gösterecek TextMeshProUGUI bileşeni")]
+        [Tooltip("Oyun BittiÄŸinde son skoru gÃ¶sterecek TextMeshProUGUI bileÅŸeni")]
         public TextMeshProUGUI gameOverFinalScoreText;
-        [Tooltip("Oyun içi UI Duraklatma (Pause) Butonu objesi")]
+        [Tooltip("Oyun iÃ§i UI Duraklatma (Pause) Butonu objesi")]
         public GameObject pauseButtonUIObj;
 
         [Header("Oyun İçi ve Menü Panelleri")]
@@ -64,21 +73,25 @@ namespace RecycleRush.UI
 
         [Header("Ses Ayarları (Slider)")]
         [Tooltip("Müzik (BGM) seviyesi için Slider")]
+        
+        [Header("Oyun Ä°Ã§i ve MenÃ¼ Panelleri")]
+        public GameObject levelSelectionBoard;
+        public GameObject missionPanel;
+        public GameObject xpPanel;
+        public GameObject comboPanel;
+        
+        [Header("AR GÃ¼venlik ArayÃ¼zÃ¼")]
+        [Tooltip("OdanÄ±n Ä±ÅŸÄ±ÄŸÄ± kapandÄ±ÄŸÄ±nda veya AR takip bozulduÄŸunda Ã§Ä±kacak 'OdayÄ± AydÄ±nlatÄ±n' paneli")]
+        public GameObject safetyWarningPanel;
+
+        [Tooltip("MÃ¼zik (BGM) seviyesi iÃ§in Slider")]
         public Slider bgmSlider;
-        [Tooltip("Ses Efektleri (SFX) seviyesi için Slider")]
+        [Tooltip("Ses Efektleri (SFX) seviyesi iÃ§in Slider")]
         public Slider sfxSlider;
 
         [Header("VR Girdi (Input)")]
-        [Tooltip("VR Menü/Geri tuşu (ESC) Input Action referansı")]
+        [Tooltip("VR MenÃ¼/Geri tuÅŸu (ESC) Input Action referansÄ±")]
         public InputActionReference menuPauseAction;
-
-        [Header("Achievement UI (Başarım Sistemi)")]
-        [Tooltip("Başarım bildirim paneli (Canvas'ta yukardan inen Toast Message)")]
-        public GameObject achievementPanel;
-        [Tooltip("Başarımın başlığını gösterecek TextMeshProUGUI")]
-        public TextMeshProUGUI achievementTitleText;
-        [Tooltip("Başarımın açıklamasını gösterecek TextMeshProUGUI")]
-        public TextMeshProUGUI achievementDescText;
 
         private Coroutine _comboAnimationCoroutine;
         private Coroutine _countdownCoroutine;
@@ -92,7 +105,7 @@ namespace RecycleRush.UI
 
         private void Awake()
         {
-            // Panelleri dolu olan UIManager'ı öncelikli olarak Instance kabul et (Hiçbir objeyi silmeden)
+            // Panelleri dolu olan UIManager'Ä± Ã¶ncelikli olarak Instance kabul et (HiÃ§bir objeyi silmeden)
             if (Instance == null || settingsPanel != null)
             {
                 Instance = this;
@@ -111,12 +124,24 @@ namespace RecycleRush.UI
         private void OnEnable()
         {
             // Event'leri dinlemeye başla
+            // Event'leri dinlemeye baÅŸla
             GameManager.OnGameStateChanged += HandleGameState;
             GameManager.OnMagnetStarted += HandleMagnetStarted;
             GameManager.OnMagnetTimeUpdated += HandleMagnetTimeUpdated;
             GameManager.OnMagnetEnded += HandleMagnetEnded;
             GameManager.OnHourglassUsed += HandleHourglassUsed;
             GameManager.OnGameTimeUpdated += UpdateTimeDisplay;
+            GameManager.OnMagnetStarted += HandleMagnetStarted;
+            GameManager.OnMagnetTimeUpdated += HandleMagnetTimeUpdated;
+            GameManager.OnMagnetEnded += HandleMagnetEnded;
+            GameManager.OnHourglassUsed += HandleHourglassUsed;
+            
+            // GÃ¼venlik uyarÄ±sÄ± dinleyicisi
+            Managers.EnvironmentSafetyManager.OnSafetyWarningTriggered += HandleSafetyWarning;
+
+            // Etkinlik yÃ¶neticisi (Frenzy vb.) dinleyicisi
+            Managers.EventManager.OnGameEventStarted += HandleGameEventStarted;
+            Managers.EventManager.OnGameEventEnded += HandleGameEventEnded;
 
             // Etkinlik yöneticisi (Frenzy vb.) dinleyicisi
             EventManager.OnGameEventStarted += HandleGameEventStarted;
@@ -138,6 +163,7 @@ namespace RecycleRush.UI
             }
 
             // Başlangıçta panelleri ve metinleri başlangıç durumuna (MainMenu) ayarla
+            // BaÅŸlangÄ±Ã§ durumunu hemen ekrana yansÄ±t
             if (GameManager.Instance != null)
             {
                 HandleGameState(GameManager.Instance.CurrentState);
@@ -156,12 +182,19 @@ namespace RecycleRush.UI
 
             // Başarım yöneticisine bağlan
             if (Managers.AchievementManager.Instance != null)
+            
+            // ScoreManager Ã¼zerinden kombo olaylarÄ±nÄ± dinlemeye baÅŸla (Awake sonrasÄ± olduÄŸu iÃ§in Instance hazÄ±rdÄ±r)
+            if (Core.ScoreManager.Instance != null)
             {
-                Managers.AchievementManager.OnAchievementUnlocked += HandleAchievementUnlocked;
-                Managers.AchievementManager.OnAchievementProgress += HandleAchievementProgress;
+                RecycleRush.Managers.ComboManager.OnComboChanged += HandleComboChanged;
             }
+            
+            // BaÅŸlangÄ±Ã§ta yazÄ±larÄ± gizle
+            if (comboText != null) comboText.gameObject.SetActive(false);
+            if (eventNotificationText != null) eventNotificationText.gameObject.SetActive(false);
+            if (powerupNotificationText != null) powerupNotificationText.gameObject.SetActive(false);
 
-            // Sliderları AudioManager'a bağla
+            // SliderlarÄ± AudioManager'a baÄŸla
             if (bgmSlider != null && AudioManager.Instance != null)
             {
                 bgmSlider.onValueChanged.AddListener(AudioManager.Instance.SetBGMVolume);
@@ -174,22 +207,65 @@ namespace RecycleRush.UI
             }
 
             // Panelleri başlangıçta gizle
+            
+            // Panelleri baÅŸlangÄ±Ã§ta gizle
             if (settingsPanel != null) settingsPanel.SetActive(false);
             if (pausePanel != null)
             {
                 SetupPauseButtons();
                 pausePanel.SetActive(false);
+                
+                UnityEngine.UI.Button[] buttons = pausePanel.GetComponentsInChildren<UnityEngine.UI.Button>(true);
+                foreach (var btn in buttons)
+                {
+                    if (btn.name.ToLower().Contains("exit") || btn.name.ToLower().Contains("quit"))
+                    {
+                        btn.onClick.RemoveAllListeners();
+                        btn.onClick.AddListener(QuitApplication);
+                        Debug.Log($"<color=green>[UIManager]</color> Pause Panel: '{btn.name}' butonu QuitApplication metoduna otomatik baÄŸlandÄ±!");
+                    }
+                }
             }
             if (gameOverPanel != null)
             {
                 SetupGameOverButtons();
                 gameOverPanel.SetActive(false);
             }
+                
+                // Oyuncu Inspector'dan baÄŸlamayÄ± unutursa diye Game Over panelindeki butonlarÄ± otomatik bulup baÄŸlÄ±yoruz:
+                UnityEngine.UI.Button[] buttons = gameOverPanel.GetComponentsInChildren<UnityEngine.UI.Button>(true);
+                foreach (var btn in buttons)
+                {
+                    string btnName = btn.name.ToLower();
+                    if (btnName.Contains("exit") || btnName.Contains("quit"))
+                    {
+                        btn.onClick.RemoveAllListeners();
+                        btn.onClick.AddListener(QuitApplication);
+                        Debug.Log($"<color=green>[UIManager]</color> '{btn.name}' butonu QuitApplication metoduna otomatik baÄŸlandÄ±!");
+                    }
+                    else if (btnName.Contains("restart") || btnName.Contains("retry"))
+                    {
+                        btn.onClick.RemoveAllListeners();
+                        btn.onClick.AddListener(RestartGameUI);
+                        Debug.Log($"<color=green>[UIManager]</color> '{btn.name}' butonu RestartGameUI metoduna otomatik baÄŸlandÄ±!");
+                    }
+                    else if (btnName.Contains("next"))
+                    {
+                        btn.onClick.RemoveAllListeners();
+                        btn.onClick.AddListener(StartNextLevelUI);
+                        Debug.Log($"<color=green>[UIManager]</color> '{btn.name}' butonu StartNextLevelUI metoduna otomatik baÄŸlandÄ±!");
+                    }
+                }
+            }
+            if (pauseButtonUIObj != null) pauseButtonUIObj.SetActive(false);
+            
+            // GÃ¼venlik panelini baÅŸlangÄ±Ã§ta gizle
+            if (safetyWarningPanel != null) safetyWarningPanel.SetActive(false);
         }
 
         private void Update()
         {
-            // PC testi için klavyeden ESC tuşu (Yeni Input System kullanılarak)
+            // PC testi iÃ§in klavyeden ESC tuÅŸu (Yeni Input System kullanÄ±larak)
             if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
             {
                 HandleMenuPauseToggle();
@@ -198,7 +274,7 @@ namespace RecycleRush.UI
 
         private void OnDisable()
         {
-            // Bellek sızıntısını önlemek için dinlemeyi bırak
+            // Bellek sÄ±zÄ±ntÄ±sÄ±nÄ± Ã¶nlemek iÃ§in dinlemeyi bÄ±rak
             GameManager.OnGameStateChanged -= HandleGameState;
             GameManager.OnMagnetStarted -= HandleMagnetStarted;
             GameManager.OnMagnetTimeUpdated -= HandleMagnetTimeUpdated;
@@ -214,6 +290,19 @@ namespace RecycleRush.UI
             {
                 Managers.ComboManager.OnComboChanged -= HandleComboChangedLegacy;
                 Managers.ComboManager.OnComboBroken -= HandleComboBroken;
+            GameManager.OnMagnetStarted -= HandleMagnetStarted;
+            GameManager.OnMagnetTimeUpdated -= HandleMagnetTimeUpdated;
+            GameManager.OnMagnetEnded -= HandleMagnetEnded;
+            GameManager.OnHourglassUsed -= HandleHourglassUsed;
+            
+            Managers.EnvironmentSafetyManager.OnSafetyWarningTriggered -= HandleSafetyWarning;
+            
+            Managers.EventManager.OnGameEventStarted -= HandleGameEventStarted;
+            Managers.EventManager.OnGameEventEnded -= HandleGameEventEnded;
+            
+            if (Core.ScoreManager.Instance != null)
+            {
+                RecycleRush.Managers.ComboManager.OnComboChanged -= HandleComboChanged;
             }
 
             if (menuPauseAction != null && menuPauseAction.action != null)
@@ -316,7 +405,7 @@ namespace RecycleRush.UI
         #endregion
 
         /// <summary>
-        /// Oyun durumu her değiştiğinde (MainMenu -> Playing -> GameOver) bu fonksiyon çalışır.
+        /// Oyun durumu her deÄŸiÅŸtiÄŸinde (MainMenu -> Playing -> GameOver) bu fonksiyon Ã§alÄ±ÅŸÄ±r.
         /// </summary>
         public void HandleGameState(GameState state)
         {
@@ -339,6 +428,8 @@ namespace RecycleRush.UI
                     if (eventNotificationText != null) eventNotificationText.gameObject.SetActive(false);
                     if (powerupNotificationText != null) powerupNotificationText.gameObject.SetActive(false);
                     if (comboText != null) comboText.gameObject.SetActive(false);
+                    if (timeText != null) timeText.text = "Time: 60";
+                    
                     if (restartButtonObj != null) restartButtonObj.SetActive(false);
                     if (pauseButtonUIObj != null) pauseButtonUIObj.SetActive(false);
                     if (pausePanel != null) pausePanel.SetActive(false);
@@ -356,6 +447,10 @@ namespace RecycleRush.UI
 
                 case GameState.Placement:
                     if (statusText != null)
+                    break;
+                    
+                case GameState.ReadyToStart:
+                    if (statusText != null) 
                     {
                         if (PlayerPrefs.GetInt("TutorialDone", 0) == 0)
                             statusText.text = "<color=yellow>TUTORIAL</color>\nPULL THE LEVER TO START";
@@ -413,6 +508,31 @@ namespace RecycleRush.UI
                         statusText.transform.localScale = _originalStatusScale;
                         StartCoroutine(ClearStatusTextAfterDelay(2f));
                     }
+                    break;
+                    
+                case GameState.Playing:
+                    if (statusText != null) 
+                    {
+                        statusText.text = "RECYCLING STARTED";
+                        // Oyuncunun Ã¶nÃ¼nÃ¼ kapatmamak iÃ§in yazÄ±yÄ± 2 saniye sonra silen bir coroutine baÅŸlatÄ±yoruz
+                        StartCoroutine(ClearStatusTextAfterDelay(2f));
+                    }
+                    if (restartButtonObj != null) restartButtonObj.SetActive(false);
+                    if (pausePanel != null) pausePanel.SetActive(false);
+                    if (gameOverPanel != null) gameOverPanel.SetActive(false);
+                    if (pauseButtonUIObj != null) 
+                        pauseButtonUIObj.SetActive(true);
+                    else
+                        Debug.LogWarning("<color=red>[UIManager]</color> Pause Button UI Obj atanmamÄ±ÅŸ (None)! Pause butonu gÃ¶rÃ¼nmÃ¼yor olabilir.");
+                        
+                    if (levelSelectionBoard != null) levelSelectionBoard.SetActive(false);
+                    if (missionPanel != null) missionPanel.SetActive(true);
+                    if (xpPanel != null) xpPanel.SetActive(true);
+                    if (comboPanel != null) comboPanel.SetActive(true);
+                    break;
+                    
+                case GameState.Countdown:
+                    if (levelSelectionBoard != null) levelSelectionBoard.SetActive(false);
                     if (restartButtonObj != null) restartButtonObj.SetActive(false);
                     if (pausePanel != null) pausePanel.SetActive(false);
                     if (gameOverPanel != null) gameOverPanel.SetActive(false);
@@ -421,6 +541,7 @@ namespace RecycleRush.UI
                     break;
 
                 case GameState.Tutorial:
+                    // TutorialManager yazÄ±larÄ± kendisi yÃ¶netecek, burada sadece butonu gizliyoruz
                     if (levelSelectionBoard != null) levelSelectionBoard.SetActive(false);
                     if (missionPanel != null) missionPanel.SetActive(false);
                     if (xpPanel != null) xpPanel.SetActive(false);
@@ -446,6 +567,9 @@ namespace RecycleRush.UI
                         SetupPauseButtons();
                         pausePanel.SetActive(true);
                     }
+                    if (statusText != null) statusText.text = "SYSTEM PAUSED";
+                    if (levelSelectionBoard != null) levelSelectionBoard.SetActive(false);
+                    if (pausePanel != null) pausePanel.SetActive(true);
                     if (gameOverPanel != null) gameOverPanel.SetActive(false);
                     if (pauseButtonUIObj != null) pauseButtonUIObj.SetActive(false);
                     break;
@@ -453,6 +577,10 @@ namespace RecycleRush.UI
                 case GameState.GameOver:
                     if (levelSelectionBoard != null) levelSelectionBoard.SetActive(false);
                     if (statusText != null)
+                    if (statusText != null) statusText.text = "<color=red>TIME'S UP!</color>\nCONVEYOR STOPPED";
+                    
+                    // Oyun bittiÄŸinde GameOver panelini aÃ§ ve son skoru yazdÄ±r!
+                    if (gameOverPanel != null) 
                     {
                         statusText.text = "<color=red>TIME'S UP!</color>\nRECYCLING STOPPED";
                         statusText.transform.localScale = _originalStatusScale;
@@ -463,6 +591,23 @@ namespace RecycleRush.UI
                     {
                         SetupGameOverButtons();
                         gameOverPanel.SetActive(true);
+                        
+                        // Next Level butonunun aktiflik durumunu gÃ¶reve gÃ¶re ayarla
+                        bool isMissionCompleted = false;
+                        if (MissionManager.Instance != null && MissionManager.Instance.ActiveMission != null)
+                        {
+                            isMissionCompleted = MissionManager.Instance.ActiveMission.IsCompleted;
+                        }
+
+                        UnityEngine.UI.Button[] buttons = gameOverPanel.GetComponentsInChildren<UnityEngine.UI.Button>(true);
+                        foreach (var btn in buttons)
+                        {
+                            if (btn.name.ToLower().Contains("next"))
+                            {
+                                btn.interactable = isMissionCompleted; // TamamlanmadÄ±ysa basÄ±lamaz (soluk) olur
+                                // Ä°stenirse tamamen gizlemek iÃ§in: btn.gameObject.SetActive(isMissionCompleted);
+                            }
+                        }
                     }
                     if (gameOverFinalScoreText != null && Core.ScoreManager.Instance != null)
                     {
@@ -477,7 +622,25 @@ namespace RecycleRush.UI
         }
 
         /// <summary>
-        /// GameManager'dan saniye saniye gelen kalan süre bilgisini ekrana (timeText) yazar.
+        /// GÃ¼venlik yÃ¶neticisinden gelen dÃ¼ÅŸÃ¼k Ä±ÅŸÄ±k / takip koptu uyarÄ±larÄ±nÄ± yÃ¶netir.
+        /// </summary>
+        private void HandleSafetyWarning(bool isWarningActive)
+        {
+            if (safetyWarningPanel != null)
+            {
+                safetyWarningPanel.SetActive(isWarningActive);
+            }
+            else
+            {
+                if (isWarningActive)
+                {
+                    Debug.LogWarning("<color=red>[UIManager]</color> GÃ¼venlik uyarÄ±sÄ± tetiklendi fakat Inspector'da 'Safety Warning Panel' atanmamÄ±ÅŸ!");
+                }
+            }
+        }
+
+        /// <summary>
+        /// GameManager'dan saniye saniye gelen kalan sÃ¼re bilgisini ekrana (timeText) yazar.
         /// </summary>
         private void UpdateTimeDisplay(float remainingTime)
         {
@@ -486,6 +649,10 @@ namespace RecycleRush.UI
                 timeText.text = $"Time: {Mathf.CeilToInt(remainingTime)}";
 
                 // Vurgu (Juice): Son 10 saniye kala yazıyı kırmızı yap!
+                // SÃ¼reyi tam sayÄ±ya (Ã–rn: 59.4 -> 60) yuvarlayarak baÅŸÄ±na 'Time:' Ã¶n ekiyle yazdÄ±r
+                timeText.text = $"Time: {Mathf.CeilToInt(remainingTime)}";
+                
+                // Vurgu (Juice): Son 10 saniye kala yazÄ±yÄ± kÄ±rmÄ±zÄ± yap!
                 if (remainingTime <= 10f)
                 {
                     timeText.color = Color.red;
@@ -530,17 +697,40 @@ namespace RecycleRush.UI
             }
 
             if (isRankUp)
+        /// <summary>
+        /// Kombo deÄŸiÅŸtiÄŸinde tetiklenir ve Pop (Patlama) animasyonunu baÅŸlatÄ±r.
+        /// </summary>
+        private void HandleComboChanged(int comboCount, int multiplier, bool isRankUp = false)
+        {
+            if (comboText == null) return;
+
+            if (multiplier > 1)
             {
+                // Kombo varsa yazÄ±yÄ± aktif et ve metni ayarla
                 comboText.gameObject.SetActive(true);
                 comboText.text = $"{multiplier}x COMBO!";
                 comboText.color = new Color(1f, 0.84f, 0f);
 
                 if (_comboAnimationCoroutine != null) StopCoroutine(_comboAnimationCoroutine);
+                comboText.color = new Color(1f, 0.84f, 0f); // AltÄ±n SarÄ±sÄ± (Gold)
+
+                // Varsa Ã¶nceki animasyonu durdur ki Ã§akÄ±ÅŸmasÄ±n
+                if (_comboAnimationCoroutine != null)
+                {
+                    StopCoroutine(_comboAnimationCoroutine);
+                }
+                
+                // Yeni Pop animasyonunu baÅŸlat
                 _comboAnimationCoroutine = StartCoroutine(ComboPopAnimation());
+            }
+            else
+            {
+                // KatlayÄ±cÄ± yoksa (Kombo sÄ±fÄ±rlandÄ±ysa) yazÄ±yÄ± gizle
+                comboText.gameObject.SetActive(false);
             }
         }
 
-        private void HandleComboBroken()
+        private IEnumerator ClearStatusTextAfterDelay(float delay)
         {
             if (comboText == null) return;
 
@@ -590,6 +780,11 @@ namespace RecycleRush.UI
             }
 
             _comboAnimationCoroutine = null;
+            yield return new WaitForSeconds(delay);
+            if (statusText != null)
+            {
+                statusText.text = "";
+            }
         }
 
         #endregion
@@ -604,19 +799,44 @@ namespace RecycleRush.UI
                 Debug.LogWarning("<color=orange>[UIManager]</color> statusText atanmamış! Geri sayım atlanıp oyun başlatılıyor.");
                 yield return null;
                 _countdownCoroutine = null;
+        /// 3-2-1-BAÅLA ÅŸeklinde profesyonel, animasyonlu (Pop & Lerp) geri sayÄ±m yapar.
+        /// </summary>
+        private IEnumerator StartCountdownAnimation()
+        {
+            Debug.Log("<color=yellow>[UIManager]</color> StartCountdownAnimation Coroutine'i baÅŸladÄ±!");
+            
+            // EÄŸer Unity'de arayÃ¼z yazÄ±sÄ± (statusText) atanmamÄ±ÅŸsa, oyunu kitlememek iÃ§in direkt baÅŸlat
+            if (statusText == null) 
+            {
+                Debug.LogWarning("<color=orange>[UIManager]</color> statusText atanmamÄ±ÅŸ (veya silinmiÅŸ)! Geri sayÄ±m atlanÄ±p oyun baÅŸlatÄ±lÄ±yor.");
+                // C# Event Ã§akÄ±ÅŸmasÄ±nÄ± Ã¶nlemek iÃ§in (Reentrancy Bug) 1 frame bekleyip Ã¶yle baÅŸlatÄ±yoruz
+                yield return null; 
                 if (GameManager.Instance != null) GameManager.Instance.FinishCountdown();
                 yield break;
             }
+            
+            Debug.Log("<color=yellow>[UIManager]</color> statusText mevcut, geri sayÄ±m dÃ¶ngÃ¼sÃ¼ne giriliyor...");
 
             string[] countTexts = { "<color=yellow>3</color>", "<color=orange>2</color>", "<color=red>1</color>", "<color=green>GO!</color>" };
             Vector3 originalScale = _originalStatusScale;
             Vector3 targetScale = originalScale * 1.3f;
+            
+            // DÃœZELTME: YazÄ±nÄ±n Inspector'daki orijinal Scale (Ã¶lÃ§ek) deÄŸerini al (VR projelerinde UI genelde 0.005 gibi ufak deÄŸerlerdir)
+            Vector3 originalScale = statusText.transform.localScale;
+            // SÄ±fÄ±rlanma ihtimaline karÅŸÄ± koruma
+            if (originalScale.magnitude < 0.0001f) originalScale = Vector3.one;
+            
+            Vector3 targetScale = originalScale * 2f; // %100 bÃ¼yÃ¼t (Daha vurucu bir etki iÃ§in)
 
             foreach (string text in countTexts)
             {
                 if (statusText == null) yield break;
                 statusText.text = text;
 
+                
+                // TODO: AudioManager Ã¼zerinden "Bip" sesi Ã§aldÄ±rma buraya eklenecek
+                
+                // BÃ¼yÃ¼me (Scale Up) - HÄ±zlÄ±ca patlama efekti (Pop)
                 float elapsed = 0f;
                 float duration = 0.15f;
                 while (elapsed < duration)
@@ -629,6 +849,7 @@ namespace RecycleRush.UI
                 if (statusText == null) yield break;
                 statusText.transform.localScale = targetScale;
 
+                // KÃ¼Ã§Ã¼lme (Scale Down) - YavaÅŸÃ§a eski haline dÃ¶nme ve bekleme
                 elapsed = 0f;
                 duration = 0.85f;
                 while (elapsed < duration)
@@ -648,6 +869,10 @@ namespace RecycleRush.UI
                 statusText.transform.localScale = _originalStatusScale;
             }
             _countdownCoroutine = null;
+            // Geri sayÄ±m bitti, yazÄ±yÄ± temizle ve oyunu asÄ±l ÅŸimdi baÅŸlat!
+            statusText.text = ""; 
+            
+            Debug.Log("<color=yellow>[UIManager]</color> Geri sayÄ±m animasyonu tamamlandÄ±, FinishCountdown Ã§aÄŸrÄ±lÄ±yor...");
             if (GameManager.Instance != null)
             {
                 GameManager.Instance.FinishCountdown();
@@ -747,6 +972,52 @@ namespace RecycleRush.UI
         }
 
         public void SetupPauseButtons()
+        /// <summary>
+        /// YazÄ±yÄ± bir anda bÃ¼yÃ¼tÃ¼p sonra yavaÅŸÃ§a normal boyutuna indiren (Lerp) Juice animasyonu.
+        /// </summary>
+        private IEnumerator ComboPopAnimation()
+        {
+            Vector3 originalScale = Vector3.one;
+            Vector3 targetScale = originalScale * 1.5f; // %50 bÃ¼yÃ¼t
+            
+            float duration = 0.15f; // BÃ¼yÃ¼me sÃ¼resi
+            float elapsed = 0f;
+
+            // BÃ¼yÃ¼me (Scale Up)
+            while (elapsed < duration)
+            {
+                comboText.transform.localScale = Vector3.Lerp(originalScale, targetScale, elapsed / duration);
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
+
+            comboText.transform.localScale = targetScale;
+            
+            elapsed = 0f;
+            duration = 0.25f; // KÃ¼Ã§Ã¼lme sÃ¼resi (Daha yumuÅŸak)
+            
+            // KÃ¼Ã§Ã¼lme (Scale Down)
+            while (elapsed < duration)
+            {
+                comboText.transform.localScale = Vector3.Lerp(targetScale, originalScale, elapsed / duration);
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
+
+            comboText.transform.localScale = originalScale;
+            
+            // Oyuncunun yazÄ±yÄ± okuyabilmesi iÃ§in 1 saniye bekle
+            yield return new WaitForSeconds(1.0f);
+            
+            // Ekranda sÃ¼rekli kalmamasÄ± iÃ§in yazÄ±yÄ± gizle
+            comboText.gameObject.SetActive(false);
+            
+            _comboAnimationCoroutine = null;
+        }
+
+        // --- YENÄ° EKLENEN PANEL VE MENÃœ KONTROL METOTLARI ---
+
+        private void OnMenuButtonPressed(InputAction.CallbackContext context)
         {
             if (pausePanel == null) return;
 
@@ -793,6 +1064,10 @@ namespace RecycleRush.UI
             {
                 settingsPanel.SetActive(true);
             }
+            else
+            {
+                Debug.LogWarning("<color=red>[UIManager]</color> Settings Panel aÃ§Ä±lmaya Ã§alÄ±ÅŸÄ±ldÄ± ancak Inspector'da 'Settings Panel' deÄŸiÅŸkeni ATANMAMIÅ (None)! LÃ¼tfen UIManager bileÅŸenindeki boÅŸluÄŸa paneli sÃ¼rÃ¼kleyin.");
+            }
         }
 
         public void CloseSettingsPanel()
@@ -837,6 +1112,14 @@ namespace RecycleRush.UI
             {
                 GameManager.Instance.PrepareToStart();
             }
+
+            // EKLENDÄ°: Restart yapÄ±ldÄ±ÄŸÄ±nda aktif gÃ¶revi sÄ±fÄ±rlamak iÃ§in mevcut bÃ¶lÃ¼mÃ¼ baÅŸtan kur
+            if (LevelSelectionManager.Instance != null)
+            {
+                int currentLvl = LevelSelectionManager.Instance.CurrentPlayingLevelId;
+                LevelSelectionManager.Instance.StartLevel(currentLvl);
+                Debug.Log($"<color=cyan>[UIManager]</color> Restart butonuna basÄ±ldÄ±. AÅŸama {currentLvl} ve gÃ¶revleri sÄ±fÄ±rlandÄ±.");
+            }
         }
 
         public void StartNextLevelUI()
@@ -860,6 +1143,9 @@ namespace RecycleRush.UI
 
                     LevelSelectionManager.Instance.StartLevel(nextLevelId);
 
+                
+                if (nextLevel != null && nextLevel.IsUnlocked)
+                {
                     if (GameManager.Instance != null)
                     {
                         GameManager.Instance.PrepareToStart();
@@ -868,6 +1154,12 @@ namespace RecycleRush.UI
                 else
                 {
                     Debug.LogWarning($"<color=orange>[UIManager]</color> Sonraki seviye ({nextLevelId}) kilitli veya bulunamadı!");
+                    LevelSelectionManager.Instance.StartLevel(nextLevelId);
+                    Debug.Log($"<color=green>[UIManager]</color> Next Level butonuna basÄ±ldÄ±. AÅŸama {nextLevelId} hazÄ±rlanÄ±yor.");
+                }
+                else
+                {
+                    Debug.LogWarning($"<color=orange>[UIManager]</color> Sonraki seviye ({nextLevelId}) kilitli veya bulunamadÄ±!");
                 }
             }
         }
@@ -877,9 +1169,89 @@ namespace RecycleRush.UI
             if (GameManager.Instance != null) GameManager.Instance.ResumeGame();
         }
 
+        // --- YENÄ° EKLENEN EVENT VE POWER-UP UI METOTLARI ---
+
+        private void HandleGameEventStarted(GameEventType eventType)
+        {
+            if (eventNotificationText != null)
+            {
+                eventNotificationText.gameObject.SetActive(true);
+                eventNotificationText.text = $"EVENT: {eventType.ToString().ToUpper()}!";
+                eventNotificationText.color = Color.magenta;
+            }
+        }
+
+        private void HandleGameEventEnded()
+        {
+            if (eventNotificationText != null)
+            {
+                eventNotificationText.gameObject.SetActive(false);
+            }
+        }
+
+        private void HandleMagnetStarted(float duration)
+        {
+            if (powerupNotificationText != null)
+            {
+                powerupNotificationText.gameObject.SetActive(true);
+                powerupNotificationText.color = Color.cyan;
+                powerupNotificationText.text = $"MAGNET ACTIVE: {Mathf.CeilToInt(duration)}s";
+            }
+        }
+
+        private void HandleMagnetTimeUpdated(float remainingTime)
+        {
+            if (powerupNotificationText != null && GameManager.Instance != null && GameManager.Instance.IsMagnetActive)
+            {
+                powerupNotificationText.text = $"MAGNET ACTIVE: {Mathf.CeilToInt(remainingTime)}s";
+            }
+        }
+
+        private void HandleMagnetEnded()
+        {
+            if (powerupNotificationText != null)
+            {
+                powerupNotificationText.gameObject.SetActive(false);
+            }
+        }
+
+        private void HandleHourglassUsed(float timeAdded)
+        {
+            if (powerupNotificationText != null)
+            {
+                // Mevcut bir Magnet varsa yazÄ±sÄ±nÄ± ezmemek iÃ§in kÄ±sa bir bildirim gÃ¶sterip eski haline dÃ¶nÃ¼lebilir.
+                // Veya ÅŸimdilik 2 saniye boyunca sÃ¼renin eklendiÄŸini gÃ¶sterebiliriz.
+                StartCoroutine(ShowHourglassNotification(timeAdded));
+            }
+        }
+
+        private IEnumerator ShowHourglassNotification(float timeAdded)
+        {
+            bool wasMagnetActive = GameManager.Instance != null && GameManager.Instance.IsMagnetActive;
+            
+            powerupNotificationText.gameObject.SetActive(true);
+            powerupNotificationText.color = Color.green;
+            powerupNotificationText.text = $"+{timeAdded} SECONDS!";
+            
+            yield return new WaitForSeconds(2f);
+            
+            if (wasMagnetActive && GameManager.Instance != null && GameManager.Instance.IsMagnetActive)
+            {
+                // Magnet geri dÃ¶nsÃ¼n
+                HandleMagnetTimeUpdated(GameManager.Instance.MagnetRemainingTime);
+                powerupNotificationText.color = Color.cyan;
+            }
+            else
+            {
+                powerupNotificationText.gameObject.SetActive(false);
+            }
+        }
+
         public void QuitApplication()
         {
             Debug.Log("[UIManager] Uygulamadan Çıkılıyor...");
+            Debug.Log("[UIManager] Uygulamadan Ã‡Ä±kÄ±lÄ±yor... (Exit Butonu Tetiklendi)");
+            
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.isPlaying = false;
 #else
@@ -928,3 +1300,6 @@ namespace RecycleRush.UI
         #endregion
     }
 }
+}
+
+

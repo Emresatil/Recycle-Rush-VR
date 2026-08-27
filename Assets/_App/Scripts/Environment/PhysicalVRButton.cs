@@ -200,7 +200,7 @@ namespace RecycleRush.Environment
             {
                 case ButtonType.Play:
                 case ButtonType.Retry:
-                    GameManager.Instance.RestartGame();
+                    GameManager.Instance.PrepareToStart();
                     break;
                 case ButtonType.Pause:
                     if (GameManager.Instance.CurrentState == GameState.Paused)

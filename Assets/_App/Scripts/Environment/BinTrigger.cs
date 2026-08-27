@@ -30,12 +30,14 @@ public struct SortResultData
     
     // YENİ: Precision (Hassasiyet) verisi
     public RecycleRush.Core.PrecisionSystem.PrecisionResult PrecisionData;
+    public WasteType ProcessedWasteType;
     public GameObject ProcessedWaste;
 }
 
 [RequireComponent(typeof(Collider))]
 public class BinTrigger : MonoBehaviour
 {
+    private static System.Collections.Generic.Dictionary<WasteType, UnityEngine.Transform> _binRegistry = new System.Collections.Generic.Dictionary<WasteType, UnityEngine.Transform>();
     [Header("Precision (Hassasiyet) Ayarları")]
     [Tooltip("Kutunun çarpışma sınırlarından yarıçapı otomatik hesaplar")]
     [SerializeField] private bool _useDynamicRadius = true;
@@ -71,6 +73,7 @@ public class BinTrigger : MonoBehaviour
     private void Awake()
     {
         _binCollider = GetComponent<Collider>();
+        _binRegistry[_acceptedWasteType] = transform;
         if (_binCollider != null)
         {
             _binCollider.isTrigger = true;
@@ -365,4 +368,15 @@ public class BinTrigger : MonoBehaviour
             Destroy(Instantiate(_failParticlePrefab, spawnPosition, Quaternion.identity), 3f);
         }
     }
+
+    public static UnityEngine.Transform GetBinTransform(WasteType type)
+    {
+        if (_binRegistry != null && _binRegistry.TryGetValue(type, out UnityEngine.Transform binTransform))
+        {
+            return binTransform;
+        }
+        return null;
+    }
+    public static event System.Action<int> OnComboChanged;
+
 }
