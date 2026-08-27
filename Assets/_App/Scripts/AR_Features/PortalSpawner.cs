@@ -20,6 +20,12 @@ namespace RecycleRush.AR_Features
 
         [Tooltip("Atıkların oyuncunun kafasından ne kadar yüksekten düşeceği (Metre)")]
         public float spawnHeight = 1.5f;
+
+        [Header("Spawn Distance & Area Settings")]
+        [Tooltip("Kutulardan oyuncuya doğru ne kadar önde doğsun? (Metre)")]
+        public float spawnDistanceFromBins = 2.4f;
+        [Tooltip("Yatay sağ-sol dağılım genişliği (Metre)")]
+        public float spawnHorizontalSpread = 1.0f;
         
         [Tooltip("Üretilecek standart atık prefabları (Kağıt, Cam, Plastik vb.)")]
         public GameObject[] wastePrefabs;
@@ -53,6 +59,7 @@ namespace RecycleRush.AR_Features
 
         private void OnEnable()
         {
+            GameManager.OnGameStateChanged += HandleGameStateChanged;
             EventManager.OnGameEventStarted += HandleGameEventStarted;
             EventManager.OnGameEventEnded += HandleGameEventEnded;
             DifficultyManager.OnDifficultyLevelChanged += UpdateSpawnSpeed;
@@ -60,9 +67,22 @@ namespace RecycleRush.AR_Features
 
         private void OnDisable()
         {
+            GameManager.OnGameStateChanged -= HandleGameStateChanged;
             EventManager.OnGameEventStarted -= HandleGameEventStarted;
             EventManager.OnGameEventEnded -= HandleGameEventEnded;
             DifficultyManager.OnDifficultyLevelChanged -= UpdateSpawnSpeed;
+        }
+
+        private void HandleGameStateChanged(GameState newState)
+        {
+            if (newState == GameState.Playing)
+            {
+                StartSpawning();
+            }
+            else
+            {
+                StopSpawning();
+            }
         }
 
         private void UpdateSpawnSpeed(float multiplier)
@@ -99,7 +119,17 @@ namespace RecycleRush.AR_Features
                 Debug.LogError("<color=red>[PortalSpawner]</color> Sahnede ObjectPoolManager bulunamadı! Lütfen Core sistemleri ekleyin.");
             }
             
-            // GameManager artık spawner'ı kontrol ettiği için otomatik başlamayı kaldırdık.
+            if (GameManager.Instance != null && GameManager.Instance.CurrentState == GameState.Playing)
+            {
+                StartSpawning();
+            }
+        }
+
+        private bool HasWasteTag(GameObject obj)
+        {
+            if (obj == null) return false;
+            return obj.CompareTag("Paper") || obj.CompareTag("Glass") || obj.CompareTag("Plastic") || 
+                   obj.CompareTag("Metal") || obj.CompareTag("Hourglass") || obj.CompareTag("Magnet");
         }
 
         private void Update()
@@ -144,32 +174,58 @@ namespace RecycleRush.AR_Features
                 return;
             }
 
-            // Rastgele bir konum hesapla (SpawnCenter'ın etrafında X ve Z ekseninde rastgele bir çember)
-            Vector3 centerPos = spawnCenter != null ? spawnCenter.position : Vector3.zero;
-            
-            // Rastgele bir açı (0-360) ve yarıçap (0 - spawnRadius) belirle
-            float randomAngle = Random.Range(0f, Mathf.PI * 2f);
-            float randomDist = Random.Range(0f, spawnRadius);
+            // Rastgele bir konum hesapla (Kutulardan spawnDistanceFromBins kadar önde veya SpawnCenter etrafında)
+            Vector3 randomSpawnPos;
+            if (BinTrigger.TryGetBinsCenter(out Vector3 binsCenter))
+            {
+                Vector3 frontDir = Vector3.back;
+                Vector3 camPos = Camera.main != null ? Camera.main.transform.position : Vector3.zero;
+                Vector3 toCam = camPos - binsCenter;
+                toCam.y = 0f;
+                float totalDistance = toCam.magnitude;
 
-            float randomX = Mathf.Cos(randomAngle) * randomDist;
-            float randomZ = Mathf.Sin(randomAngle) * randomDist;
+                if (toCam.sqrMagnitude > 0.25f)
+                {
+                    frontDir = toCam / totalDistance;
+                }
 
-            // Düşme noktası: Merkezden X ve Z kadar uzaklaş, yüksekliği (Y) ise merkezden spawnHeight kadar yukarıda tut.
-            Vector3 randomSpawnPos = new Vector3(
-                centerPos.x + randomX, 
-                centerPos.y + spawnHeight, 
-                centerPos.z + randomZ
-            );
+                Vector3 rightDir = Vector3.Cross(Vector3.up, frontDir).normalized;
+
+                float actualDistance = totalDistance > 1.5f ? Mathf.Min(spawnDistanceFromBins, totalDistance - 0.7f) : spawnDistanceFromBins;
+                float frontOffset = actualDistance + Random.Range(-0.2f, 0.2f);
+                float rightOffset = Random.Range(-spawnHorizontalSpread * 0.5f, spawnHorizontalSpread * 0.5f);
+
+                float spawnY = (Camera.main != null ? Camera.main.transform.position.y : binsCenter.y + 1.2f);
+                spawnY = Mathf.Max(spawnY, binsCenter.y + 0.8f);
+
+                randomSpawnPos = binsCenter + (frontDir * frontOffset) + (rightDir * rightOffset);
+                randomSpawnPos.y = spawnY;
+            }
+            else
+            {
+                Vector3 centerPos = spawnCenter != null ? spawnCenter.position : (Camera.main != null ? Camera.main.transform.position + Camera.main.transform.forward * 1.5f : Vector3.zero);
+                float randomAngle = Random.Range(0f, Mathf.PI * 2f);
+                float effectiveRadius = Mathf.Min(spawnRadius, 0.6f);
+                float randomDist = Random.Range(0f, effectiveRadius);
+
+                float randomX = Mathf.Cos(randomAngle) * randomDist;
+                float randomZ = Mathf.Sin(randomAngle) * randomDist;
+
+                randomSpawnPos = new Vector3(
+                    centerPos.x + randomX, 
+                    centerPos.y + spawnHeight, 
+                    centerPos.z + randomZ
+                );
+            }
 
             // --- ÇAKIŞMA ÖNLEYİCİ (Overlap Check) ---
-            // Objeler spawn olurken tavanla veya birbirleriyle iç içe geçerse yatayda (havada) mermi gibi fırlarlar.
-            // Bunu engellemek için spawn noktasının boş olup olmadığını kontrol ediyoruz.
-            Collider[] existingColliders = Physics.OverlapSphere(randomSpawnPos, 0.4f);
+            // Objeler spawn olurken birbirleriyle iç içe geçerse yatayda (havada) mermi gibi fırlarlar.
+            // Sadece diğer çöp objelerini kontrol ediyoruz; AR mekansal ortam mesh'leri engel sayılmaz!
+            Collider[] existingColliders = Physics.OverlapSphere(randomSpawnPos, 0.35f);
             foreach (var col in existingColliders)
             {
-                if (!col.isTrigger)
+                if (!col.isTrigger && HasWasteTag(col.gameObject))
                 {
-                    // Çakışma var, bu spawn döngüsünü iptal et (Sonraki döngüde başka bir yerde dener)
                     Debug.LogWarning($"<color=orange>[PortalSpawner]</color> Spawn noktası dolu! ({col.gameObject.name}). Patlama (Ghosting) önlendi.");
                     return; 
                 }
@@ -191,8 +247,6 @@ namespace RecycleRush.AR_Features
             }
 
             // --- ALTIN ÇÖP MANTIĞI (Sabit İhtimal) ---
-            // Seviyeye göre altın çöp şansının artması, ileri seviyelerde oyunun dengesini bozduğu için kaldırıldı.
-            // Ayrıca etkinliklerin (LuckyDrop) bu ihtimali değiştirmesi istendiği gibi iptal edildi.
             float currentGoldenChance = 0.05f;
 
             // --- POWER-UP: KUM SAATİ SPAWN MANTIĞI (Level 20-30 Arası) ---
@@ -228,11 +282,25 @@ namespace RecycleRush.AR_Features
                 {
                     // Şans yaver gitti, Altın Çöp seçildi!
                     selectedPrefab = goldenWastePrefab;
-                    // Konsola bilgi yazdır
                     Debug.Log($"<color=yellow>[PortalSpawner]</color> Jackpot! Altın Çöp düştü! (Mevcut İhtimal: %{currentGoldenChance * 100})");
                 }
                 else
                 {
+                    List<GameObject> validPrefabs = new List<GameObject>();
+                    if (wastePrefabs != null)
+                    {
+                        foreach (var p in wastePrefabs)
+                        {
+                            if (p != null) validPrefabs.Add(p);
+                        }
+                    }
+
+                    if (validPrefabs.Count == 0)
+                    {
+                        Debug.LogWarning("<color=orange>[PortalSpawner]</color> Geçerli standart prefab bulunamadı!");
+                        return;
+                    }
+
                     // --- GÖREV ODAKLI SPAWN SİSTEMİ (Mission Biasing) ---
                     bool missionBiased = false;
                     if (RecycleRush.Managers.MissionManager.Instance != null && 
@@ -244,9 +312,9 @@ namespace RecycleRush.AR_Features
                         {
                             string targetTag = RecycleRush.Managers.MissionManager.Instance.ActiveMission.TargetWaste.ToString();
                             List<GameObject> targetPrefabs = new List<GameObject>();
-                            foreach (var p in wastePrefabs)
+                            foreach (var p in validPrefabs)
                             {
-                                if (p != null && p.CompareTag(targetTag)) targetPrefabs.Add(p);
+                                if (p.CompareTag(targetTag)) targetPrefabs.Add(p);
                             }
                             
                             if (targetPrefabs.Count > 0)
@@ -260,7 +328,7 @@ namespace RecycleRush.AR_Features
                     if (!missionBiased)
                     {
                         // Şans tutmadı, rastgele standart atık (Kağıt/Cam/Plastik) seç
-                        selectedPrefab = wastePrefabs[Random.Range(0, wastePrefabs.Length)];
+                        selectedPrefab = validPrefabs[Random.Range(0, validPrefabs.Count)];
                     }
                 }
             }

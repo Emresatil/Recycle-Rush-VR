@@ -78,18 +78,17 @@ namespace RecycleRush.Managers
             {
                 // Rastgele bir atık türü seç
                 Array wasteTypes = Enum.GetValues(typeof(WasteType));
-                // Untagged'i hariç tutmak için 0 ile Length-1 arası (Untagged genelde sondaydı, ama rastgele seçelim)
                 ActiveMission.TargetWaste = (WasteType)Random.Range(0, 4); // Paper, Glass, Plastic, Metal
                 
-                // Formül: 3 + (Level * 2) -> Lvl 30'da 63 Çöp hedeflenir. Hızlandırılmış şans ile kolayca yapılır.
-                ActiveMission.TargetAmount = 3 + Mathf.FloorToInt(level * 2f);
-                ActiveMission.Description = $"{ActiveMission.TargetAmount} Tane {ActiveMission.TargetWaste} At!";
+                // Dengeli Formül: Level 1'de 3, Level 10'da 7, Level 30'da maks 17 atık
+                ActiveMission.TargetAmount = Mathf.Clamp(3 + Mathf.FloorToInt((level - 1) * 0.5f), 3, 17);
+                ActiveMission.Description = $"Sort {ActiveMission.TargetAmount} {ActiveMission.TargetWaste}!";
             }
             else if (ActiveMission.Type == MissionType.EarnXP)
             {
-                // Formül: 50 + (Level * 60) -> Lvl 4'te 290 XP, Lvl 30'da 1850 XP hedeflenir.
-                ActiveMission.TargetAmount = 50 + (level * 60);
-                ActiveMission.Description = $"{ActiveMission.TargetAmount} XP Kazan!";
+                // Dengeli Formül: Level 1'de 80 XP, Level 10'da 305 XP, Level 30'da maks 800 XP
+                ActiveMission.TargetAmount = Mathf.Clamp(80 + ((level - 1) * 25), 80, 800);
+                ActiveMission.Description = $"Earn {ActiveMission.TargetAmount} XP!";
             }
 
             ActiveMission.CurrentAmount = 0;

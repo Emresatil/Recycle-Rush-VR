@@ -85,6 +85,8 @@ namespace RecycleRush.Environment
 
         private void OnCollisionEnter(Collision collision)
         {
+            if (!gameObject.activeInHierarchy || !enabled) return;
+
             // Sadece daha önce elde tutulmuş ve şu an havadan düşmüşse sayacı başlat (Spawn olduğu an cezalandırmamak için)
             if (_hasBeenGrabbedAtLeastOnce && !_isCurrentlyGrabbed && !_isPenalized)
             {

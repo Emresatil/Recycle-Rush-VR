@@ -97,9 +97,9 @@ namespace RecycleRush.Interaction
             switch (materialType)
             {
                 case WasteMaterialType.Paper:
-                    _rigidbody.mass = 0.1f;          // Daha da hafiflettik
-                    _rigidbody.linearDamping = 5.0f; // Paraşüt gibi yavaş inmesi için hava sürtünmesini çok artırdık (eski: 2)
-                    _rigidbody.angularDamping = 4.0f; 
+                    _rigidbody.mass = 0.2f;
+                    _rigidbody.linearDamping = 1.0f; 
+                    _rigidbody.angularDamping = 1.5f; 
                     break;
                 case WasteMaterialType.Plastic:
                     _rigidbody.mass = 0.5f;
@@ -108,12 +108,12 @@ namespace RecycleRush.Interaction
                     break;
                 case WasteMaterialType.Glass:
                     _rigidbody.mass = 1.2f;
-                    _rigidbody.linearDamping = 0.1f; // Drag 0 olmasın ki aşırı savrulmasın
+                    _rigidbody.linearDamping = 0.2f;
                     _rigidbody.angularDamping = defaultAngularDamping;
                     break;
                 case WasteMaterialType.Metal:
                     _rigidbody.mass = 1.5f;
-                    _rigidbody.linearDamping = 0.05f;
+                    _rigidbody.linearDamping = 0.1f;
                     _rigidbody.angularDamping = defaultAngularDamping;
                     break;
             }
@@ -122,6 +122,9 @@ namespace RecycleRush.Interaction
             // 1. Tünelleme Önleyici: Hızlı fırlatılan çöpün kutu duvarının içinden geçip gitmesini (Ghosting) engeller.
             _rigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
             
+            // 2. Fırlama/Pop Sıçraması Önleyici
+            _rigidbody.maxDepenetrationVelocity = 2.0f;
+
             // 3. Havada Yumuşatma: Çöp havada uçarken FPS takılmasını gizler, sinematik ve pürüzsüz bir uçuş sağlar.
             _rigidbody.interpolation = RigidbodyInterpolation.Interpolate;
             
@@ -130,22 +133,20 @@ namespace RecycleRush.Interaction
 
         private void FixedUpdate()
         {
-            // Sadece Kağıt objeleri salınım (yaprak düşüşü) yapar
+            // Sadece Kağıt objeleri hafif salınım (yaprak düşüşü) yapar
             if (materialType != WasteMaterialType.Paper) return;
             if (_rigidbody == null || _grabInteractable == null) return;
 
             // Eğer obje Gravity Pull ile çekiliyorsa veya elde tutuluyorsa süzülme fiziğini DEVRE DIŞI bırak!
             if (_grabInteractable.isSelected) return;
 
-            // Sadece aşağı doğru düşerken ve çok şiddetli fırlatılmamışken salınım yap (hedefi şaşırtmasın)
+            // Sadece aşağı doğru düşerken ve çok şiddetli fırlatılmamışken hafif salınım yap (hedefi şaşırtmasın)
             if (_rigidbody.linearVelocity.y < -0.1f && _rigidbody.linearVelocity.magnitude < 5.0f)
             {
-                // Kuvveti çok ciddi oranda artırdık ki VR'da gözle net görülebilsin
-                // Frekansı (hızı) aynı tuttuk ama şiddetini (multiplier) 0.4'ten 4.0'a çıkardık
-                float swayForceX = Mathf.Sin(Time.time * 3f) * 4.0f;
-                float swayForceZ = Mathf.Cos(Time.time * 2f) * 3.0f;
+                // Hafif ve doğal salınım (Eski 4.0f fırlatma gücü yerine dengeli 0.3f)
+                float swayForceX = Mathf.Sin(Time.time * 2f) * 0.3f;
+                float swayForceZ = Mathf.Cos(Time.time * 1.5f) * 0.2f;
 
-                // ForceMode.Acceleration kullanarak kütleden (mass) bağımsız direkt itiş gücü uyguluyoruz
                 _rigidbody.AddForce(new Vector3(swayForceX, 0, swayForceZ), ForceMode.Acceleration);
             }
         }
