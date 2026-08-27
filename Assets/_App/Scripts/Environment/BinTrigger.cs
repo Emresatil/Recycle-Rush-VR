@@ -30,7 +30,6 @@ public struct SortResultData
     
     // YENİ: Precision (Hassasiyet) verisi
     public RecycleRush.Core.PrecisionSystem.PrecisionResult PrecisionData;
-    public WasteType ProcessedWasteType;
     public GameObject ProcessedWaste;
 }
 
@@ -368,15 +367,5 @@ public class BinTrigger : MonoBehaviour
             Destroy(Instantiate(_failParticlePrefab, spawnPosition, Quaternion.identity), 3f);
         }
     }
-
-    public static UnityEngine.Transform GetBinTransform(WasteType type)
-    {
-        if (_binRegistry != null && _binRegistry.TryGetValue(type, out UnityEngine.Transform binTransform))
-        {
-            return binTransform;
-        }
-        return null;
-    }
-    public static event System.Action<int> OnComboChanged;
 
 }
