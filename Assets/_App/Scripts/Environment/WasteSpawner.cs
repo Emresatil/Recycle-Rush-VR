@@ -30,6 +30,11 @@ public class WasteSpawner : MonoBehaviour
 
     [Header("Mystery Package Settings")]
     [Tooltip("Nadir olarak düşecek Sürpriz Kutu Prefab'ı")]
+        [Header("Power-Up Settings (Friend)")]
+    public GameObject hourglassPrefab;
+    public GameObject magnetPrefab;
+    [Range(0f, 100f)] public float hourglassSpawnChance = 10f;
+    [Range(0f, 100f)] public float magnetSpawnChance = 8f;
     public GameObject wastePackagePrefab;
     [Tooltip("Sürpriz Kutu'nun çıkma ihtimali (Yüzde % olarak)")]
     [Range(0f, 100f)] public float packageSpawnChance = 5f;
@@ -114,8 +119,8 @@ public class WasteSpawner : MonoBehaviour
     private void UpdateSpawnSpeed(float multiplier)
     {
         // Zorluk arttıkça bekleme süresi kısalır ama çakışmayı önlemek için minimum 0.6s sınır konur
-        minSpawnInterval = Mathf.Max(0.6f, _baseMinSpawnInterval / multiplier);
-        maxSpawnInterval = Mathf.Max(1.0f, _baseMaxSpawnInterval / multiplier);
+        minSpawnInterval = Mathf.Max(0.4f, _baseMinSpawnInterval / multiplier); // Dengeleme: Son seviyelerde daha zorlu olmasi icin 0.4e dusuruldu
+        maxSpawnInterval = Mathf.Max(0.75f, _baseMaxSpawnInterval / multiplier); // Dengeleme: Son seviyelerde daha zorlu olmasi icin 0.75e dusuruldu
         
         Debug.Log($"<color=cyan>[WasteSpawner]</color> Yeni zorluğa uyarlandı! Üretim süresi: {minSpawnInterval:F1}s - {maxSpawnInterval:F1}s");
     }
@@ -171,8 +176,8 @@ public class WasteSpawner : MonoBehaviour
             if (spawned)
             {
                 // 1. Özellik: Eşit zaman aralıkları. (Rastgelelik kaldırıldı, tam orta değer kullanılıyor)
-                float fixedWait = (minSpawnInterval + maxSpawnInterval) / 2f;
-                yield return new WaitForSeconds(fixedWait);
+                float organicWait = Random.Range(minSpawnInterval, maxSpawnInterval);
+                yield return new WaitForSeconds(organicWait);
             }
             else
             {
@@ -267,7 +272,29 @@ public class WasteSpawner : MonoBehaviour
         GameObject selectedPrefab = null;
         
         // Önce paketi kontrol et, paket gelmezse altın çöpe bak
-        if (wastePackagePrefab != null && randomRoll <= packageSpawnChance)
+        
+        // --- POWERUP DROP LOGIC ---
+        // Gucce gore poweruplari tetikle
+        int currentLvl = 1;
+        if (RecycleRush.Managers.LevelManager.Instance != null) {
+            currentLvl = RecycleRush.Managers.LevelManager.Instance.CurrentLevel;
+        }
+
+        // Magnet ve Hourglass sansi level arttikca hafif artabilir (veya sabit)
+        float currentMagnetChance = magnetSpawnChance + (currentLvl * 0.1f);
+        float currentHourglassChance = hourglassSpawnChance + (currentLvl * 0.1f);
+
+        if (hourglassPrefab != null && Random.Range(0f, 100f) <= currentHourglassChance)
+        {
+            selectedPrefab = hourglassPrefab;
+            Debug.Log("<color=cyan>[Game Feel]</color> Hourglass Uretildi!");
+        }
+        else if (magnetPrefab != null && Random.Range(0f, 100f) <= currentMagnetChance)
+        {
+            selectedPrefab = magnetPrefab;
+            Debug.Log("<color=cyan>[Game Feel]</color> Magnet Uretildi!");
+        }
+        else if (wastePackagePrefab != null && randomRoll <= packageSpawnChance)
         {
             selectedPrefab = wastePackagePrefab;
             Debug.Log($"<color=#D87093>[WasteSpawner]</color> SÜRPRİZ KUTU (PACKAGE) Üretiliyor!");
@@ -298,6 +325,9 @@ public class WasteSpawner : MonoBehaviour
 
         // Obje üretimi veya havuzdan çekim
         GameObject spawnedA = ObjectPoolManager.Instance.SpawnFromPool(selectedPrefab.tag, selectedPrefab, finalSpawnPosition, uprightRandomRotation);
+        // OYNANIS BUG FIX: Hizli firlatmalarda objenin kutunun icinden gecip gitmesini (tunneling) engellemek icin carpisma modunu Continuous yapiyoruz.
+        Rigidbody rb = spawnedA.GetComponent<Rigidbody>();
+        if (rb != null) rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
         
         // Composite Waste (Yapışık Çöp) Mantığı
         float compositeChance = GetCompositeChance();
@@ -493,3 +523,4 @@ public class WasteSpawner : MonoBehaviour
         return 15f;               // Level 13-15+: %15
     }
 }
+
