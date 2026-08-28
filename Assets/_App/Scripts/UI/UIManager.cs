@@ -553,9 +553,20 @@ namespace RecycleRush.UI
 
                 case GameState.GameOver:
                     if (levelSelectionBoard != null) levelSelectionBoard.SetActive(false);
+
+                    bool isPollutionOverload = (GameManager.Instance != null && GameManager.Instance.LastGameOverReason == GameOverReason.PollutionOverload) ||
+                                               (Core.RoomPollutionManager.Instance != null && Core.RoomPollutionManager.Instance.CurrentPollution >= 100f);
+
                     if (statusText != null)
                     {
-                        statusText.text = "<color=red>TIME'S UP!</color>\nRECYCLING STOPPED";
+                        if (isPollutionOverload)
+                        {
+                            statusText.text = "<color=red>POLLUTION 100%!</color>\nROOM OVERWHELMED";
+                        }
+                        else
+                        {
+                            statusText.text = "<color=red>TIME'S UP!</color>\nRECYCLING STOPPED";
+                        }
                         statusText.transform.localScale = _originalStatusScale;
                     }
 
@@ -567,7 +578,15 @@ namespace RecycleRush.UI
                     }
                     if (gameOverFinalScoreText != null && Core.ScoreManager.Instance != null)
                     {
-                        gameOverFinalScoreText.text = $"FINAL SCORE: {Core.ScoreManager.Instance.CurrentScore}";
+                        int score = Core.ScoreManager.Instance.CurrentScore;
+                        if (isPollutionOverload)
+                        {
+                            gameOverFinalScoreText.text = $"<color=#FF5555><size=80%>POLLUTION REACHED 100%!</size> <size=65%>Room got too dirty</size></color>\nFINAL SCORE: {score}";
+                        }
+                        else
+                        {
+                            gameOverFinalScoreText.text = $"FINAL SCORE: {score}";
+                        }
                     }
 
                     if (restartButtonObj != null) restartButtonObj.SetActive(true);

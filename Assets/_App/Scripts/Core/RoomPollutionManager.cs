@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using RecycleRush.Managers;
 
 namespace RecycleRush.Core
 {
@@ -22,13 +23,17 @@ namespace RecycleRush.Core
 
     /// <summary>
     /// Odadaki kirlilik (hayatta kalma/can barı) durumunu takip eden merkezi sistem. (SRP)
-    /// Sadece değerleri hesaplar ve sınır aşımlarında diğer sistemlere (Event) haber verir.
+    /// Sahnede bulunan aktif çöp sayısına göre kirlilik yüzdesini anlık hesaplar.
+    /// Çöpler spawn oldukça kirlilik artar; kutuya atıldıkça/yok oldukça kirlilik düşer.
     /// </summary>
     public class RoomPollutionManager : MonoBehaviour
     {
         public static RoomPollutionManager Instance { get; private set; }
 
-        [Header("Settings")]
+        [Header("Atık Kapasitesi & Kirlilik Ayarları")]
+        [Tooltip("Sahnede izin verilen maksimum çöp sayısı (Bu sayıya ulaşıldığında kirlilik %100 olur ve GameOver tetiklenir)")]
+        [SerializeField] private int maxWasteCapacity = 15;
+
         [Tooltip("Maksimum kirlilik oranı (Örn: 100)")]
         [SerializeField] private float maxPollution = 100f;
 
@@ -40,6 +45,8 @@ namespace RecycleRush.Core
         public float CurrentPollution { get; private set; }
         public PollutionState CurrentState { get; private set; }
         public PollutionStats Stats => _stats;
+        public int CurrentActiveWasteCount { get; private set; }
+        public int MaxWasteCapacity => maxWasteCapacity;
 
         private PollutionStats _stats;
 
@@ -62,57 +69,92 @@ namespace RecycleRush.Core
 
         private void OnEnable()
         {
-            BinTrigger.OnWasteProcessed += HandleWasteProcessed;
+            ObjectPoolManager.OnActiveWasteCountChanged += HandleActiveWasteCountChanged;
+            GameManager.OnGameStateChanged += HandleGameStateChanged;
         }
 
         private void OnDisable()
         {
-            BinTrigger.OnWasteProcessed -= HandleWasteProcessed;
+            ObjectPoolManager.OnActiveWasteCountChanged -= HandleActiveWasteCountChanged;
+            GameManager.OnGameStateChanged -= HandleGameStateChanged;
         }
 
-        private void HandleWasteProcessed(SortResultData data)
+        private void Update()
         {
-            if (data.IsCorrect)
+            // Oynanış sırasında pool listesindeki gerçek aktif obje sayısını periyodik senkronize et
+            if (GameManager.Instance != null && GameManager.Instance.CurrentState == GameState.Playing)
             {
-                Debug.Log("<color=cyan>[RoomPollutionManager]</color> BinTrigger'dan doğru atış sinyali alındı! Kirlilik düşürülüyor...");
-                // Sadece DOĞRU kutuya atıldığında odayı temizle (-2 kirlilik).
-                // Yanlış atışlarda ceza YOKTUR (SRP ve Game Design kuralı).
-                ReducePollution(2f);
+                if (ObjectPoolManager.Instance != null)
+                {
+                    int currentCount = ObjectPoolManager.Instance.ActiveWasteCount;
+                    if (currentCount != CurrentActiveWasteCount)
+                    {
+                        HandleActiveWasteCountChanged(currentCount);
+                    }
+                }
             }
         }
 
-        public void AddPollution(float amount)
+        private void HandleGameStateChanged(GameState newState)
         {
-            if (CurrentState == PollutionState.GameOver) return; // Oyun bittiyse daha da artırma
+            if (newState == GameState.Playing)
+            {
+                // Oyun başladığında mevcut aktif çöplere göre kirliliği güncelle
+                int count = ObjectPoolManager.Instance != null ? ObjectPoolManager.Instance.ActiveWasteCount : 0;
+                HandleActiveWasteCountChanged(count);
+            }
+            else if (newState == GameState.MainMenu || newState == GameState.Placement || newState == GameState.Countdown || newState == GameState.Tutorial)
+            {
+                // Menüde veya hazırlıkta kirliliği sıfır tut
+                ResetPollution();
+            }
+        }
 
-            CurrentPollution = Mathf.Clamp(CurrentPollution + amount, 0, maxPollution);
-            
-            _stats.TotalPollutionAdded += amount;
+        /// <summary>
+        /// Sahnede bulunan aktif atık sayısı değiştikçe kirlilik yüzdesini anında günceller.
+        /// </summary>
+        private void HandleActiveWasteCountChanged(int activeCount)
+        {
+            if (GameManager.Instance != null && GameManager.Instance.CurrentState != GameState.Playing)
+            {
+                return;
+            }
+
+            CurrentActiveWasteCount = Mathf.Max(0, activeCount);
+            float targetPollution = Mathf.Clamp(((float)CurrentActiveWasteCount / Mathf.Max(1, maxWasteCapacity)) * maxPollution, 0f, maxPollution);
+
+            SetPollution(targetPollution);
+        }
+
+        private void SetPollution(float newPollution)
+        {
+            if (CurrentState == PollutionState.GameOver && newPollution < maxPollution) return;
+
+            CurrentPollution = newPollution;
+
             if (CurrentPollution > _stats.PeakPollution)
             {
                 _stats.PeakPollution = CurrentPollution;
             }
 
-            Debug.Log($"<color=orange>[RoomPollutionManager]</color> Kirlilik ARTTI (+{amount}). Mevcut: %{CurrentPollution}");
-
             OnPollutionChanged?.Invoke(CurrentPollution);
             CheckThresholds();
+        }
+
+        public void AddPollution(float amount)
+        {
+            if (CurrentState == PollutionState.GameOver) return;
+
+            SetPollution(Mathf.Clamp(CurrentPollution + amount, 0f, maxPollution));
+            _stats.TotalPollutionAdded += amount;
         }
 
         public void ReducePollution(float amount)
         {
             if (CurrentState == PollutionState.GameOver) return;
 
-            float prev = CurrentPollution;
-            CurrentPollution = Mathf.Clamp(CurrentPollution - amount, 0, maxPollution);
-            
-            float actualReduction = prev - CurrentPollution;
-            _stats.TotalPollutionReduced += actualReduction;
-
-            Debug.Log($"<color=green>[RoomPollutionManager]</color> Kirlilik TEMİZLENDİ (-{actualReduction}). Mevcut: %{CurrentPollution}");
-
-            OnPollutionChanged?.Invoke(CurrentPollution);
-            CheckThresholds();
+            SetPollution(Mathf.Clamp(CurrentPollution - amount, 0f, maxPollution));
+            _stats.TotalPollutionReduced += amount;
         }
 
         public void RecordWasteRecovered()
@@ -123,6 +165,7 @@ namespace RecycleRush.Core
         public void ResetPollution()
         {
             CurrentPollution = 0f;
+            CurrentActiveWasteCount = 0;
             CurrentState = PollutionState.Clean;
             _stats = new PollutionStats();
             
@@ -158,7 +201,7 @@ namespace RecycleRush.Core
 
                 if (CurrentState == PollutionState.GameOver)
                 {
-                    Debug.Log("<color=red>[RoomPollutionManager]</color> Kirlilik %100 oldu! GAME OVER çağrısı yapılıyor.");
+                    Debug.Log("<color=red>[RoomPollutionManager]</color> Kirlilik %100 oldu! (Maksimum atık limitine ulaşıldı). GAME OVER tetikleniyor.");
                     OnGameOverTriggered?.Invoke(_stats);
                 }
             }

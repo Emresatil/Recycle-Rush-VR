@@ -21,10 +21,22 @@ namespace RecycleRush.UI
         [Tooltip("Barın rengini değiştirmek için (opsiyonel) Image referansı")]
         [SerializeField] private Image _barFillImage;
 
+        [Header("Metin Formatı")]
+        [Tooltip("Kirlilik başlığı (Örn: 'Pollution: %')")]
+        [SerializeField] private string _labelPrefix = "Pollution: %";
+
         [Header("Renk Ayarları (Opsiyonel)")]
         [SerializeField] private Color _cleanColor = Color.green;
         [SerializeField] private Color _mildColor = Color.yellow;
         [SerializeField] private Color _dangerColor = Color.red;
+
+        private void Awake()
+        {
+            if (string.IsNullOrEmpty(_labelPrefix) || _labelPrefix.ToUpper().Contains("KIRLILIK") || _labelPrefix.ToUpper().Contains("KİRLİLİK"))
+            {
+                _labelPrefix = "Pollution: %";
+            }
+        }
 
         private void Start()
         {
@@ -60,8 +72,8 @@ namespace RecycleRush.UI
             // Yazıyı güncelle
             if (_pollutionText != null)
             {
-                // Tam sayı olarak göster (%25, %40 gibi)
-                _pollutionText.text = $"%{Mathf.RoundToInt(currentPollution)}";
+                // "Pollution: %25" gibi anlaşılır şekilde göster
+                _pollutionText.text = $"{_labelPrefix}{Mathf.RoundToInt(currentPollution)}";
             }
 
             // Opsiyonel: Tehlikeye göre barın rengini değiştir

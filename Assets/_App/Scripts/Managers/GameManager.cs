@@ -18,6 +18,12 @@ public enum GameState
     GameOver
 }
 
+public enum GameOverReason
+{
+    TimeUp,
+    PollutionOverload
+}
+
 [System.Serializable]
 public struct GameSessionData
 {
@@ -120,6 +126,7 @@ public class GameManager : MonoBehaviour
     // Oyun durumunun okunabilmesi ama sadece bu sınıf tarafından değiştirilebilmesi için Property
     public GameState CurrentState { get; private set; }
     public GameState PreviousState { get; private set; }
+    public GameOverReason LastGameOverReason { get; private set; } = GameOverReason.TimeUp;
 
     public float RemainingTime { get; private set; }
 
@@ -166,6 +173,7 @@ public class GameManager : MonoBehaviour
     private void HandlePollutionGameOver(RecycleRush.Core.PollutionStats stats)
     {
         Debug.Log("<color=red>[GameManager]</color> Kirlilik maksimuma ulaştı! Oyun sona eriyor.");
+        LastGameOverReason = GameOverReason.PollutionOverload;
         EndGame();
     }
 
@@ -393,6 +401,7 @@ public class GameManager : MonoBehaviour
 
             if (RemainingTime <= 0)
             {
+                LastGameOverReason = GameOverReason.TimeUp;
                 EndGame();
             }
         }
