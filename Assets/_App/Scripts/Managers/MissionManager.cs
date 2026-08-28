@@ -80,20 +80,20 @@ namespace RecycleRush.Managers
                 Array wasteTypes = Enum.GetValues(typeof(WasteType));
                 ActiveMission.TargetWaste = (WasteType)Random.Range(0, 4); // Paper, Glass, Plastic, Metal
                 
-                // Dengeli Formül: Level 1'de 3, Level 10'da 7, Level 30'da maks 17 atık
-                ActiveMission.TargetAmount = Mathf.Clamp(3 + Mathf.FloorToInt((level - 1) * 0.5f), 3, 17);
+                // Bir tık arttırılmış dengeli formül: Level 1'de 5, Level 10'da 10, Level 30'da maks 22 atık
+                ActiveMission.TargetAmount = Mathf.Clamp(5 + Mathf.FloorToInt((level - 1) * 0.6f), 5, 22);
                 ActiveMission.Description = $"Sort {ActiveMission.TargetAmount} {ActiveMission.TargetWaste}!";
             }
             else if (ActiveMission.Type == MissionType.EarnXP)
             {
-                // Dengeli Formül: Level 1'de 80 XP, Level 10'da 305 XP, Level 30'da maks 800 XP
-                ActiveMission.TargetAmount = Mathf.Clamp(80 + ((level - 1) * 25), 80, 800);
+                // Bir tık arttırılmış dengeli formül: Level 1'de 120 XP, Level 10'da 435 XP, Level 30'da maks 1000 XP
+                ActiveMission.TargetAmount = Mathf.Clamp(120 + ((level - 1) * 35), 120, 1000);
                 ActiveMission.Description = $"Earn {ActiveMission.TargetAmount} XP!";
             }
 
             ActiveMission.CurrentAmount = 0;
-            ActiveMission.RewardXP = 50 * level;
-            ActiveMission.RewardCoins = 20 * level;
+            ActiveMission.RewardXP = 60 * level;
+            ActiveMission.RewardCoins = 25 * level;
 
             Debug.Log($"<color=green>[MissionManager]</color> Yeni Görev Verildi: {ActiveMission.Description}");
             OnMissionProgressUpdated?.Invoke(ActiveMission);

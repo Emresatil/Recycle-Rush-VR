@@ -47,7 +47,7 @@ namespace RecycleRush.UI
             if (currentCombo > 1)
             {
                 // Kombo varsa yazıyı göster ve efekti başlat
-                _comboText.text = $"Kombo x{currentCombo}!";
+                _comboText.text = $"Combo x{currentCombo}!";
                 
                 if (_hideCoroutine != null)
                 {
