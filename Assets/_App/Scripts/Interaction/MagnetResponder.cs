@@ -80,14 +80,22 @@ namespace RecycleRush.Interaction
 
             // 1. Oyuncunun elinden objeyi YUMUŞAKÇA ve ZORLA al
             // Bu adım XR bug'larını (Phantom forces, el kilitlenmesi) önler.
-            if (_grabInteractable.interactionManager != null)
+            if (_grabInteractable != null && _grabInteractable.interactionManager != null)
             {
                 _grabInteractable.interactionManager.CancelInteractableSelection((UnityEngine.XR.Interaction.Toolkit.Interactables.IXRSelectInteractable)_grabInteractable);
             }
 
             // 2. Havada uçarken başka çöpleri veya oyuncuyu fırlatmasın diye fizikleri kapat
-            _rb.isKinematic = true;
-            _col.enabled = false;
+            if (_rb != null)
+            {
+                if (!_rb.isKinematic)
+                {
+                    _rb.linearVelocity = Vector3.zero;
+                    _rb.angularVelocity = Vector3.zero;
+                }
+                _rb.isKinematic = true;
+            }
+            if (_col != null) _col.enabled = false;
 
             // 3. Hedef kutunun tam üstüne (0.5m yukarısına) pürüzsüz uçuş
             Vector3 startPos = transform.position;

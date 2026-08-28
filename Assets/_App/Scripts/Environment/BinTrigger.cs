@@ -72,7 +72,9 @@ public class BinTrigger : MonoBehaviour
     private Collider[] _assistColliders = new Collider[10];
 
     public static event Action<SortResultData> OnWasteProcessed;
+#pragma warning disable CS0067
     public static event Action<int> OnComboChanged;
+#pragma warning restore CS0067
 
     private Collider _binCollider;
 
@@ -249,11 +251,21 @@ public class BinTrigger : MonoBehaviour
     {
         if (wasteObject == null) yield break;
 
+        var grab = wasteObject.GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>() ?? 
+                   wasteObject.GetComponentInChildren<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>();
+        if (grab != null && grab.isSelected && grab.interactionManager != null)
+        {
+            grab.interactionManager.CancelInteractableSelection((UnityEngine.XR.Interaction.Toolkit.Interactables.IXRSelectInteractable)grab);
+        }
+
         Rigidbody rb = wasteObject.GetComponent<Rigidbody>();
         if (rb != null)
         {
-            rb.linearVelocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
+            if (!rb.isKinematic)
+            {
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+            }
             rb.isKinematic = true;
         }
 
@@ -445,14 +457,21 @@ public class BinTrigger : MonoBehaviour
     {
         if (rb != null)
         {
-            var grab = rb.GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>();
+            var grab = rb.GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>() ??
+                       rb.GetComponentInChildren<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>();
             if (grab != null && grab.isSelected)
             {
+                if (grab.interactionManager != null)
+                {
+                    grab.interactionManager.CancelInteractableSelection((UnityEngine.XR.Interaction.Toolkit.Interactables.IXRSelectInteractable)grab);
+                }
                 grab.enabled = false;
                 grab.enabled = true;
             }
 
+            if (rb.isKinematic) rb.isKinematic = false;
             rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
             
             // Fırlatma gücünü inanılmaz derecede kıstık. Sadece kutunun içinden hafifçe sekip hemen dibine (yere) düşecek.
             rb.AddForce(new Vector3(0, 1.5f, -0.5f), ForceMode.Impulse);

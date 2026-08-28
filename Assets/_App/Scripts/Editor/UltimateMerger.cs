@@ -1,4 +1,4 @@
-﻿#if UNITY_EDITOR
+#if UNITY_EDITOR
 using UnityEditor;
 using UnityEngine;
 using UnityEditor.SceneManagement;
@@ -109,6 +109,16 @@ public class UltimateMerger : MonoBehaviour
                     if (child.name.Contains("MissionPanel")) uiManager.missionPanel = child.gameObject;
                     if (child.name.Contains("XPPanel")) uiManager.xpPanel = child.gameObject;
                     if (child.name.Contains("SafetyWarning")) uiManager.safetyWarningPanel = child.gameObject;
+                    if (child.name.Contains("Achievement"))
+                    {
+                        uiManager.achievementPanel = child.gameObject;
+                        var achTexts = child.GetComponentsInChildren<TextMeshProUGUI>(true);
+                        foreach (var txt in achTexts)
+                        {
+                            if (txt.name.ToLower().Contains("title")) uiManager.achievementTitleText = txt;
+                            else if (txt.name.ToLower().Contains("desc")) uiManager.achievementDescText = txt;
+                        }
+                    }
                 }
 
                 var texts = copiedPanelCanvas.GetComponentsInChildren<TextMeshProUGUI>(true);

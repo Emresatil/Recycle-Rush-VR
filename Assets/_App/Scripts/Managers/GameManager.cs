@@ -502,7 +502,6 @@ public class GameManager : MonoBehaviour
         if (RecycleRush.Managers.SaveManager.Instance != null)
         {
             var saveData = RecycleRush.Managers.SaveManager.Instance.CurrentData;
-            bool dataChanged = false;
 
             // Deltaları hesapla (Güncellemeden önce)
             CurrentSession.ScoreDelta = finalScore - saveData.HighestScore;
@@ -513,24 +512,20 @@ public class GameManager : MonoBehaviour
             {
                 saveData.HighestScore = finalScore;
                 CurrentSession.IsNewHighScore = true;
-                dataChanged = true;
             }
             if (CurrentSession.AccuracyDelta > 0)
             {
                 saveData.BestAccuracy = CurrentSession.AccuracyPercentage;
                 CurrentSession.IsNewBestAccuracy = true;
-                dataChanged = true;
             }
             if (CurrentSession.ComboDelta > 0)
             {
                 saveData.BestCombo = CurrentSession.MaxCombo;
                 CurrentSession.IsNewBestCombo = true;
-                dataChanged = true;
             }
             if (CurrentSession.GoldenWastesCollected > saveData.MostGoldenWaste)
             {
                 saveData.MostGoldenWaste = CurrentSession.GoldenWastesCollected;
-                dataChanged = true;
             }
 
             // Oyun sonu kazanımlarını kalıcı profile ekle

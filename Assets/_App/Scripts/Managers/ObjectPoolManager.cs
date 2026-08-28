@@ -165,13 +165,19 @@ public class ObjectPoolManager : MonoBehaviour
             grab.enabled = true; // Kapat-aç yapmak grab bağlantısını kesin olarak koparır.
         }
 
-        // Havuza dönerken tüm fiziksel kuvvetleri temizle ve kinematic yap
+        // Havuza dönerken tüm fiziksel kuvvetleri temizle ve kinematic yap (Unity 6 PhysX uyumlu sıralama)
         Rigidbody[] returnRbs = obj.GetComponentsInChildren<Rigidbody>(true);
         foreach (var r in returnRbs)
         {
-            r.isKinematic = true;
-            r.linearVelocity = Vector3.zero;
-            r.angularVelocity = Vector3.zero;
+            if (r != null)
+            {
+                if (!r.isKinematic)
+                {
+                    r.linearVelocity = Vector3.zero;
+                    r.angularVelocity = Vector3.zero;
+                }
+                r.isKinematic = true;
+            }
         }
 
         // 2) EBEVEYN (PARENT) RESETLEME

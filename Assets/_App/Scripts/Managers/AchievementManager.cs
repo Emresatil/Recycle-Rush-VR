@@ -252,6 +252,29 @@ namespace RecycleRush.Managers
             SaveAchievements();
         }
 
+        [ContextMenu("Reset All Achievements (Sıfırla)")]
+        public void ResetAllAchievements()
+        {
+            if (File.Exists(_savePath))
+            {
+                File.Delete(_savePath);
+            }
+            _notifiedThresholds.Clear();
+            InitializeDefaultDatabase();
+            Debug.Log("<color=green>[AchievementManager]</color> Tüm başarımlar başarıyla sıfırlandı!");
+        }
+
+        [ContextMenu("Test - Unlock First Achievement (Test Aç)")]
+        public void TestUnlockFirst()
+        {
+            if (CurrentData != null && CurrentData.Achievements.Count > 0)
+            {
+                var ach = CurrentData.Achievements[0];
+                ach.IsUnlocked = false;
+                UnlockAchievement(ach);
+            }
+        }
+
         // --- İstatistik (Statistics) Metodu ---
         public AchievementStats GetAchievementStatistics()
         {

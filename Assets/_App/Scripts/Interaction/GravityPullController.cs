@@ -91,12 +91,16 @@ namespace RecycleRush.Interaction
 
         private void SendHapticFeedback()
         {
-            // Eğer HapticManager varsa o kullanılabilir, ancak doğrudan kontrolcüye titreşim yolluyoruz:
-            var controller = GetComponent<XRBaseController>();
-            if (controller != null)
+            if (_interactor is XRBaseInputInteractor controllerInteractor)
+            {
+                controllerInteractor.SendHapticImpulse(_hapticIntensity, _hapticDuration);
+            }
+#pragma warning disable CS0618
+            else if (TryGetComponent<XRBaseController>(out var controller))
             {
                 controller.SendHapticImpulse(_hapticIntensity, _hapticDuration);
             }
+#pragma warning restore CS0618
         }
     }
 }
