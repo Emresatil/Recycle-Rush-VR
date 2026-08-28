@@ -1,91 +1,109 @@
-# ♻️ Recycle Rush VR
-
 <div align="center">
-  <img src="docs/assets/logo-preview.png" alt="Recycle Rush VR Logo" width="400"/>
-  <br/>
-  <i>An educational Virtual Reality experience designed to teach correct recycling habits through immersive, physics-based gameplay on Meta Quest.</i>
+
+# ♻️ Recycle Rush MR
+### Mixed Reality (AR/MR) Recycling Simulator for Meta Quest
+
+[![Unity](https://img.shields.io/badge/Unity-2022_LTS-000000?style=for-the-badge&logo=unity&logoColor=white)](https://unity.com/)
+[![Platform](https://img.shields.io/badge/Platform-Meta_Quest_2%20%7C%203%20%7C%20Pro-0668E1?style=for-the-badge&logo=meta&logoColor=white)](https://www.meta.com/)
+[![Architecture](https://img.shields.io/badge/Architecture-Event--Driven%20%7C%20State%20Machine-2ea44f?style=for-the-badge)](#technical-architecture)
+[![Status](https://img.shields.io/badge/Status-Release_Candidate-blueviolet?style=for-the-badge)](#)
+
+*Transform your physical room into an interactive, high-score chasing recycling center.*
+
 </div>
 
 ---
 
-## 📖 Project Overview
+## 📖 About The Project
 
-**Recycle Rush VR** is an interactive, fast-paced virtual reality game developed for the Meta Quest platform. The primary objective is to educate players on environmental sustainability and proper waste sorting. Players are challenged to identify, grab, and correctly categorize various types of waste (Paper, Glass, Plastic, Metal) moving along a dynamic conveyor belt into their respective recycling bins.
+**Recycle Rush MR** is a next-generation Mixed Reality (MR) simulator designed to gamify the waste-sorting process. Initially conceptualized as a standard Virtual Reality (VR) conveyor belt game, the project was completely re-architected in its second month to leverage **Meta Passthrough** and **Spatial Anchors**. 
 
-This project was developed with a strong focus on **performance optimization, scalable software architecture, and immersive XR interactions**, making it an excellent showcase of professional Unity VR development practices.
-
----
-
-## 🎥 Gameplay Trailer
-
-[> 📹 **Watch the Recycle Rush VR Gameplay Trailer on YouTube**](https://youtu.be/2mVESY8Hb2Q)
+By removing virtual locomotion and physical friction constraints, the game seamlessly integrates with the player's real-world environment. Trash falls from spatial portals on your ceiling directly onto your actual floor. The result is a physically engaging, stutter-free "Arcade" experience that encourages active movement, quick decision-making, and environmental awareness.
 
 ---
 
-## 🎮 Key Features
+## ✨ Key Features & Mechanics
 
-- **Immersive XR Interactions:** Fully utilizes Unity's XR Interaction Toolkit (XRI) for natural grabbing, throwing, and physical manipulation of objects.
-- **Interactive VR Menus:** Fully diegetic, physical VR UI panels featuring interactable Play, Settings, and Exit buttons, along with a comprehensive Game Over screen.
-- **Dynamic Difficulty Scaling:** The game progressively speeds up the conveyor belt and spawn rates, adapting to the player's skill level.
-- **Multisensory Feedback:** Integrated spatial audio and haptic controller feedback to reward correct actions and alert on mistakes.
-- **Educational AI Drone:** A companion drone governed by a Finite State Machine (FSM) that reacts to the player's gameplay state (Happy, Sad, Idle).
-- **Fair-Play Penalty System:** Advanced collision and raycast detection to penalize players for dropping waste, while smartly exempting items currently traveling on the belt.
+- **Mixed Reality Passthrough:** See your real room while interacting with high-quality holographic bins and dynamic spatial portals.
+- **Deep Progression System:** 15 carefully balanced levels featuring scaling difficulty, decreasing portal drop rates, and unique mission objectives.
+- **Dynamic Economy (XP & Coin):** Earn XP and Coins through successful sorts. Unlock achievements, level up, and build your high score.
+- **Advanced Combo & Grace System:** Chain correct throws to build up to a **x5 Multiplier**. Utilize the "Grace" mechanic to save a combo from breaking during critical moments.
+- **Random Events:** The `EventManager` dynamically injects 6 unique game-altering events (e.g., *Speed Mode, Slow Motion, Double XP, Lucky Drop*).
+- **Golden Waste System:** A rare, high-value item with dynamic spawn rates (scaling from 5% to 25% in the final levels).
+- **Adaptive Audio & Spatial Haptics:** Features 3D Spatial Audio and an **Adaptive BGM Pitch** system that dynamically increases the music tempo during the final 30 seconds to elevate adrenaline.
 
 ---
 
-## ⚙️ Technical Architecture & Engineering
+## 🏗️ Technical Architecture & Design Patterns
 
-To ensure a smooth VR experience at high framerates (90+ FPS), the project implements several advanced software engineering patterns:
+Designed with scalability, performance, and clean code principles in mind. This repository strictly adheres to industry-standard software architectures.
 
-### 1. High-Performance Object Pooling (`ObjectPoolManager`)
-VR games on mobile chipsets are highly sensitive to memory allocation spikes (Garbage Collection stutter). To solve this:
-- **Zero-Allocation Spawning:** Waste objects are pre-instantiated and recycled using a robust Queue-based pooling system instead of being instantiated/destroyed at runtime.
-- **Fuzzy Tag Matching:** Flexible dictionary lookups allow seamless handling of different prefab variants.
-- **Physics Stabilization & Kill-Z:** Implemented `maxDepenetrationVelocity` to prevent physics "explosions" when objects spawn densely. A custom `Kill-Z` and boundary tracking algorithm automatically culls objects that escape the play area, ensuring optimal scene performance and preventing memory leaks.
+### 1. Robust State Machine (`GameManager.cs`)
+The core loop is managed by a strictly typed Finite State Machine (FSM):
+`MainMenu` ➔ `Placement (AR Anchor Setup)` ➔ `Countdown` ➔ `Playing` ➔ `Paused` / `GameOver`
+This ensures deterministic transitions and prevents race conditions between UI and Gameplay layers.
 
 ### 2. Event-Driven Architecture
-The game relies heavily on C# `Action` and `delegate` events to maintain a decoupled, modular codebase:
-- Systems like `ScoreManager`, `DifficultyManager`, and `GameManager` communicate entirely through events (e.g., `OnWasteMissedFloor`, `OnDifficultyLevelChanged`).
-- This prevents "Spaghetti Code" and strict dependencies, making the project highly scalable and easy to test.
+To decouple systems and prevent monolithic "Spaghetti Code", inter-system communication is handled via C# `Action` events.
+*Example:* When `BinTrigger.cs` detects a correct sort, it fires `OnWasteProcessed`. `ScoreManager`, `ComboManager`, and `AchievementManager` listen to this event independently, calculate their respective logic, and update the UI without direct dependencies.
 
-### 3. Advanced Physics & Collision Handling (`WasteSpawner` & `FloorZone`)
-- **Safe Spawning:** The `WasteSpawner` uses `Physics.OverlapSphere` to mathematically guarantee the spawn area is clear before initializing a new object, preventing catastrophic physics overlaps.
-- **Smart Ground Detection:** The `FloorZone` script utilizes a combination of Raycasting and OverlapSphere checking to differentiate between "waste sitting on the moving belt" and "waste dropped on the floor", ensuring the 3-second penalty timer is completely fair.
+### 3. Persistent JSON Serialization (`SaveManager.cs`)
+All player data (Current Level, Total XP, Coins, Unlocked Achievements, and Audio Settings) is securely serialized to JSON and stored in `Application.persistentDataPath`. The architecture includes fallback mechanisms to prevent data corruption.
+
+### 4. Zero-Allocation Object Pooling
+To meet the strict **72-90 FPS** requirement for Meta Quest, `Instantiate` and `Destroy` are completely banned during the `Playing` state. `PortalSpawner.cs` and `VfxManager.cs` utilize generic Object Pools, resulting in **0 Bytes of GC Allocation (Garbage Collection Spikes)** during runtime.
+
+### 5. Catastrophic Merge Conflict Resolution
+During development, the team successfully utilized Git best practices to recover from catastrophic merge conflicts (involving `UIManager.cs` and `GameManager.cs`), demonstrating strong version control proficiency, file integrity restoration, and clean PR merging.
 
 ---
 
-## 🚀 Getting Started
+## 🎮 Level Design & Balancing
 
-### Prerequisites
-- **Unity Engine:** 6.3 LTS (6000.3.19f1) or newer.
-- **XR Plugin Management:** OpenXR configured for Android/Meta Quest.
-- **Hardware:** Meta Quest 2, Pro, or 3 (or compatible PC VR setup via Quest Link).
+The game features an exponential difficulty and XP curve, mathematically balanced to ensure a state of "Flow". 
 
-### Installation
+| Metric | Level 1 (Tutorial) | Level 8 (Mid-Game) | Level 15 (Arcade Master) |
+| :--- | :---: | :---: | :---: |
+| **Target Score** | 50 | 620 | 3000 |
+| **Portal Spawn Rate** | 3.5s | 1.9s | 0.9s (Dual Portals) |
+| **Golden Waste Chance**| 5% | 14% | 25% |
+| **Unique Event** | Basic Sorting | Flawless Accuracy | All Events Active |
+
+*Equation used for XP requirements:* `Mathf.RoundToInt(100 * Mathf.Pow(Level, 1.4f))`
+
+---
+
+## 🏆 Achievement System
+
+A hidden and public achievement matrix designed to increase replayability. Includes milestone tracking (Thresholds at 50%, 75%, 90%) and immediate reward injection.
+* **Golden Rain:** Catch 3 Golden Wastes in a single run. (Hidden)
+* **Cool-Headed Master:** Reach a x5 combo without using the Grace mechanic.
+* **Perfect Streak:** Make 20 correct throws flawlessly.
+
+---
+
+## 🛠️ Development Workflow (Git & Agile)
+
+This project was developed over a 20-day sprint cycle simulating a professional studio environment:
+- **Agile Kanban:** Tracked via GitHub Projects (To Do, In Progress, Review, Done).
+- **Git Flow:** Direct pushes to `main` were prohibited. Development occurred on isolated `feature/` branches.
+- **Stacked PRs:** Code was integrated using Pull Requests requiring peer review and approval before merging.
+- **Atomic Commits:** Commit messages followed semantic versioning (e.g., `fix(core): resolve merge conflicts in game manager`).
+
+---
+
+## 🚀 Installation & Build
+
 1. Clone the repository: `git clone https://github.com/Emresatil/Recycle-Rush-VR.git`
-2. Open the project in Unity Hub.
-3. Open the main scene located at `Assets/_App/Scenes/MainGame.unity`.
-4. Press **Play** (Ensure your VR headset is connected via Link, or build the `.apk` directly to the headset).
+2. Open the project in **Unity 2022 LTS** (or newer).
+3. Ensure **Meta XR Core SDK** and **XR Interaction Toolkit** are installed via Package Manager.
+4. Switch platform to **Android** (ASTC Compression enabled).
+5. Build and deploy to your Meta Quest device via Meta Quest Developer Hub (MQDH).
 
 ---
 
-## 🎨 Visual Assets & Concepts
+## 👥 Meet The Team
 
-*(The following sections showcase the UI/UX and Asset design process for the project).*
-
-### Layered App Icon Structure
-Concept presentation showing the background layer, foreground layer and the assembled Meta Quest application icon.
-
-![Layered App Icon](docs/assets/app-icon-showcase.png)
-
-
-
-## 👥 The Team
-
-- **Hakan Uzer** - [LinkedIn](https://www.linkedin.com/in/hakanuzer/)
-- **Emre Satıl** - [LinkedIn](https://www.linkedin.com/in/emresatil/)
-
----
-<div align="center">
-  <b>Developed with 💚 for a cleaner future.</b>
-</div>
+**Emre & Hakan**
+*Internship Developers & Technical Architects*
+Developed as a capstone internship project to demonstrate advanced proficiency in XR development, C# software architecture, and agile project management.
