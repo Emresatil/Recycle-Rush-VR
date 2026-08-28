@@ -49,6 +49,10 @@ namespace RecycleRush.Tutorial
         public Color instructionColor = Color.white;
         public Color progressColor = new Color(1f, 0.85f, 0.2f, 1f); // Gold
 
+        [Header("🔤 Özel Yazı Tipi (Font)")]
+        [Tooltip("Özel yazı tipi (Boş bırakılırsa varsayılan ChakraPetch atanır)")]
+        public TMP_FontAsset customFont;
+
         private TextMeshPro _stepTitleText;
         private TextMeshPro _stepInstructionText;
         private TextMeshPro _stepProgressText;
@@ -109,6 +113,13 @@ namespace RecycleRush.Tutorial
             if (_canvasRoot != null)
             {
                 _canvasRoot.transform.localScale = Vector3.one * cardScale;
+            }
+
+            if (customFont != null)
+            {
+                if (_stepTitleText != null) _stepTitleText.font = customFont;
+                if (_stepInstructionText != null) _stepInstructionText.font = customFont;
+                if (_stepProgressText != null) _stepProgressText.font = customFont;
             }
 
             if (_stepTitleText != null)

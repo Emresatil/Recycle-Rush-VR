@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using TMPro;
 
 namespace RecycleRush.Tutorial
@@ -12,7 +12,10 @@ namespace RecycleRush.Tutorial
     {
         [Header("🔤 Boyut & Font")]
         [Tooltip("3D Hologram Oku Font / Simge Boyutu")]
-        [Range(0.2f, 5.0f)] public float pointerFontSize = 1.8f;
+        [Range(0.5f, 10.0f)] public float pointerFontSize = 3.5f;
+
+        [Tooltip("Özel Yazı Tipi (Boş bırakılırsa varsayılan ChakraPetch atanır)")]
+        public TMP_FontAsset customFont;
 
         [Header("🎨 Görsel Ayarlar")]
         [Tooltip("Varsayılan Ok Rengi")]
@@ -20,10 +23,10 @@ namespace RecycleRush.Tutorial
 
         [Header("📍 Hareket & Yaylanma Ayarları")]
         [Tooltip("Hedefin üzerindeki dikey yükseklik mesafesi")]
-        [Range(0.05f, 1.5f)] public float heightOffset = 0.30f;
+        [Range(0.1f, 2.0f)] public float heightOffset = 0.45f;
 
         [Tooltip("Yaylanma genliği (yukarı-aşağı ne kadar oynasın)")]
-        [Range(0.01f, 0.5f)] public float bounceAmplitude = 0.08f;
+        [Range(0.01f, 0.5f)] public float bounceAmplitude = 0.12f;
 
         [Tooltip("Yaylanma hızı")]
         [Range(0.5f, 10.0f)] public float bounceFrequency = 4.0f;
@@ -45,11 +48,14 @@ namespace RecycleRush.Tutorial
             _visualHolder.transform.SetParent(transform, false);
 
             _arrowText = _visualHolder.AddComponent<TextMeshPro>();
+            if (customFont != null) _arrowText.font = customFont;
             _arrowText.text = "▼";
             _arrowText.fontSize = pointerFontSize;
             _arrowText.color = pointerColor;
             _arrowText.fontStyle = FontStyles.Bold;
             _arrowText.alignment = TextAlignmentOptions.Center;
+            _arrowText.rectTransform.sizeDelta = new Vector2(4f, 4f);
+            _arrowText.overflowMode = TextOverflowModes.Overflow;
 
             gameObject.SetActive(false);
         }
@@ -58,8 +64,10 @@ namespace RecycleRush.Tutorial
         {
             if (_arrowText != null)
             {
+                if (customFont != null) _arrowText.font = customFont;
                 _arrowText.fontSize = pointerFontSize;
                 _arrowText.color = pointerColor;
+                _arrowText.rectTransform.sizeDelta = new Vector2(4f, 4f);
             }
         }
 
@@ -107,18 +115,22 @@ namespace RecycleRush.Tutorial
 
         private void UpdatePosition(bool instant = false, float extraHeight = 0f)
         {
+            if (_targetTransform == null) return;
+
             Vector3 centerPos = _targetTransform.position;
             float topY = centerPos.y;
 
             Collider[] colliders = _targetTransform.GetComponentsInChildren<Collider>();
-            if (colliders.Length > 0)
-            {
-                Bounds combinedBounds = new Bounds();
-                bool hasBounds = false;
+            Renderer[] renderers = _targetTransform.GetComponentsInChildren<Renderer>();
 
+            Bounds combinedBounds = new Bounds();
+            bool hasBounds = false;
+
+            if (colliders != null && colliders.Length > 0)
+            {
                 foreach (var col in colliders)
                 {
-                    if (col != null && col.enabled && !col.isTrigger)
+                    if (col != null && col.enabled)
                     {
                         if (!hasBounds)
                         {
@@ -131,12 +143,31 @@ namespace RecycleRush.Tutorial
                         }
                     }
                 }
+            }
 
-                if (hasBounds)
+            if (!hasBounds && renderers != null && renderers.Length > 0)
+            {
+                foreach (var rend in renderers)
                 {
-                    centerPos = combinedBounds.center;
-                    topY = combinedBounds.max.y;
+                    if (rend != null && rend.enabled)
+                    {
+                        if (!hasBounds)
+                        {
+                            combinedBounds = rend.bounds;
+                            hasBounds = true;
+                        }
+                        else
+                        {
+                            combinedBounds.Encapsulate(rend.bounds);
+                        }
+                    }
                 }
+            }
+
+            if (hasBounds)
+            {
+                centerPos = combinedBounds.center;
+                topY = combinedBounds.max.y;
             }
 
             float bounce = Mathf.Sin(Time.time * bounceFrequency) * bounceAmplitude;
