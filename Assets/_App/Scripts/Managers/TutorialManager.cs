@@ -165,7 +165,7 @@ namespace RecycleRush.Managers
         {
             if (PlayerPrefs.GetInt("TutorialDone", 0) == 1) return;
 
-            if (state == GameState.ReadyToStart)
+            if (state == GameState.Placement)
             {
                 _currentStep = TutorialStep.PullLever;
                 UpdateTutorialUI("<color=yellow>TUTORIAL</color>\nPULL THE LEVER TO START");

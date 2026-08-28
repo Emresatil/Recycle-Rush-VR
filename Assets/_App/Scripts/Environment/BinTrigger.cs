@@ -30,7 +30,6 @@ public struct SortResultData
     
     // YENİ: Precision (Hassasiyet) verisi
     public RecycleRush.Core.PrecisionSystem.PrecisionResult PrecisionData;
-    public WasteType ProcessedWasteType;
     public GameObject ProcessedWaste;
 }
 
@@ -65,8 +64,17 @@ public class BinTrigger : MonoBehaviour
     [SerializeField] private GameObject _successParticlePrefab;
     [SerializeField] private GameObject _failParticlePrefab;
 
+    [Header("Aim Assist (Görünmez Nişan Desteği)")]
+    [Tooltip("Doğru kutuya yakın fırlatılan çöpleri hafifçe kutunun ağzına yönlendirir")]
+    [SerializeField] private bool _enableAimAssist = true;
+    [SerializeField] private float _assistRadius = 1.3f;
+    [SerializeField] private float _assistForce = 7f;
+    private Collider[] _assistColliders = new Collider[10];
+
     public static event Action<SortResultData> OnWasteProcessed;
+#pragma warning disable CS0067
     public static event Action<int> OnComboChanged;
+#pragma warning restore CS0067
 
     private Collider _binCollider;
 
@@ -145,7 +153,7 @@ public class BinTrigger : MonoBehaviour
             {
                 GameManager.Instance.AddTime(10f);
             }
-            ObjectPoolManager.Instance.ReturnToPool(wasteObj);
+            StartCoroutine(SwallowRoutine(wasteObj));
             return;
         }
 
@@ -155,7 +163,7 @@ public class BinTrigger : MonoBehaviour
             {
                 GameManager.Instance.ActivateMagnet(15f);
             }
-            ObjectPoolManager.Instance.ReturnToPool(wasteObj);
+            StartCoroutine(SwallowRoutine(wasteObj));
             return;
         }
 
@@ -234,7 +242,107 @@ public class BinTrigger : MonoBehaviour
         // Event'i fırlat.
         OnWasteProcessed?.Invoke(resultData);
 
-        ObjectPoolManager.Instance.ReturnToPool(wasteObj);
+        // YENİ: Objeyi pat diye silmek yerine yutulma efekti (Swallow) Coroutine'i başlatıyoruz
+        StartCoroutine(SwallowRoutine(wasteObj));
+    }
+
+    // --- YUTULMA EFEKTİ (SWALLOW VISUAL) ---
+    private System.Collections.IEnumerator SwallowRoutine(GameObject wasteObject)
+    {
+        if (wasteObject == null) yield break;
+
+        var grab = wasteObject.GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>() ?? 
+                   wasteObject.GetComponentInChildren<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>();
+        if (grab != null && grab.isSelected && grab.interactionManager != null)
+        {
+            grab.interactionManager.CancelInteractableSelection((UnityEngine.XR.Interaction.Toolkit.Interactables.IXRSelectInteractable)grab);
+        }
+
+        Rigidbody rb = wasteObject.GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            if (!rb.isKinematic)
+            {
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+            }
+            rb.isKinematic = true;
+        }
+
+        Collider[] colliders = wasteObject.GetComponentsInChildren<Collider>();
+        foreach (var c in colliders)
+        {
+            if (c != null) c.enabled = false;
+        }
+
+        Vector3 startScale = wasteObject.transform.localScale;
+        Vector3 startPos = wasteObject.transform.position;
+        Vector3 targetPos = transform.position + Vector3.up * 0.15f; 
+
+        float duration = 0.18f;
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            if (wasteObject == null) yield break;
+            float t = elapsed / duration;
+            wasteObject.transform.localScale = Vector3.Lerp(startScale, Vector3.zero, t);
+            wasteObject.transform.position = Vector3.Lerp(startPos, targetPos, t);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        if (wasteObject != null)
+        {
+            wasteObject.transform.localScale = startScale;
+            foreach (var c in colliders)
+            {
+                if (c != null) c.enabled = true;
+            }
+            if (rb != null) rb.isKinematic = false;
+
+            if (ObjectPoolManager.Instance != null)
+            {
+                ObjectPoolManager.Instance.ReturnToPool(wasteObject);
+            }
+            else
+            {
+                Destroy(wasteObject);
+            }
+        }
+    }
+
+    // --- AIM ASSIST (MANYETİK ÇEKİM) ---
+    private void FixedUpdate()
+    {
+        if (!_enableAimAssist) return;
+        
+        int numColliders = Physics.OverlapSphereNonAlloc(transform.position + Vector3.up * 0.5f, _assistRadius, _assistColliders);
+        for (int i = 0; i < numColliders; i++)
+        {
+            Collider col = _assistColliders[i];
+            if (col == null || col.isTrigger) continue;
+            
+            Rigidbody rb = col.attachedRigidbody;
+            if (rb != null)
+            {
+                if (rb.linearVelocity.magnitude > 0.8f) 
+                {
+                    var grab = rb.GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>();
+                    if (grab != null && !grab.isSelected)
+                    {
+                        WasteType type = GetWasteTypeFromCollider(col);
+                        var tuner = col.GetComponentInChildren<RecycleRush.Interaction.ARWastePhysicsTuner>();
+                        bool isGold = tuner != null && tuner.isGoldenWaste;
+                        if (type != WasteType.Untagged && (type == _acceptedWasteType || isGold)) 
+                        {
+                            Vector3 dirToBin = (transform.position + Vector3.up * 0.2f) - rb.transform.position;
+                            rb.AddForce(dirToBin.normalized * _assistForce, ForceMode.Acceleration);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     public static WasteType GetWasteTypeFromCollider(Collider col)
@@ -349,14 +457,21 @@ public class BinTrigger : MonoBehaviour
     {
         if (rb != null)
         {
-            var grab = rb.GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>();
+            var grab = rb.GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>() ??
+                       rb.GetComponentInChildren<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>();
             if (grab != null && grab.isSelected)
             {
+                if (grab.interactionManager != null)
+                {
+                    grab.interactionManager.CancelInteractableSelection((UnityEngine.XR.Interaction.Toolkit.Interactables.IXRSelectInteractable)grab);
+                }
                 grab.enabled = false;
                 grab.enabled = true;
             }
 
+            if (rb.isKinematic) rb.isKinematic = false;
             rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
             
             // Fırlatma gücünü inanılmaz derecede kıstık. Sadece kutunun içinden hafifçe sekip hemen dibine (yere) düşecek.
             rb.AddForce(new Vector3(0, 1.5f, -0.5f), ForceMode.Impulse);
@@ -368,15 +483,4 @@ public class BinTrigger : MonoBehaviour
             Destroy(Instantiate(_failParticlePrefab, spawnPosition, Quaternion.identity), 3f);
         }
     }
-
-    public static UnityEngine.Transform GetBinTransform(WasteType type)
-    {
-        if (_binRegistry != null && _binRegistry.TryGetValue(type, out UnityEngine.Transform binTransform))
-        {
-            return binTransform;
-        }
-        return null;
-    }
-    public static event System.Action<int> OnComboChanged;
-
 }

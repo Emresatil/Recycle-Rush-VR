@@ -49,6 +49,10 @@ namespace RecycleRush.Tutorial
         [Tooltip("Adım 4: Kompozit çöpün spawn mesafesi")]
         public Vector3 step4SpawnOffset = new Vector3(0f, 0.1f, 0.9f);
 
+        [Header("🔤 Yazı Tipi (Font)")]
+        [Tooltip("Öğretici metinlerinin yazı tipi (Boşsa ChakraPetch-Medium SDF kullanılır)")]
+        public TMPro.TMP_FontAsset tutorialFont;
+
         [Header("🗑️ Geri Dönüşüm Kutuları (Atanmazsa otomatik bulunur)")]
         public Transform paperBinTransform;
         public Transform plasticBinTransform;
@@ -97,6 +101,8 @@ namespace RecycleRush.Tutorial
                 GameObject wastePtrObj = new GameObject("HoloWastePointer");
                 wastePtrObj.transform.SetParent(transform);
                 wastePointer = wastePtrObj.AddComponent<ARHoloPointer>();
+                wastePointer.pointerFontSize = 3.0f;
+                wastePointer.heightOffset = 0.35f;
             }
 
             if (binPointer == null)
@@ -104,6 +110,8 @@ namespace RecycleRush.Tutorial
                 GameObject binPtrObj = new GameObject("HoloBinPointer");
                 binPtrObj.transform.SetParent(transform);
                 binPointer = binPtrObj.AddComponent<ARHoloPointer>();
+                binPointer.pointerFontSize = 4.5f; // Kutu üzerinde uzaktan çok net görünen büyük ok
+                binPointer.heightOffset = 0.50f;
             }
 
             if (stepCard == null)
@@ -119,10 +127,24 @@ namespace RecycleRush.Tutorial
                 guideObj.transform.SetParent(transform);
                 handGuide = guideObj.AddComponent<ARHoloHandGuide>();
             }
+
+            // Font atamalarını yap
+            if (tutorialFont != null)
+            {
+                if (wastePointer != null) wastePointer.customFont = tutorialFont;
+                if (binPointer != null) binPointer.customFont = tutorialFont;
+                if (stepCard != null) stepCard.customFont = tutorialFont;
+                if (handGuide != null) handGuide.customFont = tutorialFont;
+            }
         }
 
         private void AutoFindBins()
         {
+            if (paperBinTransform == null) paperBinTransform = BinTrigger.GetBinTransform(WasteType.Paper);
+            if (plasticBinTransform == null) plasticBinTransform = BinTrigger.GetBinTransform(WasteType.Plastic);
+            if (glassBinTransform == null) glassBinTransform = BinTrigger.GetBinTransform(WasteType.Glass);
+            if (metalBinTransform == null) metalBinTransform = BinTrigger.GetBinTransform(WasteType.Metal);
+
             if (paperBinTransform == null)
             {
                 var paper = GameObject.Find("TrashbinBlue") ?? GameObject.Find("Paper_Bin") ?? GameObject.Find("Bin_Paper");
@@ -166,6 +188,11 @@ namespace RecycleRush.Tutorial
 
         public void SetStep(TutorialStep step)
         {
+            if (CurrentStep != TutorialStep.None && CurrentStep != step)
+            {
+                OnTutorialStepCompleted?.Invoke(CurrentStep);
+            }
+
             if (_stepRoutine != null)
             {
                 StopCoroutine(_stepRoutine);
@@ -198,6 +225,8 @@ namespace RecycleRush.Tutorial
 
         private IEnumerator StepPlacementRoutine()
         {
+            AutoFindBins();
+
             if (stepCard != null)
             {
                 stepCard.DisplayStep(
@@ -208,7 +237,7 @@ namespace RecycleRush.Tutorial
             }
 
             Transform target = paperBinTransform != null ? paperBinTransform : transform;
-            if (binPointer != null) binPointer.SetTarget(target, Color.cyan, "★", 0.4f);
+            if (binPointer != null) binPointer.SetTarget(target, Color.cyan, "▼", 0.4f);
             if (handGuide != null) handGuide.Hide();
 
             yield return new WaitForSeconds(3.5f);
@@ -226,6 +255,8 @@ namespace RecycleRush.Tutorial
 
         private IEnumerator StepGrabAndDropRoutine()
         {
+            AutoFindBins();
+
             if (stepCard != null)
             {
                 stepCard.DisplayStep(
@@ -254,20 +285,33 @@ namespace RecycleRush.Tutorial
 
         private Transform GetMatchingBinForWaste(GameObject waste)
         {
+            AutoFindBins();
             if (waste == null) return paperBinTransform != null ? paperBinTransform : transform;
-            string t = waste.tag.ToLower();
-            string n = waste.name.ToLower();
 
-            if (t.Contains("paper") || n.Contains("paper") || n.Contains("gazete") || n.Contains("bardak"))
+            Collider col = waste.GetComponentInChildren<Collider>();
+            if (col != null)
+            {
+                WasteType wType = BinTrigger.GetWasteTypeFromCollider(col);
+                if (wType != WasteType.Untagged)
+                {
+                    Transform matchedBin = BinTrigger.GetBinTransform(wType);
+                    if (matchedBin != null) return matchedBin;
+                }
+            }
+
+            string tagStr = waste.tag.ToLower();
+            string nameStr = waste.name.ToLower();
+
+            if (tagStr.Contains("paper") || nameStr.Contains("paper") || nameStr.Contains("gazete") || nameStr.Contains("bardak"))
                 return paperBinTransform != null ? paperBinTransform : transform;
 
-            if (t.Contains("plastic") || n.Contains("plastic") || n.Contains("pet") || n.Contains("sise"))
+            if (tagStr.Contains("plastic") || nameStr.Contains("plastic") || nameStr.Contains("pet") || nameStr.Contains("sise"))
                 return plasticBinTransform != null ? plasticBinTransform : transform;
 
-            if (t.Contains("glass") || n.Contains("glass") || n.Contains("cam"))
+            if (tagStr.Contains("glass") || nameStr.Contains("glass") || nameStr.Contains("cam"))
                 return glassBinTransform != null ? glassBinTransform : transform;
 
-            if (t.Contains("metal") || n.Contains("metal") || n.Contains("teneke") || n.Contains("can"))
+            if (tagStr.Contains("metal") || nameStr.Contains("metal") || nameStr.Contains("teneke") || nameStr.Contains("can"))
                 return metalBinTransform != null ? metalBinTransform : transform;
 
             return paperBinTransform != null ? paperBinTransform : transform;
@@ -279,7 +323,7 @@ namespace RecycleRush.Tutorial
             if (handGuide != null) handGuide.Hide();
 
             Transform targetBin = GetMatchingBinForWaste(_activeTutorialWaste);
-            if (binPointer != null) binPointer.SetTarget(targetBin, Color.green, "⬇", 0.3f);
+            if (binPointer != null) binPointer.SetTarget(targetBin, Color.green, "▼", 0.3f);
         }
 
         private void OnStep2WasteSorted(SortResultData data)

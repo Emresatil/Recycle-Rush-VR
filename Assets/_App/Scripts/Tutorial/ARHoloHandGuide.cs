@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using TMPro;
 
 namespace RecycleRush.Tutorial
@@ -20,6 +20,9 @@ namespace RecycleRush.Tutorial
         [Header("🔤 Boyut & Font")]
         [Tooltip("El / Hareket simgelerinin boyutu")]
         [Range(0.2f, 4.0f)] public float gestureFontSize = 1.1f;
+
+        [Tooltip("Özel Yazı Tipi (Boş bırakılırsa varsayılan ChakraPetch atanır)")]
+        public TMP_FontAsset customFont;
 
         [Header("📍 Konum & Animasyon")]
         [Tooltip("Hedefe göre dikey/yatay konum ofseti")]
@@ -47,6 +50,7 @@ namespace RecycleRush.Tutorial
             if (_gestureText != null) return;
 
             _gestureText = gameObject.AddComponent<TextMeshPro>();
+            if (customFont != null) _gestureText.font = customFont;
             _gestureText.fontSize = gestureFontSize;
             _gestureText.fontStyle = FontStyles.Bold;
             _gestureText.alignment = TextAlignmentOptions.Center;
@@ -58,6 +62,7 @@ namespace RecycleRush.Tutorial
         public void ShowGesture(GuideGestureType gesture, Transform target = null)
         {
             if (_gestureText == null) SetupGestureVisuals();
+            if (customFont != null && _gestureText != null) _gestureText.font = customFont;
 
             _currentGesture = gesture;
             _targetTransform = target;
@@ -106,17 +111,17 @@ namespace RecycleRush.Tutorial
                 switch (_currentGesture)
                 {
                     case GuideGestureType.SingleGrab:
-                        _gestureText.text = cycle > 0.5f ? "✊ [GRIP]" : "🖐 [REACH]";
+                        _gestureText.text = cycle > 0.5f ? "[GRIP & HOLD]" : "[REACH & GRAB]";
                         _gestureText.color = Color.Lerp(new Color(0.2f, 0.8f, 1f), grabColor, cycle);
                         break;
 
                     case GuideGestureType.GravityPull:
-                        _gestureText.text = cycle > 0.5f ? "⚡ ➔ ✊ [PULL]" : "⚡ ➔ 🖐 [AIM RAY]";
+                        _gestureText.text = cycle > 0.5f ? ">>> [PULL FAST]" : "--- [AIM RAY]";
                         _gestureText.color = Color.Lerp(pullColor, Color.cyan, cycle);
                         break;
 
                     case GuideGestureType.BimanualTear:
-                        _gestureText.text = cycle > 0.5f ? "⬅ ✊  ||  ✊ ➡\n[PULL APART]" : "🖐 ➡  ||  ⬅ 🖐\n[GRAB BOTH]";
+                        _gestureText.text = cycle > 0.5f ? "<< [PULL APART] >>" : ">> [GRAB BOTH] <<";
                         _gestureText.color = Color.Lerp(tearColor, new Color(1f, 0.9f, 0.2f), cycle);
                         break;
                 }

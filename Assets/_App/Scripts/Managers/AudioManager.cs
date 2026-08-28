@@ -157,6 +157,7 @@ public enum AudioPriority
         private void OnEnable()
         {
             GameManager.OnGameStateChanged += HandleGameStateChanged;
+            GameManager.OnGameTimeUpdated += HandleGameTimeUpdated;
             MachineLever.OnLeverPulledAction += PlayLeverSound;
             
             RecycleRush.Managers.ComboManager.OnComboChanged += HandleComboChanged;
@@ -167,6 +168,7 @@ public enum AudioPriority
         private void OnDisable()
         {
             GameManager.OnGameStateChanged -= HandleGameStateChanged;
+            GameManager.OnGameTimeUpdated -= HandleGameTimeUpdated;
             MachineLever.OnLeverPulledAction -= PlayLeverSound;
             
             RecycleRush.Managers.ComboManager.OnComboChanged -= HandleComboChanged;
@@ -339,8 +341,26 @@ public enum AudioPriority
             }
         }
 
+        private void HandleGameTimeUpdated(float remainingTime)
+        {
+            if (_bgmSource == null || !_bgmSource.isPlaying) return;
+
+            // Adaptif Müzik Gerilimi: Son 15 saniyede müzik temposu (Pitch) kademeli yükselir
+            if (GameManager.Instance != null && GameManager.Instance.CurrentState == GameState.Playing && remainingTime <= 15f && remainingTime > 0f)
+            {
+                float tensionFactor = 1f - (remainingTime / 15f); // 0'dan 1'e doğru ilerler
+                _bgmSource.pitch = Mathf.Lerp(1.0f, 1.25f, tensionFactor);
+            }
+            else
+            {
+                _bgmSource.pitch = 1.0f;
+            }
+        }
+
         private void HandleGameStateChanged(GameState state)
         {
+            if (_bgmSource != null) _bgmSource.pitch = 1.0f;
+
             if (state == GameState.Playing || state == GameState.Tutorial)
             {
                 if (_engineSource != null && !_engineSource.isPlaying) _engineSource.Play();

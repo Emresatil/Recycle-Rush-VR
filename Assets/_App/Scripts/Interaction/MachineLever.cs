@@ -48,8 +48,8 @@ public class MachineLever : MonoBehaviour
             // Kol her çekildiğinde mekanik klik sesi çalınması için anons (Broadcast) yapıyoruz.
             OnLeverPulledAction?.Invoke();
 
-            // Eğer oyun 'ReadyToStart' (Kol Çekmeye Hazır) durumundaysa oyunu BAŞLAT!
-            if (GameManager.Instance != null && GameManager.Instance.CurrentState == GameState.ReadyToStart)
+            // Eğer oyun 'Placement' durumundaysa oyunu BAŞLAT!
+            if (GameManager.Instance != null && GameManager.Instance.CurrentState == GameState.Placement)
             {
                 GameManager.Instance.StartGame();
                 Debug.Log("<color=yellow>[MachineLever]</color> Vardiya başlatıldı! GameManager tetiklendi.");

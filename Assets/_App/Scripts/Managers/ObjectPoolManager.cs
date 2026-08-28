@@ -19,6 +19,10 @@ public class ObjectPoolManager : MonoBehaviour
 
     // Sahnede aktif olan havuz objelerini takip etmek için liste
     private List<GameObject> _activeObjects = new List<GameObject>();
+    public int ActiveWasteCount => _activeObjects.Count;
+    public IReadOnlyList<GameObject> ActiveObjects => _activeObjects;
+    public static event System.Action<int> OnActiveWasteCountChanged;
+
     private Transform _poolContainer;
     public Transform PoolContainer => _poolContainer;
 
@@ -120,6 +124,7 @@ public class ObjectPoolManager : MonoBehaviour
         if (!_activeObjects.Contains(objToSpawn))
         {
             _activeObjects.Add(objToSpawn);
+            OnActiveWasteCountChanged?.Invoke(_activeObjects.Count);
         }
 
         return objToSpawn;
@@ -146,6 +151,7 @@ public class ObjectPoolManager : MonoBehaviour
         if (_activeObjects.Contains(obj))
         {
             _activeObjects.Remove(obj);
+            OnActiveWasteCountChanged?.Invoke(_activeObjects.Count);
         }
 
         // 1) EĞER OYUNCU OBJEYİ ELİNDE TUTARKEN HAVUZA GİDERSE (Süre bitimi, yere düşme vs.)
@@ -165,13 +171,19 @@ public class ObjectPoolManager : MonoBehaviour
             grab.enabled = true; // Kapat-aç yapmak grab bağlantısını kesin olarak koparır.
         }
 
-        // Havuza dönerken tüm fiziksel kuvvetleri temizle ve kinematic yap
+        // Havuza dönerken tüm fiziksel kuvvetleri temizle ve kinematic yap (Unity 6 PhysX uyumlu sıralama)
         Rigidbody[] returnRbs = obj.GetComponentsInChildren<Rigidbody>(true);
         foreach (var r in returnRbs)
         {
-            r.isKinematic = true;
-            r.linearVelocity = Vector3.zero;
-            r.angularVelocity = Vector3.zero;
+            if (r != null)
+            {
+                if (!r.isKinematic)
+                {
+                    r.linearVelocity = Vector3.zero;
+                    r.angularVelocity = Vector3.zero;
+                }
+                r.isKinematic = true;
+            }
         }
 
         // 2) EBEVEYN (PARENT) RESETLEME
@@ -236,6 +248,7 @@ public class ObjectPoolManager : MonoBehaviour
             }
         }
         _activeObjects.Clear();
+        OnActiveWasteCountChanged?.Invoke(0);
     }
 
     private void Update()
@@ -258,9 +271,9 @@ public class ObjectPoolManager : MonoBehaviour
             if (pos.y < killZLevel)
             {
                 Debug.Log($"<color=orange>[ObjectPoolManager - Kill Z]</color> {obj.name} yere düştü! (Konum: {pos}). Otomatik havuza çekiliyor.");
-                if (RecycleRush.Managers.ComboManager.Instance != null) RecycleRush.Managers.ComboManager.Instance.BreakCombo(); if (RecycleRush.Core.ScoreManager.Instance != null) RecycleRush.Core.ScoreManager.Instance.AddScore(-5); ReturnToPool(obj); // ReturnToPool metodu zaten '_activeObjects.Remove(obj)' yapacağı için listemiz temiz kalır.
+                ReturnToPool(obj); 
+                // ReturnToPool metodu zaten '_activeObjects.Remove(obj)' yapacağı için listemiz temiz kalır.
             }
         }
     }
 }
-

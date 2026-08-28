@@ -28,9 +28,12 @@ namespace RecycleRush.Managers
             {
                 ScoreManager.Instance.AddScore(_bonusScore);
                 Debug.Log($"<color=#FFD700>[RewardManager]</color> Bonus Skor Eklendi: +{_bonusScore}");
-                
-                // XP sistemi ScoreManager içindeyse veya ayrıysa buraya eklenebilir. Şimdilik not olarak bırakıldı.
-                // ScoreManager.Instance.AddXP(_bonusXP); 
+            }
+
+            if (LevelManager.Instance != null && _bonusXP > 0)
+            {
+                LevelManager.Instance.AddXp(_bonusXP);
+                Debug.Log($"<color=#FFD700>[RewardManager]</color> Bonus XP Eklendi: +{_bonusXP}");
             }
 
             // Kirlilik Temizliği
