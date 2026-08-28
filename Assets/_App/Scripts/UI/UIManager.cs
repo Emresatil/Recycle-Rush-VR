@@ -1,9 +1,12 @@
+using System;
 using UnityEngine;
 using TMPro; // TextMeshPro (Yazılar) için gerekli
 using System.Collections; // Coroutine (Lerp animasyonları) için gerekli
 using System.Collections.Generic; // Queue<T> için gerekli
 using UnityEngine.UI;
 using UnityEngine.InputSystem;
+using UnityEngine.EventSystems;
+using UnityEngine.XR.Interaction.Toolkit.UI;
 using RecycleRush.Managers;
 
 namespace RecycleRush.UI
@@ -110,6 +113,60 @@ namespace RecycleRush.UI
             {
                 _originalComboScale = comboText.transform.localScale;
             }
+
+            EnsureXRUIInputSetup();
+        }
+
+        /// <summary>
+        /// Sahnede hem VR/AR Kontrolcü Lazer Işınlarının (XR Ray) hem de Mouse'un tüm panellerdeki butonlara tıklayabilmesini garanti eder.
+        /// </summary>
+        public void EnsureXRUIInputSetup()
+        {
+            // 1. EventSystem yapılandırması
+            EventSystem evt = EventSystem.current;
+            GameObject evtObj = evt != null ? evt.gameObject : GameObject.Find("EventSystem");
+            if (evtObj != null)
+            {
+                var inputModule = evtObj.GetComponent<UnityEngine.InputSystem.UI.InputSystemUIInputModule>();
+                if (inputModule != null)
+                {
+                    inputModule.enabled = false; // Çakışmayı önlemek için standart modülü kapat
+                }
+
+                var xrModule = evtObj.GetComponent<XRUIInputModule>();
+                if (xrModule == null)
+                {
+                    xrModule = evtObj.AddComponent<XRUIInputModule>();
+                }
+                xrModule.enabled = true;
+                xrModule.enableXRInput = true;
+                xrModule.enableMouseInput = true;
+                xrModule.enableTouchInput = true;
+            }
+
+            // 2. Sahnede bulunan tüm World Space panellerini bul ve raycaster + kamera ata
+            Canvas[] allCanvases = FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            Camera mainCam = Camera.main;
+            foreach (var canvas in allCanvases)
+            {
+                if (canvas.renderMode == RenderMode.WorldSpace)
+                {
+                    if (canvas.worldCamera == null && mainCam != null)
+                    {
+                        canvas.worldCamera = mainCam;
+                    }
+
+                    if (canvas.GetComponent<TrackedDeviceGraphicRaycaster>() == null)
+                    {
+                        canvas.gameObject.AddComponent<TrackedDeviceGraphicRaycaster>();
+                    }
+
+                    if (canvas.GetComponent<GraphicRaycaster>() == null)
+                    {
+                        canvas.gameObject.AddComponent<GraphicRaycaster>();
+                    }
+                }
+            }
         }
 
         private void OnEnable()
@@ -129,6 +186,10 @@ namespace RecycleRush.UI
             EventManager.OnGameEventStarted += HandleGameEventStarted;
             EventManager.OnGameEventEnded += HandleGameEventEnded;
 
+            // Başarım yöneticisi dinleyicisi
+            Managers.AchievementManager.OnAchievementUnlocked += HandleAchievementUnlocked;
+            Managers.AchievementManager.OnAchievementProgress += HandleAchievementProgress;
+
             if (menuPauseAction != null && menuPauseAction.action != null)
             {
                 menuPauseAction.action.Enable();
@@ -138,6 +199,27 @@ namespace RecycleRush.UI
 
         private void Start()
         {
+            // Eğer Inspector'da atanmadıysa sahnede otomatik ara
+            if (achievementPanel == null)
+            {
+                var allTransforms = FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+                foreach (var t in allTransforms)
+                {
+                    if (t.name.Equals("AchievementPanel", StringComparison.OrdinalIgnoreCase))
+                    {
+                        achievementPanel = t.gameObject;
+                        var texts = achievementPanel.GetComponentsInChildren<TextMeshProUGUI>(true);
+                        foreach (var txt in texts)
+                        {
+                            if (txt.name.ToLower().Contains("title")) achievementTitleText = txt;
+                            else if (txt.name.ToLower().Contains("desc")) achievementDescText = txt;
+                        }
+                        Debug.Log("<color=green>[UIManager]</color> AchievementPanel sahnede otomatik bulundu ve bağlandı.");
+                        break;
+                    }
+                }
+            }
+
             // Başarım Panelini başlangıçta gizle
             if (achievementPanel != null)
             {
@@ -159,13 +241,6 @@ namespace RecycleRush.UI
             {
                 Managers.ComboManager.OnComboChanged += HandleComboChangedLegacy;
                 Managers.ComboManager.OnComboBroken += HandleComboBroken;
-            }
-
-            // Başarım yöneticisine bağlan
-            if (Managers.AchievementManager.Instance != null)
-            {
-                Managers.AchievementManager.OnAchievementUnlocked += HandleAchievementUnlocked;
-                Managers.AchievementManager.OnAchievementProgress += HandleAchievementProgress;
             }
 
             // Sliderları AudioManager'a bağla
@@ -220,6 +295,9 @@ namespace RecycleRush.UI
             EventManager.OnGameEventStarted -= HandleGameEventStarted;
             EventManager.OnGameEventEnded -= HandleGameEventEnded;
 
+            Managers.AchievementManager.OnAchievementUnlocked -= HandleAchievementUnlocked;
+            Managers.AchievementManager.OnAchievementProgress -= HandleAchievementProgress;
+
             BinTrigger.OnComboChanged -= HandleComboChanged;
             if (Managers.ComboManager.Instance != null)
             {
@@ -237,15 +315,6 @@ namespace RecycleRush.UI
             {
                 StopCoroutine(_countdownCoroutine);
                 _countdownCoroutine = null;
-            }
-        }
-
-        private void OnDestroy()
-        {
-            if (Managers.AchievementManager.Instance != null)
-            {
-                Managers.AchievementManager.OnAchievementUnlocked -= HandleAchievementUnlocked;
-                Managers.AchievementManager.OnAchievementProgress -= HandleAchievementProgress;
             }
         }
 
@@ -335,9 +404,17 @@ namespace RecycleRush.UI
             {
                 case GameState.Initialization:
                 case GameState.MainMenu:
+                    bool isTutorialDone = PlayerPrefs.GetInt("TutorialDone", 0) == 1;
                     if (statusText != null)
                     {
-                        statusText.text = "SYSTEM ONLINE\n<color=yellow>PRESS PLAY BUTTON</color>";
+                        if (isTutorialDone)
+                        {
+                            statusText.text = "SYSTEM ONLINE\n<color=yellow>PRESS PLAY BUTTON</color>";
+                        }
+                        else
+                        {
+                            statusText.text = "";
+                        }
                         statusText.transform.localScale = _originalStatusScale;
                     }
                     if (timeText != null)
@@ -356,7 +433,6 @@ namespace RecycleRush.UI
                     if (gameOverPanel != null) gameOverPanel.SetActive(false);
 
                     // SADECE LevelSelectionBoard aktif olsun (Eğer eğitim tamamlandıysa), oyun içi paneller kapansın
-                    bool isTutorialDone = PlayerPrefs.GetInt("TutorialDone", 0) == 1;
                     if (levelSelectionBoard != null) levelSelectionBoard.SetActive(isTutorialDone);
                     if (missionPanel != null) missionPanel.SetActive(false);
                     if (xpPanel != null) xpPanel.SetActive(false);
@@ -369,7 +445,7 @@ namespace RecycleRush.UI
                     if (statusText != null)
                     {
                         if (PlayerPrefs.GetInt("TutorialDone", 0) == 0)
-                            statusText.text = "<color=yellow>TUTORIAL</color>\nPULL THE LEVER TO START";
+                            statusText.text = "";
                         else
                             statusText.text = "SYSTEM READY\nPULL THE LEVER TO START";
                         statusText.transform.localScale = _originalStatusScale;
@@ -409,18 +485,23 @@ namespace RecycleRush.UI
                     break;
 
                 case GameState.Playing:
-                    // Seviye seçim panosunu gizle, Oyun içi HUD panellerini aç
                     if (levelSelectionBoard != null) levelSelectionBoard.SetActive(false);
+                    if (timeText != null)
+                    {
+                        timeText.gameObject.SetActive(true);
+                        UpdateTimeDisplay(GameManager.Instance != null ? GameManager.Instance.RemainingTime : 60f);
+                    }
+                    if (eventNotificationText != null) eventNotificationText.gameObject.SetActive(false);
+                    if (powerupNotificationText != null) powerupNotificationText.gameObject.SetActive(false);
+                    if (comboText != null) comboText.gameObject.SetActive(true);
                     if (missionPanel != null) missionPanel.SetActive(true);
                     if (xpPanel != null) xpPanel.SetActive(true);
                     if (comboPanel != null) comboPanel.SetActive(true);
                     if (pollutionPanel != null) pollutionPanel.SetActive(true);
                     if (scorePanel != null) scorePanel.SetActive(true);
-
-                    if (timeText != null) timeText.gameObject.SetActive(true);
                     if (statusText != null)
                     {
-                        statusText.text = "RECYCLING STARTED";
+                        statusText.text = "<color=green>RECYCLING ACTIVE</color>";
                         statusText.transform.localScale = _originalStatusScale;
                         StartCoroutine(ClearStatusTextAfterDelay(2f));
                     }
@@ -428,10 +509,19 @@ namespace RecycleRush.UI
                     if (pausePanel != null) pausePanel.SetActive(false);
                     if (gameOverPanel != null) gameOverPanel.SetActive(false);
                     if (pauseButtonUIObj != null)
+                    {
                         pauseButtonUIObj.SetActive(true);
+                        var pBtn = pauseButtonUIObj.GetComponent<Button>() ?? pauseButtonUIObj.GetComponentInChildren<Button>(true);
+                        if (pBtn != null)
+                        {
+                            pBtn.onClick.RemoveAllListeners();
+                            pBtn.onClick.AddListener(HandleMenuPauseToggle);
+                        }
+                    }
                     break;
 
                 case GameState.Tutorial:
+                    if (statusText != null) statusText.text = "";
                     if (levelSelectionBoard != null) levelSelectionBoard.SetActive(false);
                     if (missionPanel != null) missionPanel.SetActive(false);
                     if (xpPanel != null) xpPanel.SetActive(false);
@@ -915,6 +1005,8 @@ namespace RecycleRush.UI
 
         private void HandleAchievementUnlocked(Managers.AchievementData data)
         {
+            if (data == null) return;
+            Debug.Log($"<color=yellow>[UIManager]</color> Başarım bildirimi alındı: {data.Title}. Kuyruğa ekleniyor...");
             _achievementQueue.Enqueue(data);
             if (!_isShowingAchievement)
             {
@@ -942,6 +1034,10 @@ namespace RecycleRush.UI
                     yield return new WaitForSeconds(3.5f);
                     achievementPanel.SetActive(false);
                     yield return new WaitForSeconds(0.5f);
+                }
+                else
+                {
+                    Debug.LogWarning("<color=orange>[UIManager]</color> AchievementPanel referansı atanmamış! Başarım bildirimi ekranda gösterilemedi.");
                 }
             }
             _isShowingAchievement = false;
